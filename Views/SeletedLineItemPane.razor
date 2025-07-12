@@ -1,0 +1,293 @@
+﻿@page "/selectedproductpane"
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject IJSRuntime Js
+@inject PicoPlus.Services.CRM.Commerce.Product ProductService
+@inject PicoPlus.Services.CRM.Commerce.LineItem LineItemService
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-5">
+    <MudCard>
+        <MudCardHeader>
+            <MudText Typo="Typo.h5">فرم سفارش</MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudSelect T="string"
+                               Label="خدمات"
+                               @bind-Value="SelectedProductID"
+                               Required="true"
+                               Searchable="true"
+                               SearchFunc="SearchProducts"
+                               AdornmentIcon="@Icons.Material.Filled.Search"
+                               Clearable="true">
+                        @foreach (var product in FilteredProducts)
+                        {
+                            <MudSelectItem Value="@product.id">@product.properties.name (@product.properties.hs_sku)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex align-items-end">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Info"
+                               FullWidth="true"
+                               OnClick="@AddToList"
+                               Disabled="@(!IsProductSelected)">
+                        @(IsEditing ? "بروزرسانی" : "افزودن به لیست")
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid class="mt-3">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="Quantity"
+                                  Label="تعداد"
+                                  Placeholder="تعداد"
+                                  Type="number"
+                                  Min="1"
+                                  Validation="@(new Func<long, string>(ValidateQuantity))" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="Percentage"
+                                  Label="تحفیف (%)"
+                                  Placeholder="تحفیف"
+                                  Type="number"
+                                  Min="0"
+                                  Max="100"
+                                  Validation="@(new Func<decimal, string>(ValidatePercentage))" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mt-5">
+                <MudItem xs="12">
+                    <MudTextField Label="جستجو در لیست سفارش‌ها"
+                                  @bind-Value="LineItemsSearch"
+                                  Placeholder="نام خدمت یا شناسه را وارد کنید"
+                                  Immediate="true"
+                                  DebounceInterval="300"
+                                  Class="mb-3" />
+
+                    <MudTable Items="FilteredLineItems" Hover="true" Dense="true">
+                        <HeaderContent>
+                            <MudTh>شناسه خدمت</MudTh>
+                            <MudTh>نام خدمت</MudTh>
+                            <MudTh>(ریال)قیمت واحد</MudTh>
+                            <MudTh>تعداد</MudTh>
+                            <MudTh>تخفیف (%)</MudTh>
+                            <MudTh>(ریال)مجموع قیمت</MudTh>
+                            <MudTh>عملیات</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="شناسه خدمت">@context.properties.hs_sku</MudTd>
+                            <MudTd DataLabel="نام خدمت">@context.properties.name</MudTd>
+                            <MudTd DataLabel="(ریال)قیمت واحد">@FormatNumber(context.properties.price)</MudTd>
+                            <MudTd DataLabel="تعداد">@context.properties.quantity</MudTd>
+                            <MudTd DataLabel="تخفیف (%)">@context.properties.hs_discount_percentage</MudTd>
+                            <MudTd DataLabel="(ریال)مجموع قیمت">@FormatNumber(context.properties.TotalPrice)</MudTd>
+                            <MudTd DataLabel="عملیات">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               OnClick="@(() => EditLineItem(context))"
+                                               Color="Color.Primary"
+                                               Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               OnClick="@(() => DeleteLineItem(context))"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               Class="mr-2" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                    <MudGrid Class="mt-3">
+                        <MudItem xs="12" md="4" Class="offset-md-8 text-end">
+                            <MudText Typo="Typo.h6" Class="fw-bold">مجموع: @FormatNumber(TotalPrice) ریال</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (IsEditing)
+                    {
+                        <div class="text-center mt-3">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Secondary"
+                                       OnClick="@CancelEdit"
+                                       Class="ml-2">
+                                لغو ویرایش
+                            </MudButton>
+                        </div>
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private bool IsInit { get; set; }
+    private long Quantity { get; set; } = 1;
+    private decimal Percentage { get; set; } = 0m;
+    private string? SelectedProductID { get; set; }
+    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> PList { get; set; } = new();
+    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> FilteredProducts { get; set; } = new();
+    private List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> LineItems { get; set; } = new();
+
+    // Search string for LineItems
+    private string LineItemsSearch { get; set; } = string.Empty;
+
+    // Editing state
+    private bool IsEditing { get; set; } = false;
+    private PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input? ItemBeingEdited { get; set; }
+    private bool IsProductSelected => !string.IsNullOrEmpty(SelectedProductID);
+
+    [Parameter]
+    public EventCallback<decimal> OnTotalPriceChanged { get; set; }
+    private decimal TotalPrice { get; set; } = 0m;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            PList = await ProductService.ListAsync();
+            FilteredProducts = PList;
+            IsInit = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddToList()
+    {
+        var selectedProduct = PList.FirstOrDefault(p => p.id == SelectedProductID);
+
+        if (selectedProduct != null && decimal.TryParse(selectedProduct.properties.price, out var priceDecimal))
+        {
+            var totalPriceForItem = priceDecimal * Quantity * (1 - (Percentage / 100));
+            var newItem = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input
+            {
+                properties = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Properties
+                {
+                    name = selectedProduct.properties.name,
+                    hs_product_id = selectedProduct.id,
+                    price = priceDecimal,
+                    quantity = Quantity,
+                    hs_discount_percentage = Percentage.ToString(),
+                    hs_sku = selectedProduct.properties.hs_sku,
+                    TotalPrice = totalPriceForItem
+                }
+            };
+
+            if (IsEditing && ItemBeingEdited != null)
+            {
+                // Update existing item
+                var index = LineItems.IndexOf(ItemBeingEdited);
+                if (index >= 0)
+                {
+                    // Remove old price
+                    TotalPrice -= ItemBeingEdited.properties.TotalPrice;
+
+                    // Update item
+                    LineItems[index] = newItem;
+
+                    // Add new price
+                    TotalPrice += totalPriceForItem;
+                }
+
+                // Reset editing state
+                CancelEdit();
+            }
+            else
+            {
+                // Add new item
+                LineItems.Add(newItem);
+                TotalPrice += totalPriceForItem;
+            }
+
+            await OnTotalPriceChanged.InvokeAsync(TotalPrice);
+            ResetForm();
+        }
+    }
+
+    private void EditLineItem(PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input item)
+    {
+        ItemBeingEdited = item;
+        IsEditing = true;
+
+        // Populate form with item's values
+        SelectedProductID = item.properties.hs_product_id;
+        long? quantity = item.properties.quantity;
+        Quantity = quantity.Value;
+        Percentage = decimal.Parse(item.properties.hs_discount_percentage);
+    }
+
+    private void DeleteLineItem(PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input item)
+    {
+        LineItems.Remove(item);
+        TotalPrice -= item.properties.TotalPrice;
+        OnTotalPriceChanged.InvokeAsync(TotalPrice);
+
+        if (IsEditing && item == ItemBeingEdited)
+        {
+            CancelEdit();
+        }
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        ItemBeingEdited = null;
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        Quantity = 1;
+        Percentage = 0m;
+        SelectedProductID = null;
+    }
+
+    // Filtered list of line items based on search input
+    private IEnumerable<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> FilteredLineItems =>
+        string.IsNullOrWhiteSpace(LineItemsSearch)
+            ? LineItems
+            : LineItems.Where(li =>
+                (li.properties.name?.Contains(LineItemsSearch, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (li.properties.hs_sku?.Contains(LineItemsSearch, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    public List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> GetLineItems() => LineItems;
+
+    private string FormatNumber(decimal? number)
+    {
+        if (number == null) return string.Empty;
+        return string.Format("{0:N0}", number).Replace(",", "،");
+    }
+
+    public string GetTotalAmount() => TotalPrice.ToString();
+
+    private IEnumerable<string> SearchProducts(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            FilteredProducts = PList;
+        }
+        else
+        {
+            FilteredProducts = PList.Where(x =>
+                x.properties.name.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+                (x.properties.hs_sku?.Contains(value, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+        }
+        StateHasChanged();
+        return FilteredProducts.Select(x => x.id);
+    }
+
+    private string ValidateQuantity(long value)
+    {
+        if (value < 1) return "تعداد باید حداقل 1 باشد";
+        return null;
+    }
+
+    private string ValidatePercentage(decimal value)
+    {
+        if (value < 0) return "درصد تخفیف نمی‌تواند منفی باشد";
+        if (value > 100) return "درصد تخفیف نمی‌تواند بیشتر از 100 باشد";
+        return null;
+    }
+}

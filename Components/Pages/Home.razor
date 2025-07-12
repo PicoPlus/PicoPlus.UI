@@ -1,0 +1,22 @@
+﻿@page "/"
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@inject NavigationManager Navigation
+
+@code {
+    protected async  override Task OnAfterRenderAsync(bool firstRender)
+    {
+        int LogInState = await sessionStorage.GetItemAsync<int>("LogInState");
+        if (LogInState != null || LogInState != 0)
+   
+        {  
+            Navigation.NavigateTo("/auth/login");
+        }
+     
+        else
+        {
+            Navigation.NavigateTo("/user/panel");
+
+        }
+    }
+}

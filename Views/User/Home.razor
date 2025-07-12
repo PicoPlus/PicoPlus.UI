@@ -1,0 +1,551 @@
+﻿@page "/user/panel"
+@using MudBlazor
+@using Newtonsoft.Json
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject PicoPlus.Services.CRM.Commerce.Product ProductService
+
+<MudThemeProvider Theme="@theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <!-- App Bar -->
+    <MudAppBar Elevation="4" Fixed="true" Color="Color.Primary">
+        <MudToolBar>
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" OnClick="@ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="ml-2">پنل کاربری</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+            <MudBadge BadgeContent="3" Color="Color.Error">
+                <MudIconButton Icon="@Icons.Material.Filled.Mail" Color="Color.Inherit" />
+            </MudBadge>
+            <MudMenu Direction="Direction.Start" OffsetY="true">
+                <ActivatorContent>
+                    <MudAvatar Color="Color.Primary" Size="Size.Small">@GetInitials()</MudAvatar>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="#profile">پروفایل</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Settings">تنظیمات</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.ExitToApp" OnClick="SignOut">خروج</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        </MudToolBar>
+    </MudAppBar>
+
+    <!-- Navigation Drawer -->
+    <MudDrawer @bind-Open="@drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <MudNavMenu Rounded="true" Dense="true">
+            <MudNavLink Href="#profile" Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">پروفایل</MudNavLink>
+            <MudNavLink Href="#deals" Icon="@Icons.Material.Filled.LocalOffer" IconColor="Color.Primary">معاملات</MudNavLink>
+            <MudNavLink Href="#support" Icon="@Icons.Material.Filled.ConfirmationNumber" IconColor="Color.Primary">پشتیبانی</MudNavLink>
+            <MudNavLink Href="#services" Icon="@Icons.Material.Filled.Build" IconColor="Color.Primary">خدمات</MudNavLink>
+            <MudNavLink Href="#contact" Icon="@Icons.Material.Filled.ContactMail" IconColor="Color.Primary">تماس با ما</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <!-- Main Content -->
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-12">
+            <!-- Dashboard Stats -->
+            <MudGrid Container Class="mb-6">
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="5" Class="h-100">
+                        <MudCardContent>
+                            <MudGrid Container>
+                                <MudItem xs="8">
+                                    <MudText Typo="Typo.subtitle2" Class="text-secondary">موجودی کیف پول</MudText>
+                                    <MudText Typo="Typo.h4" Class="mt-2">@FormatNumber(50000) تومان</MudText>
+                                </MudItem>
+                                <MudItem xs="4" Class="d-flex justify-end">
+                                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large" Class="elevation-5">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                                    </MudAvatar>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@ShowAddBalanceModal" StartIcon="@Icons.Material.Filled.Add">افزایش موجودی</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="5" Class="h-100">
+                        <MudCardContent>
+                            <MudGrid Container>
+                                <MudItem xs="8">
+                                    <MudText Typo="Typo.subtitle2" Class="text-secondary">معاملات انجام شده</MudText>
+                                    <MudText Typo="Typo.h4" Class="mt-2">12</MudText>
+                                </MudItem>
+                                <MudItem xs="4" Class="d-flex justify-end">
+                                    <MudAvatar Color="Color.Success" Variant="Variant.Filled" Size="Size.Large" Class="elevation-5">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                    </MudAvatar>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.History">مشاهده تاریخچه</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="5" Class="h-100">
+                        <MudCardContent>
+                            <MudGrid Container>
+                                <MudItem xs="8">
+                                    <MudText Typo="Typo.subtitle2" Class="text-secondary">معاملات باز</MudText>
+                                    <MudText Typo="Typo.h4" Class="mt-2">3</MudText>
+                                </MudItem>
+                                <MudItem xs="4" Class="d-flex justify-end">
+                                    <MudAvatar Color="Color.Warning" Variant="Variant.Filled" Size="Size.Large" Class="elevation-5">
+                                        <MudIcon Icon="@Icons.Material.Filled.PendingActions" />
+                                    </MudAvatar>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.List">مشاهده لیست</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Tab Panels -->
+            <MudPaper Elevation="3" Class="pa-4 mb-4">
+                <MudTabs KeepPanelsAlive="true" @bind-ActivePanelIndex="activePanelIndex" Color="Color.Primary">
+                    <!-- Profile Tab -->
+                    <MudTabPanel Text="پروفایل" Icon="@Icons.Material.Filled.Person" Class="py-3">
+                        <MudGrid Container Class="mt-2">
+                            <MudItem xs="12" md="4" Class="d-flex justify-center mb-4">
+                                <MudAvatar Size="Size.Large" Class="elevation-10" Style="width:150px; height:150px;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" />
+                                </MudAvatar>
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudGrid Container>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField T="string" Label="نام" @bind-Value="ContactModel.properties.firstname" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                            Required="true" RequiredError="لطفاً نام خود را وارد کنید" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField T="string" Label="نام خانوادگی" @bind-Value="ContactModel.properties.lastname" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense"
+                                            Required="true" RequiredError="لطفاً نام خانوادگی خود را وارد کنید" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField T="string" Label="کد ملی" @bind-Value="ContactModel.properties.natcode" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                            Required="true" RequiredError="لطفاً کد ملی خود را وارد کنید" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudDatePicker Label="تاریخ تولد" DateFormat="yyyy/MM/dd" @bind-Date="birthDate" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudTextField T="string" Label="شماره موبایل" @bind-Value="ContactModel.properties.phone" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense"  
+                                            Required="true" RequiredError="لطفاً شماره موبایل خود را وارد کنید" />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudTextField T="string" Label="ایمیل" @bind-Value="ContactModel.properties.email" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense"  />
+                                    </MudItem>
+                                    <MudItem xs="12">
+                                        <MudTextField T="string" Label="سطح کاربر" ReadOnly @bind-Value="ContactModel.properties.contact_plan" 
+                                            Variant="Variant.Outlined" Margin="Margin.Dense"  />
+                                    </MudItem>
+                                    <MudItem xs="12" Class="mt-3">
+                                        <MudText Typo="Typo.h6" Class="mb-2">آدرس</MudText>
+                                        <MudGrid Container>
+                                            <MudItem xs="12" md="8">
+                                                <MudTextField T="string" Label="کد پستی" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                                            </MudItem>
+                                            <MudItem xs="12" md="4">
+                                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" FullWidth="true">دریافت کد پستی</MudButton>
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudTextField T="string" Label="آدرس کامل" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudItem>
+                                    <MudItem xs="12" Class="mt-4 d-flex justify-end">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">ذخیره تغییرات</MudButton>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+
+                    <!-- Deals Tab -->
+                    <MudTabPanel Text="معاملات" Icon="@Icons.Material.Filled.LocalOffer" Class="py-3">
+                        <MudText Typo="Typo.h5" Class="mb-4">لیست معاملات اخیر</MudText>
+                        <MudTable Items="@deals" Hover="true" Bordered="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>شناسه</MudTh>
+                                <MudTh>عنوان</MudTh>
+                                <MudTh>وضعیت</MudTh>
+                                <MudTh>مبلغ</MudTh>
+                                <MudTh>تاریخ</MudTh>
+                                <MudTh>عملیات</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="شناسه">@context.Id</MudTd>
+                                <MudTd DataLabel="عنوان">@context.Title</MudTd>
+                                <MudTd DataLabel="وضعیت">
+                                    <MudChip T="string"
+                                             Color="@GetStatusColor(context.Status)"
+                                             Text="@context.Status"
+                                             Variant="Variant.Filled"
+                                             Size="Size.Small" />
+                                </MudTd>
+                                <MudTd DataLabel="مبلغ">@FormatNumber(context.Amount) تومان</MudTd>
+                                <MudTd DataLabel="تاریخ">@FormatDate(context.Date)</MudTd>
+                                <MudTd DataLabel="عملیات">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small" Class="mr-1" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Class="mr-1" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                        <MudFab Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Class="mud-fab-bottom-right" OnClick="@ShowAddDealCreateModal" />
+                    </MudTabPanel>
+
+                    <!-- Support Tab -->
+                    <MudTabPanel Text="پشتیبانی" Icon="@Icons.Material.Filled.ConfirmationNumber" Class="py-3">
+                        <MudText Typo="Typo.h5" Class="mb-4">بلیط‌های پشتیبانی</MudText>
+                        <MudTable Items="@tickets" Hover="true" Bordered="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>شماره بلیط</MudTh>
+                                <MudTh>موضوع</MudTh>
+                                <MudTh>وضعیت</MudTh>
+                                <MudTh>اولویت</MudTh>
+                                <MudTh>تاریخ ایجاد</MudTh>
+                                <MudTh>عملیات</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="شماره بلیط">#@context.Id</MudTd>
+                                <MudTd DataLabel="موضوع">@context.Subject</MudTd>
+                                <MudTd DataLabel="وضعیت">
+                                    <MudChip T="string" Text="@context.Status" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled" Size="Size.Small" />
+                                </MudTd>
+                                <MudTd DataLabel="اولویت">
+                                    <MudChip T="string" Text="@context.Priority" Color="@GetPriorityColor(context.Priority)" Variant="Variant.Filled" Size="Size.Small" />
+                                </MudTd>
+                                <MudTd DataLabel="تاریخ ایجاد">@FormatDate(context.CreatedDate)</MudTd>
+                                <MudTd DataLabel="عملیات">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Message" Color="Color.Primary" Size="Size.Small" Class="mr-1" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                        <div class="d-flex justify-end mt-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">ایجاد بلیط جدید</MudButton>
+                        </div>
+                    </MudTabPanel>
+
+                    <!-- Services Tab -->
+                    <MudTabPanel Text="خدمات" Icon="@Icons.Material.Filled.Build" Class="py-3">
+                        <MudGrid Container Class="mb-4">
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.h5">خدمات فعال</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6" Class="d-flex justify-end">
+                                <MudTextField T="string" Label="جستجو" Value="@searchString" Immediate="true" 
+                                    Variant="Variant.Outlined" Margin="Margin.None" Adornment="Adornment.End"
+                                    AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"
+                                    Class="ml-2" OnInput="OnSearchChanged" />
+                                <MudSelect T="string" Label="دسته‌بندی" Variant="Variant.Outlined" Class="ml-2" Style="width:150px;">
+                                    <MudSelectItem T="string" >همه</MudSelectItem>
+                                    <MudSelectItem T="string" >دسته ۱</MudSelectItem>
+                                    <MudSelectItem T="string" >دسته ۲</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        @if (isLoading)
+                        {
+                            <div class="d-flex justify-center my-8">
+                                <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
+                            </div>
+                        }
+                        else
+                        {
+                            <MudTable Items="@paginatedItems" Filter="FilterItems" Hover="true" Bordered="true" Striped="true" Dense="true">
+                                <HeaderContent>
+                                    <MudTh>شناسه</MudTh>
+                                    <MudTh>نام خدمت</MudTh>
+                                    <MudTh>دسته‌بندی</MudTh>
+                                    <MudTh>قیمت</MudTh>
+                                    <MudTh>وضعیت</MudTh>
+                                    <MudTh>تاریخ فعال‌سازی</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="شناسه">@context.id</MudTd>
+                                    <MudTd DataLabel="نام محصول">
+                                        <div class="d-flex align-center">
+                                            <MudAvatar Size="Size.Small" Class="mr-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.Widgets" />
+                                            </MudAvatar>
+                                            <span>@context.properties.name</span>
+                                        </div>
+                                    </MudTd>
+                                    <MudTd DataLabel="دسته‌بندی">
+                                        <MudChip T="string" Text="خدمات پایه" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small" />
+                                    </MudTd>
+                                    <MudTd DataLabel="قیمت">
+                                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">@FormatNumber(decimal.Parse( context.properties.price)) تومان</MudText>
+                                    </MudTd>
+                                    <MudTd DataLabel="وضعیت">
+                                        <MudChip T="string" Text="فعال" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" />
+                                    </MudTd>
+                                    <MudTd DataLabel="تاریخ">@FormatDate(context.properties.createdate)</MudTd>
+                                </RowTemplate>
+                                <PagerContent>
+                                    <MudTablePager @bind-CurrentPage="currentPage" PageSize="rowsPerPage" RowsPerPageString="تعداد در صفحه" />
+                                </PagerContent>
+                            </MudTable>
+                        }
+                    </MudTabPanel>
+
+                    <!-- Contact Tab -->
+                    <MudTabPanel Text="تماس با ما" Icon="@Icons.Material.Filled.ContactMail" Class="py-3">
+                        <MudText Typo="Typo.h5" Class="mb-4">فرم تماس با ما</MudText>
+                        <MudGrid Container>
+                            <MudItem xs="12" md="6">
+                                <MudTextField T="string" Label="نام" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField T="string" Label="ایمیل" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="موضوع" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="پیام شما" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                    FullWidth="true" Lines="5" />
+                            </MudItem>
+                            <MudItem xs="12" Class="mt-4">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" 
+                                    StartIcon="@Icons.Material.Filled.Send">ارسال پیام</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                        <MudDivider Class="my-6" />
+                        <MudText Typo="Typo.h6" Class="mb-3">راه‌های ارتباطی</MudText>
+                        <MudGrid Container>
+                            <MudItem xs="12" md="4" Class="mb-4">
+                                <div class="d-flex align-center">
+                                    <MudAvatar Color="Color.Primary" Size="Size.Small" Class="mr-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Phone" />
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.subtitle2">تلفن تماس</MudText>
+                                        <MudText Typo="Typo.body2">۰۲۱-۱۲۳۴۵۶۷۸</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="mb-4">
+                                <div class="d-flex align-center">
+                                    <MudAvatar Color="Color.Info" Size="Size.Small" Class="mr-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Email" />
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.subtitle2">ایمیل</MudText>
+                                        <MudText Typo="Typo.body2">support@example.com</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="mb-4">
+                                <div class="d-flex align-center">
+                                    <MudAvatar Color="Color.Success" Size="Size.Small" Class="mr-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.subtitle2">آدرس</MudText>
+                                        <MudText Typo="Typo.body2">تهران، خیابان آزادی، پلاک ۱۲۳</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudPaper>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    // Theme customization
+    private MudTheme theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#3f51b5",
+            Secondary = "#ff4081",
+            AppbarBackground = "#3f51b5",
+            AppbarText = "#ffffff"
+        }
+    };
+
+    // State variables
+    private bool drawerOpen = true;
+    private bool _addBalanceModalVisible = false;
+    private bool isLoading = true;
+    private string searchString = "";
+    private int activePanelIndex = 0;
+    private int currentPage = 1;
+    private int rowsPerPage = 10;
+    private DateTime? birthDate = DateTime.Now.AddYears(-25);
+
+    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> paginatedItems = new();
+    public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
+    {
+        properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate loading paginated items (replace with actual data fetching logic)
+        paginatedItems = await ProductService.ListAsync();
+        ContactModel = await sessionStorage.GetItemAsync<PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result>("ContactModel");
+        Console.WriteLine("");
+
+    }
+    // Data models
+
+    // Sample data for demonstration
+    private List<Deal> deals = new List<Deal>
+    {
+        new Deal { Id = "D-1024", Title = "خرید سرویس میزبانی", Status = "تکمیل شده", Amount = 250000, Date = DateTime.Now.AddDays(-5) },
+        new Deal { Id = "D-1025", Title = "خرید دامنه", Status = "در انتظار پرداخت", Amount = 150000, Date = DateTime.Now.AddDays(-2) },
+        new Deal { Id = "D-1026", Title = "تمدید سرویس", Status = "فعال", Amount = 320000, Date = DateTime.Now.AddDays(-1) }
+    };
+
+    private List<Ticket> tickets = new List<Ticket>
+    {
+        new Ticket { Id = "T-145", Subject = "مشکل در فعال سازی سرویس", Status = "پاسخ داده شده", Priority = "متوسط", CreatedDate = DateTime.Now.AddDays(-3) },
+        new Ticket { Id = "T-146", Subject = "درخواست راهنمایی", Status = "در حال بررسی", Priority = "کم", CreatedDate = DateTime.Now.AddDays(-1) },
+        new Ticket { Id = "T-147", Subject = "مشکل فنی در پنل", Status = "جدید", Priority = "بالا", CreatedDate = DateTime.Now }
+    };
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Simulate loading
+            await Task.Delay(1000);
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleDrawer()
+    {
+        drawerOpen = !drawerOpen;
+    }
+
+    private string GetInitials()
+    {
+        if (!string.IsNullOrEmpty(ContactModel.properties.firstname) && !string.IsNullOrEmpty(ContactModel.properties.lastname))
+        {
+            return $"{ContactModel.properties.firstname[0]}{ContactModel.properties.lastname[0]}";
+        }
+        return "U";
+    }
+
+    private async Task SignOut()
+    {
+        await sessionStorage.RemoveItemAsync("LogInState");
+        await sessionStorage.RemoveItemAsync("ContactModel");
+        Navigation.NavigateTo("/auth/login");
+    }
+
+    private void ShowAddBalanceModal()
+    {
+        _addBalanceModalVisible = true;
+    }
+
+    private Task ShowAddDealCreateModal()
+    {
+        var dlg = DialogService.ShowAsync<Views.Deal.Create>();
+        return dlg;
+    }
+
+    private void CloseAddBalanceModal()
+    {
+        _addBalanceModalVisible = false;
+    }
+
+    private string FormatNumber(decimal? number)
+    {
+        if (number == null) return "-";
+        return string.Format("{0:N0}", number).Replace(",", "،");
+    }
+
+    private string FormatDate(DateTime? date)
+    {
+        if (date == null) return "-";
+        return date?.ToString("yyyy/MM/dd");
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "تکمیل شده" => Color.Success,
+            "فعال" => Color.Info,
+            "در انتظار پرداخت" => Color.Warning,
+            "جدید" => Color.Primary,
+            "در حال بررسی" => Color.Info,
+            "پاسخ داده شده" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetPriorityColor(string priority)
+    {
+        return priority switch
+        {
+            "بالا" => Color.Error,
+            "متوسط" => Color.Warning,
+            "کم" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private bool FilterItems(PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result product)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        return product.properties.name != null && product.properties.name.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private Task OnSearchChanged(string value)
+    {
+        searchString = value;
+        currentPage = 1;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // Helper classes for sample data
+    private class Deal
+    {
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Status { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    private class Ticket
+    {
+        public string Id { get; set; }
+        public string Subject { get; set; }
+        public string Status { get; set; }
+        public string Priority { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
+}

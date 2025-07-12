@@ -1,0 +1,270 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime Js
+@using Blazor.PersianDatePicker
+@using MudBlazor
+@using Newtonsoft.Json
+@inject IConfiguration Config
+@inject PicoPlus.Services.CRM.Pipelines PiplineService
+@inject PicoPlus.Services.CRM.Owners OwnerService
+@inject PicoPlus.Services.CRM.Objects.Deal DealService
+@inject PicoPlus.Services.CRM.Commerce.LineItem LineitemService
+@inject PicoPlus.Services.SMS.SMS.Send SMSService
+@inject IDialogService Dialog
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-5">
+    <MudCard>
+        <MudCardHeader>
+            <MudText Typo="Typo.h5">فرم سفارش</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" ></MudIconButton>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudForm>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="SelectedPipID" Label="کاریز">
+                            @if (IsInit)
+                            {
+                                @foreach (var Pipline in PipList.results)
+                                {
+                                    <MudSelectItem Value="@Pipline.id">@Pipline.label</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="SelectedDealStage" Label="وضعیت سفارش">
+                            @if (IsInit)
+                            {
+                                @foreach (var Pips in PipList.results)
+                                {
+                                    if (Pips.id == SelectedPipID)
+                                    {
+                                        @foreach (var stages in Pips.stages)
+                                        {
+                                            <MudSelectItem Value="@stages.id">@stages.label</MudSelectItem>
+                                        }
+                                    }
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="DealName" Label="نام معامله" Placeholder="عنوان سفارش" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <SeletedLineItemPane @ref="productGrid" />
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth="true" OnClick="SubmitFinal">ثبت نهایی</MudButton>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true" >بستن</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private bool IsInit { get; set; }
+    private bool IsContactFormVisible = false;
+    private string? ContactID { get; set; }
+
+    [Parameter]
+    public string UserID { get; set; }
+
+    private PicoPlus.Models.CRM.Pipelines.List PipList { get; set; } = new PicoPlus.Models.CRM.Pipelines.List();
+    private string SelectedPipID { get; set; }
+    private string SelectedDealStage { get; set; }
+
+    private SeletedLineItemPane productGrid; // Reference to the child component
+
+    private PicoPlus.Models.CRM.Owners.GetAll OwnerList { get; set; }
+    private string SelectedOwner { get; set; }
+    private string SelectedOwnerID { get; set; }
+
+    private string DealName { get; set; }
+
+    private string TotalPrice { get; set; }
+    private string DealAmount { get; set; }
+
+    private List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association> DealLines { get; set; } = new List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association> { };
+
+    private int currentStep { get; set; } = 0; // Initialize currentStep to 0
+    public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
+        {
+            properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+        };
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await LoadPiplines();
+                await LoadOwners();
+
+
+
+                IsInit = true;
+                StateHasChanged();
+
+            }
+            catch (Exception ex)
+            {
+                await  ShowMessageBox("خظا", ex.Message);
+            }
+
+        }
+    }
+
+    protected override async  Task OnInitializedAsync()
+    {
+        var temp = await sessionStorage.GetItemAsync<string>("ContactModel");
+        ContactModel = JsonConvert.DeserializeObject<PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result>(temp);
+
+        Console.WriteLine($"The Fetched UserID is:{ContactModel.id}");
+        UserID = ContactModel.id;
+        Console.WriteLine($"The Set UserID is:{UserID}");
+
+    }
+    private async Task LoadPiplines()
+    {
+        PipList = await PiplineService.GetPipelines("deals");
+    }
+
+    private async Task LoadOwners()
+    {
+        OwnerList = await OwnerService.GetAll();
+    }
+
+    private void HandleTotalPriceChanged(decimal totalPrice)
+    {
+        TotalPrice = totalPrice.ToString();
+        DealAmount = totalPrice.ToString();
+    }
+
+    private async Task SubmitFinal()
+    {
+        Console.WriteLine("Processing Deal...");
+        if (productGrid != null)
+        {
+            var lineItems = productGrid.GetLineItems();
+
+            var lnitm = await LineitemService.CreateLineAsync(new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request
+                {
+                    inputs = lineItems
+                });
+
+            Console.WriteLine($"{lnitm.status}");
+
+            foreach (var line_to_deal in lnitm.results)
+            {
+                DealLines.Add(new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association
+                    {
+                        to = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.To
+                        {
+                            id = long.Parse(line_to_deal.id)
+                        },
+                        types = new List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type>
+                    {
+                        new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type
+                        {
+                            associationCategory= "HUBSPOT_DEFINED",
+                            associationTypeId= 19
+                        }
+                    }
+                    });
+            }
+
+            if (UserID != null)
+            {
+                Console.WriteLine($"UserID Passed to Deal is : {UserID}");
+
+                DealLines.Add(new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association
+                    {
+                        to = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.To
+                        {
+                            id = long.Parse(UserID)
+                        },
+                        types = new List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type>
+                    {
+                        new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type
+                        {
+                            associationCategory= "HUBSPOT_DEFINED",
+                            associationTypeId= 3
+                        }
+                    }
+                    });
+            }
+
+            var deal = await DealService.Create(new PicoPlus.Models.CRM.Objects.Deal.Create.Request
+                {
+                    properties = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Properties
+                    {
+                        amount = DealAmount,
+                        dealname = DealName,
+                        hubspot_owner_id = SelectedOwnerID,
+                        dealstage = SelectedDealStage,
+                        pipeline = SelectedPipID,
+                    },
+                    associations = DealLines
+                });
+            await ShowMessageBox("موفق", $"ایجاد سفارش موفق {deal.id}");
+            if (deal.properties.dealstage == "closedwon")
+            {
+                Console.WriteLine("sending SMS");
+                await SMSService.SendDealClosedWon(new Models.Services.SMS.SMS.DealClosedWon
+                    {
+                        toNum = ContactModel.properties.phone,
+                        patternCode= "sarlemrkderzb4c",
+                        inputData = new List<Models.Services.SMS.SMS.DealClosedWonInputdata>
+                        {
+                            new Models.Services.SMS.SMS.DealClosedWonInputdata
+                            {
+                                firstname = ContactModel.properties.firstname,
+                                lastname = ContactModel.properties.lastname,
+                                id= deal.id
+                            }
+                        }
+                    });
+                Console.WriteLine("sending SMS done");
+
+            }
+
+        }
+    }
+
+  
+
+    private void PreviousStep()
+    {
+        if (currentStep > 0)
+        {
+            currentStep--;
+        }
+    }
+
+    private void NextStep()
+    {
+        if (currentStep < 4)
+        {
+            currentStep++;
+        }
+    }
+    private async Task ShowMessageBox(string title, string message)
+    {
+        bool? result = await Dialog.ShowMessageBox(title, message, yesText: "OK" );
+        StateHasChanged();
+    }
+}

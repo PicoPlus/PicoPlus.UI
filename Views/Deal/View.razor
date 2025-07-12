@@ -1,0 +1,86 @@
+﻿@using Microsoft.JSInterop
+@using Newtonsoft.Json
+@inject PicoPlus.Services.CRM.Objects.Contact ContactService
+@inject PicoPlus.Services.CRM.Objects.Deal DealService
+
+@inject IJSRuntime JSRuntime
+
+@if (ShowModal)
+{
+    <div class="modal fade show" id="modal" tabindex="-1" aria-labelledby="UserModalLabel" style="display: block;" aria-hidden="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="UserModalLabel">بروزرسانی سفارش</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="natcode" class="form-label">نام  مشتری</label>
+                            <input type="text" id="natcode" class="form-control" @bind-value="ContactModel.properties.firstname" @bind-value:event="oninput" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="birthdate" class="form-label">نام خانودگی مشتری</label>
+                            <input type="text" id="birthdate" class="form-control" @bind-value="ContactModel.properties.lastname" @bind-value:event="oninput">
+                        </div>
+                    </div>
+                  
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstname" class="form-label">نام</label>
+                            <input type="text" id="firstname" class="form-control" @bind-value="ContactModel.properties.firstname" @bind-value:event="oninput">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastname" class="form-label">نام خانوادگی</label>
+                            <input type="text" id="lastname" class="form-control" @bind-value="ContactModel.properties.lastname" @bind-value:event="oninput">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">موبایل</label>
+                            <input type="text" id="phone" class="form-control" @bind-value="ContactModel.properties.phone" @bind-value:event="oninput">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" >ایجاد مخاطب / بروزرسانی</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool ShowModal { get; set; } = true;
+
+    [Parameter]
+    public string? DealID { get; set; }
+
+    [Parameter]
+    public string? ContactID { get; set; }
+
+
+    public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
+        {
+            properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+        };
+    public PicoPlus.Models.CRM.Objects.Deal.Get.Response DealModel { get; set; } = new() { };
+
+    private async Task LoaddealInfo()
+    {
+        var Deal = await DealService.GetDeal(DealID);
+        var Contact = await ContactService.Read(ContactID);
+        DealModel = Deal;
+       
+
+
+    }
+    private async Task CloseModal()
+    {
+        await JSRuntime.InvokeVoidAsync("modalInterop.hideModal", "modal");
+        ShowModal = false;
+    }
+
+}

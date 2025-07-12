@@ -1,0 +1,20 @@
+﻿@inherits LayoutComponentBase
+@using MudBlazor
+
+<MudRTLProvider>
+    <MudThemeProvider IsDarkMode="true" />
+    <MudPopoverProvider />
+    <MudDialogProvider FullWidth="true"
+                       MaxWidth="MaxWidth.Medium"
+                       CloseButton="true"
+                       BackdropClick="false"
+                       NoHeader="true"
+                       Position="DialogPosition.Center"
+                       CloseOnEscapeKey="true"  />
+    <MudSnackbarProvider />
+    <MudLayout RightToLeft="true" >
+        <MudMainContent>
+            @Body
+        </MudMainContent>
+    </MudLayout>
+</MudRTLProvider>
