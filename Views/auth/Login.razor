@@ -1,95 +1,129 @@
-﻿@page "/auth/login"
+@page "/auth/login"
 
 @using MudBlazor
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @using Newtonsoft.Json
 
 @inject NavigationManager Navigation
-@inject IDialogService Dialog;
-@inject PicoPlus.Services.CRM.Objects.Contact ContactService;
+@inject IDialogService Dialog
+@inject PicoPlus.Services.CRM.Objects.Contact ContactService
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-5">
-    <MudPaper Elevation="3" Class="pa-4">
-        <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Login</MudText>
-        <MudTextField @bind-Value="UserID" Label="UserID" Variant="Variant.Filled" Margin="Margin.Normal" FullWidth="true" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="@DoLogIn">Login</MudButton>
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center mt-8">
+    <MudPaper Elevation="6" Class="pa-6 rounded-lg" Style="width:100%; max-width:400px;">
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h4" Align="Align.Center" Class="font-weight-bold mb-2">
+                👤 ورود به حساب کاربری
+            </MudText>
+
+            <MudText Typo="Typo.caption" Align="Align.Center" Class="text-secondary mb-3">
+                لطفاً شناسه کاربری (کد ملی یا شماره کاربری) خود را وارد نمایید
+            </MudText>
+
+            <MudTextField @bind-Value="UserID"
+                          Label="شناسه کاربری"
+                          Variant="Variant.Filled"
+                          Margin="Margin.Normal"
+                          Required="true"
+                          Error="@IsError"
+                          ErrorText="@ErrorMessage"
+                          FullWidth="true"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Person" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@IsLoading"
+                       Class="mt-4"
+                       FullWidth="true"
+                       OnClick="@DoLogIn">
+                @if (IsLoading)
+                {
+                    <MudProgressCircular Color="Color.Inherit" Size="Size.Small" Indeterminate="true" Class="me-2" />
+                    <span>در حال ورود...</span>
+                }
+                else
+                {
+                    <span>ورود</span>
+                }
+            </MudButton>
+
+            <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="mt-3 text-muted">
+                حسابی ندارید؟ <MudLink Href="/auth/register">ثبت‌نام کنید</MudLink>
+            </MudText>
+        </MudStack>
     </MudPaper>
 </MudContainer>
 
 @code {
-    public string UserID { get; set; }
+    public string UserID { get; set; } = string.Empty;
+    public bool IsLoading { get; set; } = false;
+    public bool IsError { get; set; } = false;
+    public string ErrorMessage { get; set; } = string.Empty;
 
     public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
-        {
-            properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
-        };
-
-    public PicoPlus.Models.CRM.Objects.Contact.Search.Response ContactSearchResponseModel { get; set; } = new();
-
-
+    {
+        properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+    };
 
     private async Task DoLogIn()
     {
+        IsError = false;
+        ErrorMessage = string.Empty;
 
-        if (await DoLogInWithNatCode())
+        if (string.IsNullOrWhiteSpace(UserID))
         {
-
-            
-            await sessionStorage.SetItemAsync("ContactModel", ContactModel);
-            Console.WriteLine("11");
-            await sessionStorage.SetItemAsync("LogInState", 1);
-            Navigation.NavigateTo("/user/panel");
-
-        }
-        else
-        {
-            if (await DoLogInWithID())
-            {
-                string JsonModel = JsonConvert.SerializeObject(ContactModel);
-                await sessionStorage.SetItemAsync("ContactModel", JsonModel);
-                await sessionStorage.SetItemAsync("LogInState", 1);
-                Navigation.NavigateTo("/user/panel");
-
-
-            }
-            else
-            {
-
-            }
-            Navigation.NavigateTo("/auth/register");
-
-
+            IsError = true;
+            ErrorMessage = "شناسه کاربری نباید خالی باشد.";
+            return;
         }
 
+        IsLoading = true;
 
-
-    }
-
-    private async Task<bool> DoLogInWithNatCode()
-
-    {
         try
-
         {
-            string[] Properties = PicoPlus.Services.Helpers.ConvertModelToStringArray(ContactModel.properties);
+            bool loggedIn = await DoLogInWithNatCode() || await DoLogInWithID();
 
-            var contact = await ContactService.Search("", "natcode", UserID, Properties);
-
-            if (contact.total != 0)
+            if (loggedIn)
             {
-                ContactModel =  contact.results.FirstOrDefault();
+                string jsonModel = JsonConvert.SerializeObject(ContactModel);
+                await sessionStorage.SetItemAsync("ContactModel", jsonModel);
+                await sessionStorage.SetItemAsync("LogInState", 1);
 
-                return true;
+                Navigation.NavigateTo("/user/panel");
             }
             else
             {
-                return false;
+                await ShowMessageBox("خطا", "شناسه کاربری یافت نشد، لطفاً ثبت‌نام کنید.");
+                Navigation.NavigateTo("/auth/register");
             }
         }
         catch (Exception ex)
         {
+            await ShowMessageBox("خطا در ورود", ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
-            await ShowMessageBox("Error", ex.Message);
+    private async Task<bool> DoLogInWithNatCode()
+    {
+        try
+        {
+            string[] properties = PicoPlus.Services.Helpers.ConvertModelToStringArray(ContactModel.properties);
+            var contact = await ContactService.Search("", "natcode", UserID, properties);
+
+            if (contact.total > 0)
+            {
+                ContactModel = contact.results.FirstOrDefault();
+                return true;
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageBox("خطا", ex.Message);
             return false;
         }
     }
@@ -97,34 +131,25 @@
     private async Task<bool> DoLogInWithID()
     {
         try
-
         {
-        
-            var ContactSearchModel = await ContactService.Read(UserID);
-
-            if (ContactModel != null)
+            var contactSearchModel = await ContactService.Read(UserID);
+            if (contactSearchModel is not null)
             {
+                ContactModel = contactSearchModel;
                 return true;
-             
             }
-            else
-            {
-                return false;
-            }
-
+            return false;
         }
         catch (Exception ex)
         {
-            await ShowMessageBox("Error", ex.Message);
+            await ShowMessageBox("خطا", ex.Message);
             return false;
         }
-
     }
-
 
     private async Task ShowMessageBox(string title, string message)
     {
-        bool? result = await Dialog.ShowMessageBox(title, message, yesText: "OK");
+        await Dialog.ShowMessageBox(title, message, yesText: "تأیید");
         StateHasChanged();
     }
 }
