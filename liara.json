@@ -1,8 +1,6 @@
 {
-"app":"picoplus"
-"port":3000
-"build":{
-"location":"iran"
-}
-"disks":[]
+  "port": 80,
+  "dotnet": {
+    "version": "8.0"
+  }
 }
