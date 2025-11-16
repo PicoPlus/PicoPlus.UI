@@ -81,6 +81,7 @@ builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddScoped<INavigationService, NavigationService>();
 builder.Services.AddSingleton<ToastService>();
+builder.Services.AddSingleton<PicoPlus.Infrastructure.Services.DialogService>();
 builder.Services.AddScoped<PicoPlus.Infrastructure.Services.IDialogService, DialogServiceWrapper>();
 builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ISessionStorageService, SessionStorageServiceWrapper>();
 builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ILocalStorageService, LocalStorageServiceWrapper>();

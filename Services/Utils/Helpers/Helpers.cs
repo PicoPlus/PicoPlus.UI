@@ -4,19 +4,15 @@ using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.JSInterop;
 
 namespace PicoPlus.Services
 {
     public class Helpers
     {
-        private readonly IJSRuntime _jsRuntime;
         private readonly string _masterKey;
 
-        public Helpers(IJSRuntime jsRuntime, string masterKey)
+        public Helpers(string masterKey)
         {
-            _jsRuntime = jsRuntime;
             _masterKey = masterKey;
         }
 
@@ -88,24 +84,6 @@ namespace PicoPlus.Services
                     includeParams.Add($"{prefix}{property.Name}");
                 }
             }
-        }
-
-        // Method to generate a new AES key
-        public async Task<string> GenerateKeyAsync()
-        {
-            return await _jsRuntime.InvokeAsync<string>("generateKey");
-        }
-
-        // Method to encrypt data using AES-GCM
-        public async Task<Dictionary<string, string>> EncryptDataAsync(string data, string base64Key)
-        {
-            return await _jsRuntime.InvokeAsync<Dictionary<string, string>>("encryptData", data, base64Key);
-        }
-
-        // Method to decrypt data using AES-GCM
-        public async Task<string> DecryptDataAsync(string encryptedData, string base64Key, string base64Iv)
-        {
-            return await _jsRuntime.InvokeAsync<string>("decryptData", encryptedData, base64Key, base64Iv);
         }
 
         // Encrypt the session key with the master key
