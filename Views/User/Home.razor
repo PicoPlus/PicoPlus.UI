@@ -558,10 +558,12 @@
     private PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result? selectedDeal;
     private string activeTab = "profile";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+        
         await ViewModel.InitializeAsync();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ShowProfileTab()
