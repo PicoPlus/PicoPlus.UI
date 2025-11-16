@@ -41,19 +41,17 @@
         <!-- Role Selection Tabs -->
         <div class="mb-4">
             <div class="role-tabs">
-                <button type="button" 
-                        class="role-tab @(!isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(false)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-person me-2"></i>
-                    @L["UserLogin"]
+                <button type="button"
+                        class="@($"role-tab {(isAdminMode ? "" : "active")}")"
+                        @onclick="SwitchToUser"
+                        disabled="@UserViewModel.IsLoading">
+                    <i class="bi bi-person me-2"></i> @L["UserLogin"]
                 </button>
-                <button type="button" 
-                        class="role-tab @(isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(true)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-shield-check me-2"></i>
-                    @L["AdminLogin"]
+                <button type="button"
+                        class="@($"role-tab {(isAdminMode ? "active" : "")}")"
+                        @onclick="SwitchToAdmin"
+                        disabled="@AdminViewModel.IsLoading">
+                    <i class="bi bi-shield-check me-2"></i> @L["AdminLogin"]
                 </button>
             </div>
         </div>
@@ -68,9 +66,7 @@
                 <div class="mb-4">
                     <label for="nationalCode" class="form-label">@L["NationalCode"]</label>
                     <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-card-text"></i>
-                        </span>
+                        <span class="input-group-text"><i class="bi bi-card-text"></i></span>
                         <InputText id="nationalCode"
                                    class="form-control"
                                    @bind-Value="UserViewModel.NationalCode"
@@ -80,10 +76,7 @@
                                    autocomplete="off" />
                     </div>
                     <ValidationMessage For="@(() => UserViewModel.NationalCode)" />
-                    <small class="auth-helper">
-                        <i class="bi bi-info-circle me-1"></i>
-                        @L["EnterNationalCode"]
-                    </small>
+                    <small class="auth-helper"><i class="bi bi-info-circle me-1"></i>@L["EnterNationalCode"]</small>
                 </div>
 
                 <!-- Login Button -->
@@ -97,8 +90,7 @@
                     }
                     else
                     {
-                        <i class="bi bi-box-arrow-in-left"></i>
-                        <span>@L["SignInUser"]</span>
+                        <i class="bi bi-box-arrow-in-left"></i> <span>@L["SignInUser"]</span>
                     }
                 </button>
             </EditForm>
@@ -112,8 +104,7 @@
                 <!-- Email Field -->
                 <div class="mb-3">
                     <label for="adminEmail" class="form-label">
-                        <i class="bi bi-envelope me-2"></i>
-                        @L["Email"]
+                        <i class="bi bi-envelope me-2"></i> @L["Email"]
                     </label>
                     <InputText id="adminEmail"
                                type="email"
@@ -127,8 +118,7 @@
                 <!-- Password Field -->
                 <div class="mb-3">
                     <label for="adminPassword" class="form-label">
-                        <i class="bi bi-lock me-2"></i>
-                        @L["Password"]
+                        <i class="bi bi-lock me-2"></i> @L["Password"]
                     </label>
                     <InputText id="adminPassword"
                                type="password"
@@ -145,9 +135,7 @@
                                    id="rememberMe"
                                    @bind-Value="AdminViewModel.RememberMe"
                                    disabled="@AdminViewModel.IsLoading" />
-                    <label class="form-check-label" for="rememberMe">
-                        @L["RememberMe"]
-                    </label>
+                    <label class="form-check-label" for="rememberMe">@L["RememberMe"]</label>
                 </div>
 
                 <!-- Login Button -->
@@ -161,12 +149,11 @@
                     }
                     else
                     {
-                        <i class="bi bi-box-arrow-in-right me-2"></i>
-                        <span>@L["SignInAdmin"]</span>
+                        <i class="bi bi-box-arrow-in-right me-2"></i> <span>@L["SignInAdmin"]</span>
                     }
                 </button>
 
-                <!-- Admin Credentials Info -->
+                <!-- Admin Demo Credentials -->
                 <div class="alert alert-info mt-3">
                     <small>
                         <strong>Demo:</strong><br/>
@@ -180,17 +167,14 @@
         @if (!isAdminMode)
         {
             <!-- Divider -->
-            <div class="auth-divider">
-                <span class="px-2">—</span>
-            </div>
+            <div class="auth-divider"><span class="px-2">—</span></div>
 
             <!-- Register Link -->
             <div class="text-center">
                 <p class="mb-0" style="color: var(--auth-text-muted);">
                     @L["NotRegistered"]
                     <a href="/auth/register" class="auth-link">
-                        @L["Register"]
-                        <i class="bi bi-arrow-left me-1"></i>
+                        @L["Register"] <i class="bi bi-arrow-left me-1"></i>
                     </a>
                 </p>
             </div>
@@ -201,11 +185,20 @@
 @code {
     private bool isAdminMode = false;
 
-    private void SwitchMode(bool toAdmin)
+    private void SwitchToUser()
     {
-        isAdminMode = toAdmin;
-        
-        // Clear errors when switching
+        isAdminMode = false;
+        ClearErrors();
+    }
+
+    private void SwitchToAdmin()
+    {
+        isAdminMode = true;
+        ClearErrors();
+    }
+
+    private void ClearErrors()
+    {
         UserViewModel.HasError = false;
         UserViewModel.ErrorMessage = string.Empty;
         AdminViewModel.HasError = false;
