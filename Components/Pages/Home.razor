@@ -13,8 +13,10 @@
 </div>
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
         try
         {
             var loginState = await SessionStorage.GetItemAsync<int>("LogInState");
