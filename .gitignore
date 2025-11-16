@@ -13,6 +13,9 @@ appsettings.Production.json
 secrets.json
 **/secrets.json
 
+# Data Protection Keys - sensitive cryptographic material
+DataProtectionKeys/
+
 # Temporary files
 *.tmp
 *.temp

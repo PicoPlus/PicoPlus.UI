@@ -11,6 +11,7 @@ using PicoPlus.State.Admin;
 using DotNetEnv;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,6 +71,15 @@ builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
 });
+
+// Data Protection - Configure persistent key storage
+var keysPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtectionKeys");
+Directory.CreateDirectory(keysPath); // Ensure directory exists
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+    .SetApplicationName("PicoPlus")
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
 // Razor Components
 builder.Services.AddRazorComponents()

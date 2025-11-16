@@ -37,9 +37,15 @@ This guide will help you deploy your .NET 9 Blazor application to Liara platform
    - Response compression enabled
    - Static file caching (30 days)
    - Optimized logging
+   - Data Protection keys persisted to filesystem
 
 5. **docker-compose.yml** - Local testing
    - Test production build locally before deploying
+
+6. **DataProtectionKeys/** - Persistent encryption keys
+   - Stores ASP.NET Core data protection keys
+   - Must be persisted across deployments
+   - Excluded from git (.gitignore)
 
 ## Deployment Steps
 
@@ -72,6 +78,12 @@ The deployment process will:
 2. Build Docker image using multi-stage Dockerfile
 3. Run the container on port 5000
 4. Map persistent disk to /app/data
+
+**Important**: Data protection keys are stored in `DataProtectionKeys/` directory. In production:
+- Keys are automatically created on first run
+- Keys are persisted to prevent antiforgery token errors
+- Ensure the directory has proper write permissions in container
+- If using Liara persistent disk, mount to /app for key persistence
 
 ### 4. Monitor Logs
 
@@ -148,8 +160,8 @@ dotnet build -c Release
 ### Issue: Connection to HubSpot fails
 **Solution**: Shecan DNS handler is configured for Iranian networks. Check firewall rules.
 
-### Issue: SignalR connection issues
-**Solution**: Blazor Server is configured with appropriate timeouts. Check network latency.
+### Issue: Antiforgery token errors after restart
+**Solution**: Data protection keys are now persisted to `DataProtectionKeys/` directory. Ensure this directory is included in persistent storage or mounted volume.
 
 ## Monitoring
 
