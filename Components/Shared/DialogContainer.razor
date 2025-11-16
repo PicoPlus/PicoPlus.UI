@@ -1,0 +1,118 @@
+@using PicoPlus.Infrastructure.Services
+@implements IAsyncDisposable
+
+@if (CurrentDialog != null)
+{
+    <div class="modal-backdrop fade show" @onclick="OnBackdropClick"></div>
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@CurrentDialog.Title</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-start">
+                        @if (!string.IsNullOrEmpty(GetDialogIcon()))
+                        {
+                            <i class="bi bi-@GetDialogIcon() me-3 fs-1 @GetDialogIconColor()"></i>
+                        }
+                        <p class="mb-0">@CurrentDialog.Message</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    @if (CurrentDialog.IsConfirmation)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="OnNo">
+                            @(string.IsNullOrEmpty(CurrentDialog.NoText) ? "خیر" : CurrentDialog.NoText)
+                        </button>
+                        <button type="button" class="btn btn-primary" @onclick="OnYes">
+                            @(string.IsNullOrEmpty(CurrentDialog.YesText) ? "بله" : CurrentDialog.YesText)
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="OnOk">
+                            @(string.IsNullOrEmpty(CurrentDialog.YesText) ? "تایید" : CurrentDialog.YesText)
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private DialogService DialogService { get; set; } = default!;
+
+    private DialogState? CurrentDialog { get; set; }
+
+    protected override void OnInitialized()
+    {
+        DialogService.OnShow += ShowDialog;
+    }
+
+    private void ShowDialog(DialogState dialog)
+    {
+        CurrentDialog = dialog;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnYes()
+    {
+        CurrentDialog?.TaskCompletionSource.SetResult(true);
+        CurrentDialog = null;
+        StateHasChanged();
+    }
+
+    private void OnNo()
+    {
+        CurrentDialog?.TaskCompletionSource.SetResult(false);
+        CurrentDialog = null;
+        StateHasChanged();
+    }
+
+    private void OnOk()
+    {
+        CurrentDialog?.TaskCompletionSource.SetResult(true);
+        CurrentDialog = null;
+        StateHasChanged();
+    }
+
+    private void OnBackdropClick()
+    {
+        if (CurrentDialog != null && !CurrentDialog.IsConfirmation)
+        {
+            OnOk();
+        }
+    }
+
+    private string GetDialogIcon()
+    {
+        return CurrentDialog?.Type switch
+        {
+            DialogType.Success => "check-circle-fill",
+            DialogType.Error => "x-circle-fill",
+            DialogType.Info => "info-circle-fill",
+            DialogType.Warning => "exclamation-triangle-fill",
+            _ => ""
+        };
+    }
+
+    private string GetDialogIconColor()
+    {
+        return CurrentDialog?.Type switch
+        {
+            DialogType.Success => "text-success",
+            DialogType.Error => "text-danger",
+            DialogType.Info => "text-info",
+            DialogType.Warning => "text-warning",
+            _ => ""
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        DialogService.OnShow -= ShowDialog;
+        await Task.CompletedTask;
+    }
+}

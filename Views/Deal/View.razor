@@ -1,9 +1,6 @@
-﻿@using Microsoft.JSInterop
-@using Newtonsoft.Json
+﻿@using Newtonsoft.Json
 @inject PicoPlus.Services.CRM.Objects.Contact ContactService
 @inject PicoPlus.Services.CRM.Objects.Deal DealService
-
-@inject IJSRuntime JSRuntime
 
 @if (ShowModal)
 {
@@ -77,9 +74,8 @@
 
 
     }
-    private async Task CloseModal()
+    private void CloseModal()
     {
-        await JSRuntime.InvokeVoidAsync("modalInterop.hideModal", "modal");
         ShowModal = false;
     }
 
