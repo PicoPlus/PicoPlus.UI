@@ -174,31 +174,31 @@ The toast system fully supports Persian (RTL):
 3. **ToastContainer** (Component): Subscribes to events, renders UI
 
 ### Benefits
-- ? Decoupled from UI components
-- ? Works across different pages/components
-- ? Consistent API with existing IDialogService
-- ? No JavaScript interop required (except fallback)
-- ? Testable and maintainable
+- ✅ Decoupled from UI components
+- ✅ Works across different pages/components
+- ✅ Consistent API with existing IDialogService
+- ✅ 100% Pure Blazor - NO JavaScript required
+- ✅ Testable and maintainable
 
-### Fallback
-If ToastContainer is not yet rendered, falls back to browser alerts:
-```csharp
-_jsRuntime.InvokeVoidAsync("alert", $"???: {title}\n\n{message}");
-```
+### No Fallback Needed
+ToastContainer is always available in MainLayout, so no JavaScript fallback is required. The system is 100% pure Blazor!
 
 ---
 
-## Browser Confirm Dialogs
+## Dialog System (Updated)
 
-For `ShowMessageBoxAsync` (Yes/No confirmations), still uses browser `confirm()`:
+For `ShowMessageBoxAsync` (Yes/No confirmations), now uses pure Blazor DialogContainer:
 ```csharp
 public async Task<bool?> ShowMessageBoxAsync(string title, string message, ...)
 {
-    return await _jsRuntime.InvokeAsync<bool>("confirm", $"{title}\n\n{message}");
+    var result = await _dialogService.ShowMessageBoxAsync(title, message, yesText, noText);
+    return result;
 }
 ```
 
-**Reason**: Toast notifications are for information only. Confirmations need user input.
+**Upgrade**: Moved from browser `confirm()` to pure Blazor modal dialogs with DialogContainer component.
+
+See `Docs/JavaScript-Removal-Complete.md` for details on the DialogService implementation.
 
 ---
 
