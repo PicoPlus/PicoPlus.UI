@@ -1,0 +1,295 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using PicoPlus.Services.Auth
+@using PicoPlus.Services.SMS
+@inject OtpService OtpService
+@inject ISmsService SmsService
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="modal-overlay" @onclick="CloseDialog">
+    <div class="modal-dark change-mobile-dialog" style="max-width: 500px;" @onclick:stopPropagation="true">
+        <div class="modal-dark-header">
+            <h5 class="modal-dark-title">
+                <i class="bi bi-phone me-2"></i>
+                ????? ????? ??????
+            </h5>
+            <button type="button" class="btn-close-dark" @onclick="CloseDialog">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-dark-body" dir="rtl">
+            @if (!otpSent)
+            {
+                <!-- Step 1: Enter New Mobile -->
+                <div class="mb-4">
+                    <label class="dark-label">????? ?????? ????</label>
+                    <input type="text" 
+                           class="dark-input mb-3" 
+                           value="@CurrentMobile"
+                           readonly />
+
+                    <label class="dark-label">????? ?????? ????</label>
+                    <input type="text" 
+                           class="dark-input" 
+                           @bind="newMobile"
+                           @bind:event="oninput"
+                           placeholder="09123456789"
+                           maxlength="11" 
+                           disabled="@isLoading" />
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ????? ?????? ???? ?? 09 ???? ??? ? 11 ??? ????
+                    </small>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Step 2: Enter OTP -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-shield-lock text-info" style="font-size: 3rem;"></i>
+                    <p class="mt-3 mb-0">
+                        ??? ?? ????? ????? ?? <strong>@newMobile</strong> ??????? ?????
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="dark-label">?? ????? (6 ???)</label>
+                    <input type="text" 
+                           class="dark-input text-center" 
+                           @bind="otpCode"
+                           @bind:event="oninput"
+                           placeholder="?? 6 ????"
+                           maxlength="6"
+                           disabled="@isLoading"
+                           style="font-size: 1.5rem; letter-spacing: 0.5rem;" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(otpRemainingTime))
+                {
+                    <div class="text-center mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            ???? ???? ?????: <strong>@otpRemainingTime</strong>
+                        </small>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="modal-dark-footer">
+            @if (!otpSent)
+            {
+                <button type="button" 
+                        class="btn btn-primary" 
+                        @onclick="SendOtp"
+                        disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="bi bi-send me-2"></i>????? ?? ?????
+                </button>
+            }
+            else
+            {
+                <button type="button" 
+                        class="btn btn-link" 
+                        @onclick="SendOtp"
+                        disabled="@(!canResendOtp || isLoading)">
+                    <i class="bi bi-arrow-repeat me-2"></i>????? ????
+                </button>
+
+                <button type="button" 
+                        class="btn btn-success" 
+                        @onclick="VerifyOtpAndUpdate"
+                        disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="bi bi-check-circle me-2"></i>????? ? ?????
+                </button>
+            }
+
+            <button type="button" 
+                    class="btn btn-secondary" 
+                    @onclick="CloseDialog"
+                    disabled="@isLoading">
+                <i class="bi bi-x-lg me-2"></i>???
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CurrentMobile { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnMobileChanged { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string newMobile = string.Empty;
+    private string otpCode = string.Empty;
+    private string errorMessage = string.Empty;
+    private string otpRemainingTime = string.Empty;
+    private bool otpSent = false;
+    private bool canResendOtp = false;
+    private bool isLoading = false;
+    private System.Timers.Timer? otpTimer;
+
+    protected override void OnInitialized()
+    {
+        newMobile = string.Empty;
+    }
+
+    private async Task SendOtp()
+    {
+        errorMessage = string.Empty;
+
+        // Validate new mobile number
+        if (string.IsNullOrWhiteSpace(newMobile))
+        {
+            errorMessage = "????? ????? ?????? ???? ?? ???? ????";
+            return;
+        }
+
+        if (!newMobile.StartsWith("09"))
+        {
+            errorMessage = "????? ?????? ???? ?? 09 ???? ???";
+            return;
+        }
+
+        if (newMobile.Length != 11)
+        {
+            errorMessage = "????? ?????? ???? 11 ??? ????";
+            return;
+        }
+
+        if (!newMobile.All(char.IsDigit))
+        {
+            errorMessage = "????? ??? ??? ???? ???? ????? ????";
+            return;
+        }
+
+        if (newMobile == CurrentMobile)
+        {
+            errorMessage = "????? ?????? ???? ????????? ?? ????? ???? ????? ????";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            // Generate and store OTP
+            var otp = OtpService.GenerateOtp();
+            OtpService.StoreOtp(newMobile, otp);
+
+            // Send OTP via SMS
+            await SmsService.SendOtpAsync(newMobile, otp);
+
+            otpSent = true;
+            canResendOtp = false;
+
+            // Start countdown
+            StartOtpTimer();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"??? ?? ????? ?????: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task VerifyOtpAndUpdate()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(otpCode))
+        {
+            errorMessage = "????? ?? ????? ?? ???? ????";
+            return;
+        }
+
+        if (otpCode.Length != 6)
+        {
+            errorMessage = "?? ????? ????6 ??? ????";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var result = OtpService.ValidateOtp(newMobile, otpCode);
+
+            if (result.IsValid)
+            {
+                // OTP verified - call parent callback
+                await OnMobileChanged.InvokeAsync(newMobile);
+                otpTimer?.Dispose();
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage;
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseDialog()
+    {
+        if (isLoading) return;
+        
+        otpTimer?.Dispose();
+        await OnCancel.InvokeAsync();
+    }
+
+    private void StartOtpTimer()
+    {
+        otpTimer?.Dispose();
+        otpTimer = new System.Timers.Timer(1000);
+        otpTimer.Elapsed += (s, e) => UpdateOtpTimer();
+        otpTimer.Start();
+    }
+
+    private void UpdateOtpTimer()
+    {
+        var remaining = OtpService.GetRemainingTime(newMobile);
+        if (remaining.HasValue && remaining.Value.TotalSeconds > 0)
+        {
+            otpRemainingTime = $"{remaining.Value.Minutes:D2}:{remaining.Value.Seconds:D2}";
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            otpRemainingTime = string.Empty;
+            canResendOtp = true;
+            otpTimer?.Stop();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        otpTimer?.Dispose();
+    }
+}

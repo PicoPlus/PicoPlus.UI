@@ -1,0 +1,99 @@
+@using Microsoft.AspNetCore.Components
+@using PicoPlus.Infrastructure.Services
+@inject ToastService ToastService
+@implements IAsyncDisposable
+
+<div class="toast-container" dir="rtl">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast toast-@toast.Type.ToString().ToLower() @(toast.IsHiding ? "toast-hiding" : "")" @key="toast.Id">
+            <div class="toast-icon">
+                <i class="bi bi-@GetIcon(toast.Type)"></i>
+            </div>
+            <div class="toast-content">
+                <p class="toast-title">@toast.Title</p>
+                <p class="toast-message">@toast.Message</p>
+            </div>
+            <button class="toast-close" @onclick="() => RemoveToast(toast.Id)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ToastNotification> _toasts = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private void ShowToast(string title, string message, ToastType type, int durationMs)
+    {
+        var toast = new ToastNotification
+        {
+            Id = Guid.NewGuid().ToString(),
+            Title = title,
+            Message = message,
+            Type = type,
+            CreatedAt = DateTime.Now
+        };
+
+        _toasts.Add(toast);
+        InvokeAsync(StateHasChanged);
+
+        // Auto-remove after duration
+        var timer = new System.Timers.Timer(durationMs);
+        timer.Elapsed += async (sender, e) =>
+        {
+            timer.Dispose();
+            await InvokeAsync(() => RemoveToast(toast.Id));
+        };
+        timer.Start();
+    }
+
+    private async Task RemoveToast(string id)
+    {
+        var toast = _toasts.FirstOrDefault(t => t.Id == id);
+        if (toast != null)
+        {
+            toast.IsHiding = true;
+            StateHasChanged();
+
+            // Wait for animation to complete
+            await Task.Delay(300);
+
+            _toasts.Remove(toast);
+            StateHasChanged();
+        }
+    }
+
+    private string GetIcon(ToastType type)
+    {
+        return type switch
+        {
+            ToastType.Success => "check-circle-fill",
+            ToastType.Error => "x-circle-fill",
+            ToastType.Info => "info-circle-fill",
+            ToastType.Warning => "exclamation-triangle-fill",
+            _ => "info-circle-fill"
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ToastService.OnShow -= ShowToast;
+        await Task.CompletedTask;
+    }
+
+    private class ToastNotification
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public ToastType Type { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public bool IsHiding { get; set; }
+    }
+}

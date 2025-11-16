@@ -1,0 +1,330 @@
+@page "/admin/kanban"
+@layout Components.Layout.AdminLayout
+@using PicoPlus.Services.Admin
+@using PicoPlus.State.Admin
+@using PicoPlus.Models.Admin
+@inject KanbanService KanbanService
+@inject AdminStateService AdminState
+@inject ILogger<Kanban> Logger
+
+<PageTitle>????? ?????? - ??? ??????</PageTitle>
+
+<div class="kanban-page">
+    <!-- Header -->
+    <div class="kanban-header mb-4">
+        <div>
+            <h2 class="mb-2">
+                <i class="bi bi-kanban me-2"></i>
+                ????? ??????
+            </h2>
+            @if (selectedOwner != null)
+            {
+                <p class="text-muted mb-0">???????: <strong>@selectedOwner.FullName</strong></p>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            @if (pipelines.Count > 1)
+            {
+                <select class="form-select" @bind="selectedPipelineId" @bind:after="LoadKanbanBoard">
+                    @foreach (var pipeline in pipelines)
+                    {
+                        <option value="@pipeline.Id">@pipeline.Name</option>
+                    }
+                </select>
+            }
+            <button class="btn btn-primary" @onclick="LoadKanbanBoard">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                ?????????
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">?? ??? ????????...</span>
+            </div>
+            <p class="mt-3 text-muted fs-5">?? ??? ?????? ???????...</p>
+        </div>
+    }
+    else if (!columns.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            ??? ????? ???? ????? ???? ?????. ????? ?? HubSpot ??????? ???? ???? ?? ???????? ? ????? ????? ???????.
+        </div>
+    }
+    else
+    {
+        <!-- Kanban Board -->
+        <div class="kanban-board">
+            @foreach (var column in columns)
+            {
+                <div class="kanban-column" style="border-top: 4px solid @column.Color">
+                    <!-- Column Header -->
+                    <div class="kanban-column-header">
+                        <h5 class="mb-0">@column.Name</h5>
+                        <div class="column-stats">
+                            <span class="badge bg-primary">@column.TotalCards</span>
+                            <span class="text-muted small">@FormatCurrency(column.TotalValue)</span>
+                        </div>
+                    </div>
+
+                    <!-- Cards Container -->
+                    <div class="kanban-cards" 
+                         @ondrop="@(() => HandleDrop(column.Id))"
+                         @ondragover:preventDefault
+                         @ondragover="@(() => HandleDragOver(column.Id))">
+                        
+                        @if (column.Cards.Any())
+                        {
+                            @foreach (var card in column.Cards)
+                            {
+                                <div class="kanban-card priority-@card.Priority"
+                                     draggable="true"
+                                     @ondragstart="@(() => HandleDragStart(card.Id))">
+                                    
+                                    <!-- Card Header -->
+                                    <div class="card-header-content">
+                                        <h6 class="card-title">@card.Title</h6>
+                                        @if (!string.IsNullOrEmpty(card.Priority))
+                                        {
+                                            <span class="priority-badge priority-@card.Priority">
+                                                @GetPriorityText(card.Priority)
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <!-- Card Body -->
+                                    @if (card.Amount.HasValue)
+                                    {
+                                        <div class="card-amount">
+                                            <i class="bi bi-currency-dollar me-1"></i>
+                                            @FormatCurrency(card.Amount.Value)
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(card.ContactName))
+                                    {
+                                        <div class="card-info">
+                                            <i class="bi bi-person me-1"></i>
+                                            @card.ContactName
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(card.CompanyName))
+                                    {
+                                        <div class="card-info">
+                                            <i class="bi bi-building me-1"></i>
+                                            @card.CompanyName
+                                        </div>
+                                    }
+
+                                    @if (card.CloseDate.HasValue)
+                                    {
+                                        <div class="card-date @(IsOverdue(card.CloseDate.Value) ? "text-danger" : "")">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            @card.CloseDate.Value.ToString("yyyy-MM-dd")
+                                        </div>
+                                    }
+
+                                    <!-- Tags -->
+                                    @if (card.Tags.Any())
+                                    {
+                                        <div class="card-tags">
+                                            @foreach (var tag in card.Tags)
+                                            {
+                                                <span class="tag">@tag</span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- Card Footer -->
+                                    <div class="card-footer-content">
+                                        <small class="text-muted">
+                                            @GetRelativeTime(card.UpdatedAt)
+                                        </small>
+                                        <button class="btn btn-sm btn-link p-0" @onclick="() => ViewCardDetails(card)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-column">
+                                <i class="bi bi-inbox"></i>
+                                <p>???? ??????</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Column Footer -->
+                    <div class="kanban-column-footer">
+                        <button class="btn btn-sm btn-link text-decoration-none">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            ?????? ??????
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Board Summary -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-primary">@columns.Sum(c => c.TotalCards)</h3>
+                        <p class="text-muted mb-0">?? ???????</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-success">@FormatCurrency(columns.Sum(c => c.TotalValue))</h3>
+                        <p class="text-muted mb-0">???? ??</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info">@columns.Count</h3>
+                        <p class="text-muted mb-0">????? ????</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-warning">@GetAverageDealValue()</h3>
+                        <p class="text-muted mb-0">??????? ????</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private HubSpotOwner? selectedOwner;
+    private List<KanbanColumn> columns = new();
+    private List<(string Id, string Name)> pipelines = new();
+    private string? selectedPipelineId;
+    private string? draggedCardId;
+    private string? dragOverColumnId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPipelines();
+        await LoadKanbanBoard();
+    }
+
+    private async Task LoadPipelines()
+    {
+        pipelines = await KanbanService.GetPipelinesAsync();
+        if (pipelines.Any())
+        {
+            selectedPipelineId = pipelines.First().Id;
+        }
+    }
+
+    private async Task LoadKanbanBoard()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AdminState.InitializeAsync();
+            selectedOwner = AdminState.GetSelectedOwner();
+
+            columns = await KanbanService.GetKanbanBoardAsync(selectedOwner?.Id, selectedPipelineId);
+            Logger.LogInformation("Kanban board loaded with {Count} columns", columns.Count);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleDragStart(string cardId)
+    {
+        draggedCardId = cardId;
+        Logger.LogDebug("Drag started for card: {CardId}", cardId);
+    }
+
+    private void HandleDragOver(string columnId)
+    {
+        dragOverColumnId = columnId;
+    }
+
+    private async Task HandleDrop(string targetColumnId)
+    {
+        if (string.IsNullOrEmpty(draggedCardId) || draggedCardId == null)
+        {
+            Logger.LogWarning("No card being dragged");
+            return;
+        }
+
+        Logger.LogInformation("Moving card {CardId} to column {ColumnId}", draggedCardId, targetColumnId);
+        
+        var success = await KanbanService.MoveCardAsync(draggedCardId, targetColumnId);
+        
+        if (success)
+        {
+            await LoadKanbanBoard();
+        }
+
+        draggedCardId = null;
+        dragOverColumnId = null;
+    }
+
+    private void ViewCardDetails(KanbanCard card)
+    {
+        Logger.LogInformation("Viewing card details: {CardId}", card.Id);
+        // TODO: Open modal with card details
+    }
+
+    private string FormatCurrency(decimal amount)
+    {
+        if (amount >= 1_000_000_000)
+            return $"{(amount / 1_000_000_000):F1}B ?";
+        if (amount >= 1_000_000)
+            return $"{(amount / 1_000_000):F1}M ?";
+        if (amount >= 1_000)
+            return $"{(amount / 1_000):F0}K ?";
+        
+        return $"{amount:N0} ?";
+    }
+
+    private string GetAverageDealValue()
+    {
+        var totalCards = columns.Sum(c => c.TotalCards);
+        if (totalCards == 0) return "0 ?";
+        
+        var avg = columns.Sum(c => c.TotalValue) / totalCards;
+        return FormatCurrency(avg);
+    }
+
+    private bool IsOverdue(DateTime closeDate)
+    {
+        return closeDate < DateTime.UtcNow;
+    }
+
+    private string GetPriorityText(string priority)
+    {
+        return priority switch
+        {
+            "high" => "????",
+            "medium" => "?????",
+            "low" => "????",
+            _ => ""
+        };
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1) return "???? ????";
+        if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes} ????? ???";
+        if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours} ???? ???";
+        if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays} ??? ???";
+        
+        return dateTime.ToString("yyyy-MM-dd");
+    }
+}

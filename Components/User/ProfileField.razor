@@ -1,0 +1,38 @@
+@* Profile field display component *@
+
+<div class="col-md-6">
+    <label class="dark-label">
+        <i class="bi @IconClass me-2"></i>@Label
+    </label>
+    <input type="text" 
+           class="dark-input @(IsPersian ? "persian-text" : "")" 
+           value="@Value" 
+           readonly 
+           aria-label="@Label" />
+</div>
+
+@code {
+    /// <summary>
+    /// Field label
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Field value
+    /// </summary>
+    [Parameter]
+    public string Value { get; set; } = "-";
+
+    /// <summary>
+    /// Bootstrap icon class
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string IconClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether value is in Persian (RTL text)
+    /// </summary>
+    [Parameter]
+    public bool IsPersian { get; set; }
+}

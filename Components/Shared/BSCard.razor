@@ -1,0 +1,38 @@
+@* Bootstrap Card Component *@
+<div class="card @CssClass" style="@Style">
+    @if (!string.IsNullOrEmpty(Header))
+    {
+        <div class="card-header">
+            @if (!string.IsNullOrEmpty(HeaderIcon))
+            {
+                <i class="bi bi-@HeaderIcon me-2"></i>
+            }
+            @Header
+        </div>
+    }
+    @if (HeaderContent != null)
+    {
+        <div class="card-header">
+            @HeaderContent
+        </div>
+    }
+    <div class="card-body">
+        @ChildContent
+    </div>
+    @if (FooterContent != null)
+    {
+        <div class="card-footer">
+            @FooterContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Header { get; set; } = string.Empty;
+    [Parameter] public string HeaderIcon { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = string.Empty;
+}

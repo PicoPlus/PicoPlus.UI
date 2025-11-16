@@ -1,0 +1,16 @@
+@using PicoPlus.State.UserPanel
+@using PicoPlus.Extensions
+
+@* Status badge component for deal stages *@
+
+<span class="status-badge status-@Stage.GetBadgeClass()" role="status" aria-label="?????: @Stage.GetDisplayName()">
+    @Stage.GetDisplayName()
+</span>
+
+@code {
+    /// <summary>
+    /// Deal stage to display
+    /// </summary>
+    [Parameter, EditorRequired]
+    public DealStage Stage { get; set; }
+}

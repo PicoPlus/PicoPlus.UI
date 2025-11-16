@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  picoplus-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: picoplus
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - HUBSPOT_TOKEN=${HUBSPOT_TOKEN}
+      - ZIBAL_TOKEN=${ZIBAL_TOKEN}
+    volumes:
+      - picoapp-data:/app/data
+    restart: unless-stopped
+    networks:
+      - picoplus-network
+
+volumes:
+  picoapp-data:
+    driver: local
+
+networks:
+  picoplus-network:
+    driver: bridge

@@ -1,0 +1,77 @@
+@* Bootstrap Modal Component *@
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered @SizeClass">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @if (!string.IsNullOrEmpty(TitleIcon))
+                        {
+                            <i class="bi bi-@TitleIcon me-2"></i>
+                        }
+                        @Title
+                    </h5>
+                    @if (ShowCloseButton)
+                    {
+                        <button type="button" class="btn-close" @onclick="Close"></button>
+                    }
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                @if (FooterContent != null || ShowDefaultFooter)
+                {
+                    <div class="modal-footer">
+                        @if (FooterContent != null)
+                        {
+                            @FooterContent
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-secondary" @onclick="Close">???</button>
+                            @if (ShowConfirmButton)
+                            {
+                                <button type="button" class="btn btn-primary" @onclick="Confirm">@ConfirmText</button>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string TitleIcon { get; set; } = string.Empty;
+    [Parameter] public string Size { get; set; } = "md"; // sm, md, lg, xl
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public bool ShowDefaultFooter { get; set; } = true;
+    [Parameter] public bool ShowConfirmButton { get; set; } = false;
+    [Parameter] public string ConfirmText { get; set; } = "????";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    private string SizeClass => Size switch
+    {
+        "sm" => "modal-sm",
+        "lg" => "modal-lg",
+        "xl" => "modal-xl",
+        _ => ""
+    };
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync();
+    }
+}

@@ -1,0 +1,140 @@
+@using System.Globalization
+@inject IJSRuntime JSRuntime
+
+<div class="input-group">
+    <span class="input-group-text">
+        <i class="bi bi-calendar-event"></i>
+    </span>
+    <input type="text" 
+           class="form-control @CssClass" 
+           id="@Id"
+           value="@Value"
+           @onchange="OnValueChanged"
+           placeholder="@Placeholder"
+           disabled="@Disabled"
+           maxlength="10"
+           dir="ltr"
+           autocomplete="off" />
+</div>
+
+@code {
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public string Placeholder { get; set; } = "YYYY/MM/DD";
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString() ?? string.Empty;
+        
+        // Remove any non-numeric characters except /
+        input = new string(input.Where(c => char.IsDigit(c) || c == '/').ToArray());
+        
+        // Auto-format as user types: YYYY/MM/DD
+        if (input.Length > 4 && !input.Contains('/'))
+        {
+            input = input.Insert(4, "/");
+        }
+        if (input.Length > 7 && input.Count(c => c == '/') == 1)
+        {
+            input = input.Insert(7, "/");
+        }
+
+        Value = input;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    /// <summary>
+    /// Validates Persian date format and returns true if valid
+    /// </summary>
+    public static bool IsValidPersianDate(string persianDate)
+    {
+        if (string.IsNullOrWhiteSpace(persianDate))
+            return false;
+
+        var parts = persianDate.Split('/');
+        if (parts.Length != 3)
+            return false;
+
+        if (!int.TryParse(parts[0], out int year) || 
+            !int.TryParse(parts[1], out int month) || 
+            !int.TryParse(parts[2], out int day))
+            return false;
+
+        // Persian calendar validation
+        if (year < 1300 || year > 1450) // Reasonable range
+            return false;
+
+        if (month < 1 || month > 12)
+            return false;
+
+        if (day < 1 || day > 31)
+            return false;
+
+        // Validate days per month
+        if (month <= 6 && day > 31)
+            return false;
+
+        if (month > 6 && month <= 11 && day > 30)
+            return false;
+
+        if (month == 12 && day > 29)
+        {
+            // Check for leap year in Persian calendar
+            var pc = new PersianCalendar();
+            if (!pc.IsLeapYear(year) && day > 29)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Converts Persian date (YYYY/MM/DD) to Gregorian DateTime
+    /// </summary>
+    public static DateTime? PersianToGregorian(string persianDate)
+    {
+        if (!IsValidPersianDate(persianDate))
+            return null;
+
+        var parts = persianDate.Split('/');
+        int year = int.Parse(parts[0]);
+        int month = int.Parse(parts[1]);
+        int day = int.Parse(parts[2]);
+
+        try
+        {
+            var pc = new PersianCalendar();
+            return pc.ToDateTime(year, month, day, 0, 0, 0, 0);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Converts Gregorian DateTime to Persian date string (YYYY/MM/DD)
+    /// </summary>
+    public static string GregorianToPersian(DateTime gregorianDate)
+    {
+        var pc = new PersianCalendar();
+        int year = pc.GetYear(gregorianDate);
+        int month = pc.GetMonth(gregorianDate);
+        int day = pc.GetDayOfMonth(gregorianDate);
+        return $"{year:D4}/{month:D2}/{day:D2}";
+    }
+}

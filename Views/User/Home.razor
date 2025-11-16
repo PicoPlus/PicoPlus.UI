@@ -1,0 +1,619 @@
+@page "/user"
+@using PicoPlus.ViewModels.User
+@using PicoPlus.Components.Dialogs
+@inject UserHomeViewModel ViewModel
+@implements IAsyncDisposable
+@using Microsoft.AspNetCore.Components.Web
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<link href="/css/user-panel.css" rel="stylesheet" />
+
+<!-- Top Header Bar -->
+<div class="top-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center py-2">
+            <div class="brand-logo">
+                <i class="bi bi-grid-fill me-2"></i>
+                <span class="fw-bold">??? ??????</span>
+            </div>
+            <div class="user-info-header">
+                <div class="dropdown">
+                    <button class="user-dropdown-btn" type="button" data-bs-toggle="dropdown">
+                        <div class="user-avatar-header">
+                            @if (!string.IsNullOrEmpty(ViewModel.AvatarUrl))
+                            {
+                                <img src="@ViewModel.AvatarUrl" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                @ViewModel.GetInitials()
+                            }
+                        </div>
+                        <span class="user-name-header">@ViewModel.GetFullName()</span>
+                        <span class="user-phone-header">@(ViewModel.ContactModel?.properties?.phone ?? "-")</span>
+                        <i class="bi bi-envelope-fill ms-2"></i>
+                        <i class="bi bi-phone-fill"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg modern-dropdown">
+                        <li><button type="button" class="dropdown-item" @onclick="ShowProfileTab"><i class="bi bi-person me-2"></i>?????? ???????</button></li>
+                        <li><button type="button" class="dropdown-item" @onclick="ShowDealsTab"><i class="bi bi-briefcase me-2"></i>????????</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button type="button" class="dropdown-item text-danger" @onclick="HandleSignOut" style="cursor: pointer;">
+                            <i class="bi bi-box-arrow-left me-2"></i>???? ?? ????
+                        </button></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Dark Theme -->
+<div class="page-content-dark" dir="rtl">
+    <div class="container-fluid py-4">
+        
+        <!-- Statistics Cards - Modern Dark Design -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card-dark stat-gradient-blue fade-in" style="animation-delay: 0.1s">
+                    <div class="stat-info">
+                        <h6 class="stat-label-dark">????? ??</h6>
+                        <h2 class="stat-value-dark">@ViewModel.FormatNumber(ViewModel.TotalRevenue)</h2>
+                        <small class="stat-unit-dark">????</small>
+                    </div>
+                    <div class="stat-icon-dark bg-gradient-blue">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card-dark stat-gradient-pink fade-in" style="animation-delay: 0.2s">
+                    <div class="stat-info">
+                        <h6 class="stat-label-dark">????????? ???</h6>
+                        <h2 class="stat-value-dark">@ViewModel.OpenDeals</h2>
+                        <small class="stat-unit-dark">???</small>
+                    </div>
+                    <div class="stat-icon-dark bg-gradient-pink">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card-dark stat-gradient-green fade-in" style="animation-delay: 0.3s">
+                    <div class="stat-info">
+                        <h6 class="stat-label-dark">????????? ???? ???</h6>
+                        <h2 class="stat-value-dark">@ViewModel.ClosedDeals</h2>
+                        <small class="stat-unit-dark">???</small>
+                    </div>
+                    <div class="stat-icon-dark bg-gradient-green">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card-dark stat-gradient-purple fade-in" style="animation-delay: 0.4s">
+                    <div class="stat-info">
+                        <h6 class="stat-label-dark">?????? ??? ???</h6>
+                        <h2 class="stat-value-dark">@ViewModel.FormatNumber(ViewModel.WalletBalance)</h2>
+                        <small class="stat-unit-dark">????</small>
+                    </div>
+                    <div class="stat-icon-dark bg-gradient-purple">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation - Modern Style (Blazor-controlled) -->
+        <div class="modern-tabs-container fade-in" style="animation-delay: 0.5s">
+            <div class="d-flex justify-content-between align-items-center px-2">
+                <div class="modern-tabs flex-grow-1">
+                    <button type="button" 
+                            class="modern-tab @(activeTab == "profile" ? "active" : "")" 
+                            @onclick="ShowProfileTab">
+                        <i class="bi bi-person-badge-fill me-2"></i>
+                        ??????? ??????
+                    </button>
+                    <button type="button"
+                            class="modern-tab @(activeTab == "deals" ? "active" : "")" 
+                            @onclick="ShowDealsTab">
+                        <i class="bi bi-briefcase-fill me-2"></i>
+                        ???????? (@ViewModel.TotalDeals)
+                    </button>
+                </div>
+                <button type="button" 
+                        class="btn btn-primary d-flex align-items-center gap-2" 
+                        @onclick="@(() => ViewModel.OpenCreateDealDialogCommand.Execute(null))"
+                        style="white-space: nowrap;">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>????? ????? ????</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content (Blazor-controlled) -->
+        <div class="fade-in" style="animation-delay: 0.6s">
+            
+            <!-- Profile Tab - Dark Card -->
+            @if (activeTab == "profile")
+            {
+                <div class="tab-fade-in">
+                    <div class="dark-card">
+                        <div class="dark-card-header">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-person-badge-fill me-2 text-info"></i>
+                                ??????? ??????
+                            </h5>
+                        </div>
+                        <div class="dark-card-body">
+                            @if (ViewModel.ContactModel != null && ViewModel.ContactModel.properties != null)
+                            {
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-person me-2"></i>???
+                                        </label>
+                                        <input type="text" class="dark-input persian-text" 
+                                               value="@(ViewModel.ContactModel.properties.firstname ?? "-")" 
+                                               readonly />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-person me-2"></i>??? ????????
+                                        </label>
+                                        <input type="text" class="dark-input persian-text" 
+                                               value="@(ViewModel.ContactModel.properties.lastname ?? "-")" 
+                                               readonly />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-card-text me-2"></i>?? ???
+                                        </label>
+                                        <input type="text" class="dark-input" 
+                                               value="@ViewModel.NationalCode" 
+                                               readonly />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-phone me-2"></i>????? ??????
+                                        </label>
+                                        <div class="d-flex gap-2">
+                                            <input type="text" class="dark-input flex-grow-1" 
+                                                   value="@ViewModel.Phone" 
+                                                   readonly />
+                                            <button type="button" 
+                                                    class="btn btn-outline-info" 
+                                                    @onclick="() => ViewModel.ShowChangeMobileDialog = true"
+                                                    title="????? ????? ??????">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-envelope me-2"></i>?????
+                                        </label>
+                                        <input type="text" class="dark-input" 
+                                               value="@ViewModel.EmailFormatted" 
+                                               readonly />
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(ViewModel.BirthDate) && ViewModel.BirthDate != "-")
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="dark-label">
+                                                <i class="bi bi-calendar-event me-2"></i>????? ????
+                                            </label>
+                                            <input type="text" class="dark-input" 
+                                                   value="@ViewModel.BirthDate" 
+                                                   readonly />
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(ViewModel.FatherName) && ViewModel.FatherName != "-")
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="dark-label">
+                                                <i class="bi bi-person me-2"></i>??? ???
+                                            </label>
+                                            <input type="text" class="dark-input persian-text" 
+                                                   value="@ViewModel.FatherName" 
+                                                   readonly />
+                                        </div>
+                                    }
+
+                                    <!-- Gender Field - Always Show -->
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-gender-ambiguous me-2"></i>?????
+                                        </label>
+                                        <input type="text" class="dark-input persian-text" 
+                                               value="@ViewModel.GetGenderText(ViewModel.Gender)" 
+                                               readonly />
+                                    </div>
+
+                                    <!-- Shahkar Status Field -->
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-shield-check me-2"></i>????? ??????
+                                        </label>
+                                        <input type="text" class="dark-input persian-text" 
+                                               value="@ViewModel.GetShahkarStatusText(ViewModel.ShahkarStatus)" 
+                                               readonly />
+                                    </div>
+
+                                    <!-- CR Verification Status -->
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-patch-check me-2"></i>????? ????? ????
+                                        </label>
+                                        <input type="text" class="dark-input persian-text" 
+                                               value="@ViewModel.IsVerifiedByCR" 
+                                               readonly />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-wallet2 me-2"></i>?????? ??? ???
+                                        </label>
+                                        <input type="text" class="dark-input" 
+                                               value="@(ViewModel.FormatNumber(ViewModel.WalletBalance) + " ????")" 
+                                               readonly />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-briefcase me-2"></i>????? ????????
+                                        </label>
+                                        <input type="text" class="dark-input" 
+                                               value="@ViewModel.TotalDeals" 
+                                               readonly />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="dark-label">
+                                            <i class="bi bi-graph-up-arrow me-2"></i>????? ??
+                                        </label>
+                                        <input type="text" class="dark-input" 
+                                               value="@(ViewModel.FormatNumber(ViewModel.TotalRevenue) + " ????")" 
+                                               readonly />
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state-dark">
+                                    <i class="bi bi-person-x display-4"></i>
+                                    <p class="mt-3 mb-0">???????? ???? ????? ???? ???</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Deals Tab -->
+            @if (activeTab == "deals")
+            {
+                <div class="tab-fade-in">
+                    <div class="dark-card">
+                        <div class="dark-card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold">
+                                    <i class="bi bi-list-ul me-2 text-info"></i>
+                                    ???? ????????
+                                </h5>
+                                <span class="badge-dark">@ViewModel.TotalDeals ?????</span>
+                            </div>
+                        </div>
+                        <div class="dark-card-body p-0">
+                            @if (ViewModel.Deals == null || !ViewModel.Deals.Any())
+                            {
+                                <div class="empty-state-dark">
+                                    <i class="bi bi-inbox display-1"></i>
+                                    <p class="mt-3 mb-0">??? ?????? ???? ???</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table-dark-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>?????</th>
+                                                <th>????? ?????</th>
+                                                <th>???? (????)</th>
+                                                <th>?????</th>
+                                                <th>????? ?????</th>
+                                                <th class="text-center">??????</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var deal in ViewModel.Deals)
+                                            {
+                                                var currentDeal = deal;
+                                                <tr class="deal-row-dark" @onclick="() => ShowDealDetails(currentDeal)">
+                                                    <td>
+                                                        <span class="deal-id-badge">@deal.id</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="persian-text deal-title">@(deal.properties?.dealname ?? "???? ?????")</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="deal-amount">
+                                                            @ViewModel.FormatNumber(decimal.TryParse(deal.properties?.amount, out var amt) ? amt : 0)
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="status-badge status-@ViewModel.GetDealStatusBadge(deal.properties?.dealstage)">
+                                                            @ViewModel.GetDealStatusText(deal.properties?.dealstage)
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="deal-date">
+                                                            <i class="bi bi-calendar3 me-1"></i>
+                                                            @ViewModel.FormatDate(deal.createdAt)
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn-action" @onclick:stopPropagation="true" @onclick="() => ShowDealDetails(currentDeal)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Deal Details Modal -->
+@if (selectedDeal != null)
+{
+    <div class="modal-overlay" @onclick="CloseDealDetails">
+        <div class="modal-dark" @onclick:stopPropagation="true">
+            <div class="modal-dark-header">
+                <h5 class="modal-dark-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    ?????? ?????
+                </h5>
+                <button type="button" class="btn-close-dark" @onclick="CloseDealDetails">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-dark-body" dir="rtl">
+                <div class="deal-title-section">
+                    <h6 class="persian-text">@(selectedDeal.properties?.dealname ?? "???? ?????")</h6>
+                    <small>?????: @selectedDeal.id</small>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="info-box-dark">
+                            <label>???? ?????</label>
+                            <div class="info-value text-success">
+                                @ViewModel.FormatNumber(decimal.TryParse(selectedDeal.properties?.amount, out var amt) ? amt : 0) ????
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box-dark">
+                            <label>?????</label>
+                            <div class="info-value">
+                                <span class="status-badge status-@ViewModel.GetDealStatusBadge(selectedDeal.properties?.dealstage)">
+                                    @ViewModel.GetDealStatusText(selectedDeal.properties?.dealstage)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box-dark">
+                            <label>????? ?????</label>
+                            <div class="info-value">
+                                <i class="bi bi-calendar-plus me-2"></i>
+                                @ViewModel.FormatDate(selectedDeal.createdAt)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box-dark">
+                            <label>????? ???????????</label>
+                            <div class="info-value">
+                                <i class="bi bi-clock-history me-2"></i>
+                                @ViewModel.FormatDate(selectedDeal.updatedAt)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (ViewModel.SelectedDealLineItems != null && ViewModel.SelectedDealLineItems.Any())
+                {
+                    <div class="line-items-section mt-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-cart3 me-2 text-info"></i>
+                            ???????? ????? (@ViewModel.SelectedDealLineItems.Count)
+                        </h6>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-sm table-dark table-bordered table-hover">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th class="persian-text">??? ?????/????</th>
+                                        <th class="text-center">???? ????</th>
+                                        <th class="text-center">?????</th>
+                                        <th class="text-center">?????</th>
+                                        <th class="text-end">???? ??</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in ViewModel.SelectedDealLineItems)
+                                    {
+                                        var unitPrice = decimal.TryParse(item.properties?.price, out var price) ? price : 0m;
+                                        var quantity = decimal.TryParse(item.properties?.quantity, out var qty) ? qty : 1m;
+                                        var discount = decimal.TryParse(item.properties?.hs_discount_percentage, out var disc) ? disc : 0m;
+                                        var totalPrice = unitPrice * quantity * (1 - discount / 100);
+
+                                        <tr>
+                                            <td class="persian-text">@(item.properties?.name ?? "-")</td>
+                                            <td class="text-center">@ViewModel.FormatNumber(unitPrice)</td>
+                                            <td class="text-center">@quantity</td>
+                                            <td class="text-center">@discount%</td>
+                                            <td class="text-end fw-bold text-success">@ViewModel.FormatNumber(totalPrice)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-active">
+                                    <tr>
+                                        <th colspan="4" class="text-end persian-text">??? ?? ?????:</th>
+                                        <th class="text-end text-success fw-bold">
+                                            @ViewModel.FormatNumber(ViewModel.SelectedDealLineItems.Sum(item =>
+                                            {
+                                                var unitPrice = decimal.TryParse(item.properties?.price, out var price) ? price : 0m;
+                                                var quantity = decimal.TryParse(item.properties?.quantity, out var qty) ? qty : 1m;
+                                                var discount = decimal.TryParse(item.properties?.hs_discount_percentage, out var disc) ? disc : 0m;
+                                                return unitPrice * quantity * (1 - discount / 100);
+                                            })) ?????
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else if (ViewModel.IsLoading)
+                {
+                    <div class="text-center py-3 mt-3">
+                        <div class="spinner-border spinner-border-sm text-info" role="status">
+                            <span class="visually-hidden">?? ??? ????????...</span>
+                        </div>
+                        <p class="mt-2 mb-0 small">?? ??? ???????? ???????...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        ??? ????? ???? ???? ???
+                    </div>
+                }
+            </div>
+            <div class="modal-dark-footer">
+                <button type="button" class="btn-secondary-dark" @onclick="CloseDealDetails">
+                    <i class="bi bi-x-lg me-2"></i>????
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewModel.IsLoading)
+{
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p>?? ??? ????????...</p>
+    </div>
+}
+
+@if (ViewModel.ShowChangeMobileDialog)
+{
+    <ChangeMobileDialog 
+        CurrentMobile="@(ViewModel.ContactModel?.properties?.phone ?? "")"
+        OnMobileChanged="@HandleMobileChanged"
+        OnCancel="@(() => ViewModel.ShowChangeMobileDialog = false)" />
+}
+
+@if (ViewModel.ShowCompleteBirthDateDialog)
+{
+    <CompleteBirthDateDialog 
+        NationalCode="@(ViewModel.ContactModel?.properties?.natcode ?? "")"
+        OnBirthDateProvided="@HandleBirthDateProvided"
+        OnSkip="@(() => ViewModel.ShowCompleteBirthDateDialog = false)" />
+}
+
+@if (ViewModel.ShowCreateDealDialog)
+{
+    <CreateDealDialog 
+        IsVisible="@ViewModel.ShowCreateDealDialog"
+        ContactId="@(ViewModel.ContactModel?.id ?? "")"
+        ContactName="@ViewModel.GetFullName()"
+        OnDealCreated="@HandleDealCreated"
+        OnCancel="@(() => ViewModel.CloseCreateDealDialogCommand.Execute(null))" />
+}
+
+@code {
+    private PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result? selectedDeal;
+    private string activeTab = "profile";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync();
+        StateHasChanged();
+    }
+
+    private void ShowProfileTab()
+    {
+        activeTab = "profile";
+        StateHasChanged();
+    }
+
+    private void ShowDealsTab()
+    {
+        activeTab = "deals";
+        StateHasChanged();
+    }
+
+    private async Task HandleSignOut()
+    {
+        await ViewModel.SignOutCommand.ExecuteAsync(default);
+    }
+
+    private async Task HandleMobileChanged(string newMobile)
+    {
+        await ViewModel.ChangeMobileCommand.ExecuteAsync(newMobile);
+    }
+
+    private async Task HandleBirthDateProvided(string birthDate)
+    {
+        await ViewModel.CompleteBirthDateCommand.ExecuteAsync(birthDate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleDealCreated(string dealId)
+    {
+        ViewModel.ShowCreateDealDialog = false;
+        await ViewModel.InitializeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ShowDealDetails(PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result deal)
+    {
+        selectedDeal = deal;
+        await ViewModel.LoadDealLineItemsAsync(deal.id);
+        StateHasChanged();
+    }
+
+    private void CloseDealDetails()
+    {
+        selectedDeal = null;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Task.CompletedTask;
+    }
+}

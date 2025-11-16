@@ -1,0 +1,120 @@
+@using PicoPlus.State.UserPanel
+@using PicoPlus.Services.UserPanel
+@using PicoPlus.Extensions
+
+@inject IPersianDateService DateService
+
+@* Deal details modal component *@
+
+@if (IsVisible && Deal != null)
+{
+    <div class="modal-overlay" 
+         @onclick="CloseModal" 
+         role="dialog" 
+         aria-modal="true" 
+         aria-labelledby="dealModalTitle">
+        <div class="modal-dark" @onclick:stopPropagation="true">
+            <div class="modal-dark-header">
+                <h5 id="dealModalTitle" class="modal-dark-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    ?????? ??????
+                </h5>
+                <button type="button" 
+                        class="btn-close-dark" 
+                        @onclick="CloseModal" 
+                        aria-label="????">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-dark-body" dir="rtl">
+                <div class="deal-title-section">
+                    <h6 class="persian-text">@Deal.DealName</h6>
+                    <small>?????: @Deal.Id</small>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <InfoBox 
+                            Label="???? ??????"
+                            Value="@($"{DateService.FormatNumber(Deal.Amount)} ?????")"
+                            ValueClass="text-success" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <InfoBox 
+                            Label="?????"
+                            Value="@Deal.Stage.GetDisplayName()" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <InfoBox 
+                            Label="????? ?????"
+                            Value="@DateService.FormatDate(Deal.CreatedAt)" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <InfoBox 
+                            Label="????? ?????????"
+                            Value="@DateService.FormatDate(Deal.UpdatedAt)" />
+                    </div>
+
+                    @if (Deal.CloseDate.HasValue)
+                    {
+                        <div class="col-md-6">
+                            <InfoBox 
+                                Label="????? ???? ???"
+                                Value="@DateService.FormatDate(Deal.CloseDate)" />
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Deal.Pipeline))
+                    {
+                        <div class="col-md-6">
+                            <InfoBox 
+                                Label="?????????"
+                                Value="@Deal.Pipeline" />
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-dark-footer">
+                <button type="button" 
+                        class="btn-secondary-dark" 
+                        @onclick="CloseModal">
+                    <i class="bi bi-x-lg me-2"></i>????
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// Controls modal visibility
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Deal to display details for
+    /// </summary>
+    [Parameter]
+    public DealSummary? Deal { get; set; }
+
+    /// <summary>
+    /// Callback when modal is closed
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Focus trap and escape key handling would be implemented via JS interop
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

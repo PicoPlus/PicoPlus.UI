@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using PicoPlus.Components.Shared
+@inject ILogger<CompleteBirthDateDialog> Logger
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="modal-overlay" @onclick="CloseDialog">
+    <div class="modal-dark complete-profile-dialog" style="max-width: 500px;" @onclick:stopPropagation="true">
+        <div class="modal-dark-header">
+            <h5 class="modal-dark-title">
+                <i class="bi bi-calendar-heart me-2"></i>
+                ????? ??????? ????
+            </h5>
+        </div>
+
+        <div class="modal-dark-body" dir="rtl">
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle me-2"></i>
+                ???? ?? ???? ??????? ???? ????? ?? ???? ???? ??? ?? ???? ????.
+                ??? ??????? ???? ????? ???? ?? ??? ?? ???? ?? ?????? ?? ?????.
+            </div>
+
+            <div class="mb-4">
+                <label class="dark-label">????? ???? ????</label>
+                <PersianDateInput 
+                    Value="@birthDate"
+                    ValueChanged="@((string value) => birthDate = value)"
+                    Id="birthDateInput"
+                    Placeholder="1370/01/15"
+                    Disabled="@isLoading" />
+                <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>
+                    ????? ???? ?? ?? ???? YYYY/MM/DD ???? ???? (????: 1370/01/15)
+                </small>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>@successMessage
+                </div>
+            }
+        </div>
+
+        <div class="modal-dark-footer">
+            <button type="button" 
+                    class="btn btn-success" 
+                    @onclick="VerifyAndUpdate"
+                    disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                <i class="bi bi-check-circle me-2"></i>????? ? ?????
+            </button>
+
+            <button type="button" 
+                    class="btn btn-secondary" 
+                    @onclick="SkipForNow"
+                    disabled="@isLoading">
+                <i class="bi bi-clock me-2"></i>?? ????
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string NationalCode { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnBirthDateProvided { get; set; }
+    [Parameter] public EventCallback OnSkip { get; set; }
+
+    private string birthDate = string.Empty;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
+
+    private async Task VerifyAndUpdate()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        // Validate birth date
+        if (string.IsNullOrWhiteSpace(birthDate))
+        {
+            errorMessage = "?? ???? ?? ???? ???? ?? ???? ????";
+            return;
+        }
+
+        if (!IsValidPersianDate(birthDate))
+        {
+            errorMessage = "???? ????? ???? ???? ????. ???? ????: YYYY/MM/DD";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            Logger.LogInformation("Birth date provided by user: {BirthDate}", birthDate);
+            
+            // Call parent callback
+            await OnBirthDateProvided.InvokeAsync(birthDate);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"??? ?? ?? ???? ?? ???? ????: {ex.Message}";
+            Logger.LogError(ex, "Error saving birth date");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SkipForNow()
+    {
+        if (isLoading) return;
+        
+        Logger.LogInformation("User skipped birth date input");
+        await OnSkip.InvokeAsync();
+    }
+
+    private async Task CloseDialog()
+    {
+        if (isLoading) return;
+        await SkipForNow();
+    }
+
+    private bool IsValidPersianDate(string persianDate)
+    {
+        if (string.IsNullOrWhiteSpace(persianDate))
+            return false;
+
+        var parts = persianDate.Split('/');
+        if (parts.Length != 3)
+            return false;
+
+        if (!int.TryParse(parts[0], out var year) || year < 1300 || year > 1420)
+            return false;
+
+        if (!int.TryParse(parts[1], out var month) || month < 1 || month > 12)
+            return false;
+
+        if (!int.TryParse(parts[2], out var day) || day < 1 || day > 31)
+            return false;
+
+        return true;
+    }
+}

@@ -1,0 +1,42 @@
+@* Error toast notification *@
+
+@if (IsVisible && !string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 3000;">
+        <div class="toast show align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    @ErrorMessage
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="Close" aria-label="????"></button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// Controls visibility of error toast
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Error message to display
+    /// </summary>
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Callback when toast is closed
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+}

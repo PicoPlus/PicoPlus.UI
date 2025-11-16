@@ -1,0 +1,28 @@
+@* Info box component for displaying key-value pairs *@
+
+<div class="info-box-dark">
+    <label>@Label</label>
+    <div class="info-value @ValueClass">
+        @Value
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Label text for the info box
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Value to display
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Additional CSS class for value styling
+    /// </summary>
+    [Parameter]
+    public string ValueClass { get; set; } = string.Empty;
+}

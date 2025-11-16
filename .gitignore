@@ -1,0 +1,112 @@
+## ============================
+## PicoPlus Specific
+## ============================
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
+
+# User secrets
+secrets.json
+**/secrets.json
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+## ============================
+## Build Output
+## ============================
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+[Aa][Rr][Mm]*/
+[Aa][Rr][Mm]64*/
+
+## ============================
+## Visual Studio
+## ============================
+.vs/
+*.suo
+*.user
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+## VS auto-generated
+Generated\ Files/
+
+## ============================
+## .NET / NuGet
+## ============================
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## ============================
+## Tests
+## ============================
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+coverage*.*
+*.coverage
+*.coveragexml
+
+## ============================
+## Azure / Publish
+## ============================
+publish/
+*.pubxml
+*.publishproj
+PublishScripts/
+*.azurePubxml
+
+## ============================
+## Misc Tools
+## ============================
+_ReSharper*/
+*.DotSettings.user
+_TeamCity*
+.axoCover/*
+*.dotCover
+node_modules/
+.sass-cache/
+bower_components/
+
+## ============================
+## Databases
+## ============================
+*.mdf
+*.ldf
+*.ndf
+
+## ============================
+## Others
+## ============================
+*.pfx
+*.jfm
+*.cachefile
+*.log
+*.plg
+*.opt
+*.vbw
+.localhistory/
+healthchecksdb

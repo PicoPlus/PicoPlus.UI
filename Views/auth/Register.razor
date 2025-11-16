@@ -1,0 +1,370 @@
+﻿@page "/auth/register"
+@using PicoPlus.ViewModels.Auth
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using PicoPlus.Components.Shared
+@inject RegisterViewModel ViewModel
+@implements IAsyncDisposable
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<link href="/css/auth.css" rel="stylesheet" />
+
+<div class="auth-container">
+    <div class="auth-card auth-card-wide">
+        <!-- Logo/Icon -->
+        <div class="auth-icon">
+            <i class="bi bi-person-plus"></i>
+        </div>
+
+        <!-- Title -->
+        <h1 class="auth-title">ثبت‌نام در سامانه</h1>
+        <p class="auth-subtitle">
+            برای ایجاد حساب کاربری جدید، مراحل زیر را تکمیل کنید
+        </p>
+
+        <!-- Step Indicator -->
+        <div class="auth-steps">
+            <div class="auth-step @(ViewModel.CurrentStep >= 1 ? "active" : "") @(ViewModel.IsVerified ? "completed" : "")">
+                <div class="auth-step-circle">
+                    <i class="bi bi-@(ViewModel.IsVerified ? "check" : "1-circle")"></i>
+                </div>
+                <small>استعلام هویت</small>
+            </div>
+            <div class="auth-step @(ViewModel.CurrentStep >= 2 ? "active" : "") @(ViewModel.OtpSent ? "completed" : "")">
+                <div class="auth-step-circle">
+                    <i class="bi bi-@(ViewModel.OtpSent ? "check" : "2-circle")"></i>
+                </div>
+                <small>شماره موبایل</small>
+            </div>
+            <div class="auth-step @(ViewModel.CurrentStep >= 3 ? "active" : "") @(ViewModel.CurrentStep >= 4 ? "completed" : "")">
+                <div class="auth-step-circle">
+                    <i class="bi bi-@(ViewModel.CurrentStep >= 4 ? "check" : "3-circle")"></i>
+                </div>
+                <small>تایید کد</small>
+            </div>
+            <div class="auth-step @(ViewModel.CurrentStep >= 4 ? "active" : "")">
+                <div class="auth-step-circle">
+                    <i class="bi bi-4-circle"></i>
+                </div>
+                <small>تکمیل ثبت نام</small>
+            </div>
+        </div>
+
+        <!-- Error Alert -->
+        @if (ViewModel.HasError && !string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        {
+            <div class="auth-alert auth-alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                @ViewModel.ErrorMessage
+            </div>
+        }
+
+        <!-- Register Form -->
+        <EditForm Model="@ViewModel" OnValidSubmit="@HandleSubmitClick" class="auth-form">
+            <DataAnnotationsValidator />
+            
+            <!-- Step 1: National Identity Verification -->
+            @if (ViewModel.CurrentStep == 1)
+            {
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label for="nationalCode" class="form-label">کد ملی</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-card-text"></i>
+                            </span>
+                            <InputText class="form-control" 
+                                   id="nationalCode"
+                                   @bind-Value="ViewModel.NationalCode"
+                                   placeholder="کد ملی 10 رقمی"
+                                   disabled="@(ViewModel.IsLoading || ViewModel.IsVerified)"
+                                   maxlength="10" />
+                        </div>
+                        <ValidationMessage For="@(() => ViewModel.NationalCode)" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="birthDate" class="form-label">تاریخ تولد شمسی</label>
+                        <PersianDateInput 
+                            Value="@ViewModel.BirthDate"
+                            ValueChanged="@((string value) => ViewModel.BirthDate = value)"
+                            Id="birthDate"
+                            Placeholder="1370/01/15"
+                            Disabled="@(ViewModel.IsLoading || ViewModel.IsVerified)" />
+                        <ValidationMessage For="@(() => ViewModel.BirthDate)" />
+                        <small class="auth-helper">
+                            <i class="bi bi-info-circle me-1"></i>
+                            تاریخ تولد شمسی را به فرمت YYYY/MM/DD وارد کنید (مثال: 1370/01/15)
+                        </small>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 2: Identity Verified - Show Results & Phone Input -->
+            @if (ViewModel.IsVerified && ViewModel.CurrentStep >= 2 && ViewModel.CurrentStep < 3)
+            {
+                <div class="auth-verified mb-4">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>اطلاعات شما با موفقیت تأیید شد</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نام</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <input type="text" class="form-control" value="@ViewModel.FirstName" readonly />
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نام خانوادگی</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <input type="text" class="form-control" value="@ViewModel.LastName" readonly />
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(ViewModel.FatherName))
+                    {
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام پدر</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" class="form-control" value="@ViewModel.FatherName" readonly />
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">شماره موبایل</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-phone"></i>
+                            </span>
+                            <InputText class="form-control" 
+                                   id="phone"
+                                   @bind-Value="ViewModel.Phone"
+                                   placeholder="09123456789"
+                                   maxlength="11"
+                                   disabled="@(ViewModel.IsLoading || ViewModel.OtpSent)" />
+                        </div>
+                        <ValidationMessage For="@(() => ViewModel.Phone)" />
+                        <small class="auth-helper">
+                            <i class="bi bi-info-circle me-1"></i>
+                            شماره موبایل باید با 09 شروع شود
+                        </small>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 3: OTP Verification -->
+            @if (ViewModel.OtpSent && ViewModel.CurrentStep == 3)
+            {
+                <div class="auth-otp-section">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-chat-dots-fill text-info" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">کد تایید ارسال شد</h5>
+                        <p class="text-muted">
+                            کد تایید 6 رقمی به شماره <strong>@ViewModel.Phone</strong> ارسال شد
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="otpCode" class="form-label">کد تایید</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-key"></i>
+                            </span>
+                            <InputText class="form-control" 
+                                   id="otpCode"
+                                   @bind-Value="ViewModel.OtpCode"
+                                   placeholder="کد 6 رقمی"
+                                   maxlength="6"
+                                   disabled="@ViewModel.IsLoading"
+                                   style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;" />
+                        </div>
+                        <ValidationMessage For="@(() => ViewModel.OtpCode)" />
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(ViewModel.OtpRemainingTime))
+                    {
+                        <div class="text-center mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                زمان باقی مانده: <strong>@ViewModel.OtpRemainingTime</strong>
+                            </small>
+                        </div>
+                    }
+
+                    <div class="text-center">
+                        <button type="button" 
+                                class="btn btn-link" 
+                                @onclick="HandleResendOtp"
+                                disabled="@(!ViewModel.CanResendOtp || ViewModel.IsLoading)">
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            ارسال مجدد کد
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 4: Final Confirmation -->
+            @if (ViewModel.CurrentStep >= 4)
+            {
+                <div class="auth-verified mb-4">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>شماره موبایل شما تأیید شد</span>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    با کلیک بر روی دکمه ثبت نام، حساب کاربری شما ایجاد خواهد شد
+                </div>
+            }
+
+            <!-- Action Buttons -->
+            <div class="row">
+                <div class="col-12">
+                    @if (ViewModel.CurrentStep == 1 && !ViewModel.IsVerified)
+                    {
+                        <button type="button" 
+                                class="btn auth-btn auth-btn-info w-100" 
+                                @onclick="HandleVerifyClick"
+                                disabled="@ViewModel.IsLoading">
+                            @if (ViewModel.IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm auth-spinner"></span>
+                                <span>در حال استعلام...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-shield-check"></i>
+                                <span>استعلام اطلاعات از ثبت احوال</span>
+                            }
+                        </button>
+                    }
+                    else if (ViewModel.CurrentStep == 2 && !ViewModel.OtpSent)
+                    {
+                        <button type="button" 
+                                class="btn auth-btn auth-btn-primary w-100" 
+                                @onclick="HandleSendOtpClick"
+                                disabled="@ViewModel.IsLoading">
+                            @if (ViewModel.IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm auth-spinner"></span>
+                                <span>در حال ارسال...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-send"></i>
+                                <span>ارسال کد تایید</span>
+                            }
+                        </button>
+                    }
+                    else if (ViewModel.CurrentStep == 3)
+                    {
+                        <button type="button" 
+                                class="btn auth-btn auth-btn-success w-100" 
+                                @onclick="HandleVerifyOtpClick"
+                                disabled="@ViewModel.IsLoading">
+                            @if (ViewModel.IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm auth-spinner"></span>
+                                <span>در حال تایید...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-circle"></i>
+                                <span>تایید کد</span>
+                            }
+                        </button>
+                    }
+                    else if (ViewModel.CurrentStep >= 4)
+                    {
+                        <button type="submit" 
+                                class="btn auth-btn auth-btn-primary w-100 mb-3" 
+                                disabled="@ViewModel.IsLoading">
+                            @if (ViewModel.IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm auth-spinner"></span>
+                                <span>در حال ثبت نام...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-circle"></i>
+                                <span>تکمیل ثبت نام</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+        </EditForm>
+
+        <!-- Divider -->
+        <div class="auth-divider">
+            <span class="px-2">یا</span>
+        </div>
+
+        <!-- Login Link -->
+        <div class="text-center">
+            <p class="mb-0" style="color: var(--auth-text-muted);">
+                قبلاً ثبت‌نام کرده‌اید؟
+                <a href="/auth/login" class="auth-link">
+                    وارد شوید
+                    <i class="bi bi-arrow-left me-1"></i>
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync();
+        StateHasChanged(); // Force UI update
+    }
+
+    private async Task HandleVerifyClick()
+    {
+        await ViewModel.VerifyNationalIdentityCommand.ExecuteAsync(default);
+        StateHasChanged();
+    }
+
+    private async Task HandleSendOtpClick()
+    {
+        await ViewModel.SendOtpCommand.ExecuteAsync(default);
+        StateHasChanged();
+    }
+
+    private async Task HandleVerifyOtpClick()
+    {
+        await ViewModel.VerifyOtpCommand.ExecuteAsync(default);
+        StateHasChanged();
+    }
+
+    private async Task HandleResendOtp()
+    {
+        await ViewModel.ResendOtpCommand.ExecuteAsync(default);
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmitClick()
+    {
+        await ViewModel.RegisterCommand.ExecuteAsync(default);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ViewModel.Dispose();
+        await Task.CompletedTask;
+    }
+}

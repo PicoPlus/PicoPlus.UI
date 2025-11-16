@@ -1,0 +1,366 @@
+/* =================================
+   PicoPlus RTL Bootstrap Theme
+   Persian/Farsi Support
+   Bootstrap 5.3 Compatible
+   ================================= */
+
+/* Persian Fonts */
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+
+/* Root Variables for RTL */
+:root {
+    --bs-primary: #6366f1;
+    --bs-secondary: #64748b;
+    --bs-success: #22c55e;
+    --bs-danger: #ef4444;
+    --bs-warning: #f59e0b;
+    --bs-info: #06b6d4;
+    --bs-light: #f8fafc;
+    --bs-dark: #1e293b;
+    
+    /* Persian Typography */
+    --bs-font-sans-serif: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bs-body-font-family: var(--bs-font-sans-serif);
+    --bs-body-font-size: 0.95rem;
+    --bs-body-line-height: 1.8;
+    
+    /* Spacing for RTL */
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 1.5rem;
+    
+    /* Border Radius */
+    --bs-border-radius: 0.5rem;
+    --bs-border-radius-sm: 0.375rem;
+    --bs-border-radius-lg: 0.75rem;
+    --bs-border-radius-xl: 1rem;
+    
+    /* Shadows */
+    --bs-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --bs-box-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --bs-box-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Global RTL Settings */
+* {
+    direction: rtl;
+    text-align: right;
+}
+
+body {
+    font-family: var(--bs-font-sans-serif) !important;
+    direction: rtl;
+    text-align: right;
+    background-color: #f8fafc;
+}
+
+/* RTL Typography */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: var(--bs-font-sans-serif);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--bs-dark);
+}
+
+p, span, div, label, input, textarea, select {
+    font-family: var(--bs-font-sans-serif);
+}
+
+/* RTL Form Controls */
+.form-control,
+.form-select {
+    text-align: right;
+    direction: rtl;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+    border-radius: var(--bs-border-radius);
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.15);
+}
+
+.form-label {
+    text-align: right;
+    font-weight: 500;
+    color: var(--bs-dark);
+    margin-bottom: 0.5rem;
+}
+
+.form-check {
+    padding-right: 1.5em;
+    padding-left: 0;
+}
+
+.form-check-input {
+    float: right;
+    margin-right: -1.5em;
+    margin-left: 0;
+}
+
+/* RTL Buttons */
+.btn {
+    font-family: var(--bs-font-sans-serif);
+    font-weight: 500;
+    border-radius: var(--bs-border-radius);
+    padding: 0.625rem 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.btn-primary:hover {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: var(--bs-box-shadow);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.875rem;
+}
+
+/* RTL Cards */
+.card {
+    border: none;
+    border-radius: var(--bs-border-radius-lg);
+    box-shadow: var(--bs-box-shadow-sm);
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.card:hover {
+    box-shadow: var(--bs-box-shadow);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1.25rem 1.5rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-footer {
+    background-color: transparent;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+}
+
+/* RTL Navigation */
+.navbar {
+    box-shadow: var(--bs-box-shadow-sm);
+}
+
+.navbar-brand {
+    margin-left: 1rem;
+    margin-right: 0;
+}
+
+.navbar-nav {
+    text-align: right;
+}
+
+.nav-link {
+    padding-right: 1rem;
+    padding-left: 1rem;
+    font-weight: 500;
+}
+
+/* RTL Dropdowns */
+.dropdown-menu {
+    text-align: right;
+    border: none;
+    box-shadow: var(--bs-box-shadow-lg);
+    border-radius: var(--bs-border-radius);
+}
+
+.dropdown-item {
+    text-align: right;
+    padding: 0.625rem 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+}
+
+/* RTL Alerts */
+.alert {
+    border-radius: var(--bs-border-radius);
+    border: none;
+    padding: 1rem 1.25rem;
+}
+
+.alert-dismissible .btn-close {
+    position: absolute;
+    left: 1rem;
+    right: auto;
+}
+
+/* RTL Modal */
+.modal-header {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-footer {
+    border-top: 1px solid #e2e8f0;
+}
+
+.modal-header .btn-close {
+    margin: 0 auto 0 0;
+}
+
+/* RTL Tables */
+.table {
+    text-align: right;
+}
+
+.table thead th {
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* RTL Breadcrumb */
+.breadcrumb {
+    direction: rtl;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    float: right;
+    padding-left: 0.5rem;
+    padding-right: 0;
+    content: var(--bs-breadcrumb-divider, "/");
+}
+
+/* RTL Pagination */
+.pagination {
+    direction: rtl;
+}
+
+/* Custom Components */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-card {
+    max-width: 450px;
+    width: 100%;
+    padding: 2rem;
+    background: white;
+    border-radius: var(--bs-border-radius-xl);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: var(--bs-border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--bs-box-shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    box-shadow: var(--bs-box-shadow);
+    transform: translateY(-4px);
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, #4f46e5 100%);
+    color: white;
+    border-radius: var(--bs-border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--bs-box-shadow);
+}
+
+/* Loading Spinner */
+.spinner-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Utility Classes */
+.text-muted-persian {
+    color: #64748b !important;
+    font-size: 0.875rem;
+}
+
+.border-top-persian {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+.shadow-persian {
+    box-shadow: var(--bs-box-shadow) !important;
+}
+
+.shadow-persian-sm {
+    box-shadow: var(--bs-box-shadow-sm) !important;
+}
+
+.shadow-persian-lg {
+    box-shadow: var(--bs-box-shadow-lg) !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .auth-card {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+}

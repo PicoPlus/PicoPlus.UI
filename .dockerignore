@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Documentation
+*.md
+!README.md
+Docs/
+
+# Environment and secrets
+.env
+.env.*
+appsettings.Development.json
+*.pfx
+*.key
+*.pem
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+
+# Temporary files
+temp_fix.txt
+*.tmp
+*.bak
+*.swp
+
+# IDE
+.idea/
+*.DotSettings
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Liara
+liara-env-setup.ps1
+
+# Plan files
+.copilot/
