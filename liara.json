@@ -1,7 +1,7 @@
 {
   "app": "ipicoplus",
   "port": 5000,
-  "platform": "dotnet",
+  "platform": "docker",
   "build": {
     "location": "iran"
   },
