@@ -557,11 +557,16 @@
 @code {
     private PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result? selectedDeal;
     private string activeTab = "profile";
+    private bool _initialized = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await ViewModel.InitializeAsync();
-        StateHasChanged();
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await ViewModel.InitializeAsync();
+            StateHasChanged();
+        }
     }
 
     private void ShowProfileTab()
