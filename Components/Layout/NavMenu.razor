@@ -8,7 +8,7 @@
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable">
+<div class="nav-scrollable" @onclick="CloseDropdown">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
@@ -16,17 +16,36 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <a class="nav-link dropdown-toggle" href="#" id="dealsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                معاملات
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="dealsDropdown">
-                <li>
-                    <NavLink class="dropdown-item" href="/Deal/Create">ثبت سریع سفارش</NavLink>
-                </li>
-                <li>
-                    <NavLink class="dropdown-item" href="/Deal/Search">جستجوی معاملات</NavLink>
-                </li>
-            </ul>
+            <div class="dropdown @(isDropdownOpen ? "show" : "")">
+                <a class="nav-link dropdown-toggle" href="#" @onclick="ToggleDropdown" @onclick:stopPropagation="true" @onclick:preventDefault="true" aria-expanded="@isDropdownOpen">
+                    معاملات
+                </a>
+                <ul class="dropdown-menu @(isDropdownOpen ? "show" : "")" style="@(isDropdownOpen ? "position: relative;" : "")" @onclick:stopPropagation="true">
+                    <li>
+                        <NavLink class="dropdown-item" href="/Deal/Create" @onclick="CloseDropdown">ثبت سریع سفارش</NavLink>
+                    </li>
+                    <li>
+                        <NavLink class="dropdown-item" href="/Deal/Search" @onclick="CloseDropdown">جستجوی معاملات</NavLink>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
 </div>
+
+@code {
+    private bool isDropdownOpen = false;
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void CloseDropdown()
+    {
+        if (isDropdownOpen)
+        {
+            isDropdownOpen = false;
+        }
+    }
+}

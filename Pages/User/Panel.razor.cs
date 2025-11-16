@@ -22,6 +22,7 @@ public partial class Panel : ComponentBase, IAsyncDisposable
     private bool _hasError;
     private string? _errorMessage;
     private CancellationTokenSource? _cts;
+    private bool _isDropdownOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +79,37 @@ public partial class Panel : ComponentBase, IAsyncDisposable
     {
         _activeTab = TabType.Deals;
         Logger.LogDebug("Switched to deals tab");
+    }
+
+    private void ToggleDropdown()
+    {
+        _isDropdownOpen = !_isDropdownOpen;
+    }
+
+    private void CloseDropdown()
+    {
+        if (_isDropdownOpen)
+        {
+            _isDropdownOpen = false;
+        }
+    }
+
+    private void HandleProfileTabClick()
+    {
+        CloseDropdown();
+        ShowProfileTab();
+    }
+
+    private void HandleDealsTabClick()
+    {
+        CloseDropdown();
+        ShowDealsTab();
+    }
+
+    private async Task HandleSignOutClick()
+    {
+        CloseDropdown();
+        await HandleSignOut();
     }
 
     private void ShowDealDetails(DealSummary deal)
