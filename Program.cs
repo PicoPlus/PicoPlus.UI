@@ -2,6 +2,7 @@ using Blazored.SessionStorage;
 using Blazored.LocalStorage;
 using PicoPlus.Components;
 using PicoPlus.Infrastructure.Authorization;
+using PicoPlus.Infrastructure.Extensions;
 using PicoPlus.Infrastructure.Http;
 using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
@@ -184,6 +185,9 @@ builder.Services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();
 
 builder.Services.AddRazorPages();
 
+// Extension System - Discover and configure all extensions
+builder.Services.AddExtensions(builder.Configuration);
+
 var app = builder.Build();
 
 // Development logging
@@ -222,6 +226,9 @@ app.UseRequestLocalization(locOptions);
 
 // Enable response compression
 app.UseResponseCompression();
+
+// Configure extensions
+app.UseExtensions();
 
 // Static files with caching in production
 var cacheMaxAge = app.Environment.IsProduction()
