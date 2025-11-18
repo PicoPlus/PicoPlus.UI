@@ -1,0 +1,172 @@
+@inherits LayoutComponentBase
+@using PicoPlus.Infrastructure.Authorization
+@using PicoPlus.State.Admin
+@using PicoPlus.Models.Admin
+@inject AdminAuthorizationHandler AuthHandler
+@inject AdminStateService AdminState
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<MudLayout>
+    <MudAppBar Elevation="1" Fixed="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ms-3">پنل مدیریت</MudText>
+        <MudSpacer />
+        @if (showOwnerWarning && selectedOwner == null)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="me-3">
+                لطفاً یک مالک را انتخاب کنید.
+                <MudLink Href="/admin/owner-select" Color="Color.Warning" Underline="Underline.Always">انتخاب مالک</MudLink>
+            </MudAlert>
+        }
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h5" Color="Color.Primary">
+                <MudIcon Icon="@Icons.Material.Filled.Shield" Class="me-2" />
+                پنل مدیریت
+            </MudText>
+        </MudDrawerHeader>
+        
+        @if (adminInfo != null)
+        {
+            <MudDivider />
+            <div class="pa-4">
+                <div class="d-flex align-center">
+                    <MudAvatar Color="Color.Primary" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" />
+                    </MudAvatar>
+                    <div class="ms-3">
+                        <MudText Typo="Typo.body1"><b>@adminInfo.Name</b></MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@adminInfo.Role</MudText>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (selectedOwner != null)
+        {
+            <MudDivider />
+            <div class="pa-4">
+                <div class="d-flex justify-space-between align-center mb-2">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">مالک فعال:</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Clear" Size="Size.Small" OnClick="ClearOwner" />
+                </div>
+                <MudPaper Elevation="1" Class="pa-2">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Badge" Color="Color.Primary" Class="me-2" />
+                        <div>
+                            <MudText Typo="Typo.body2"><b>@selectedOwner.FullName</b></MudText>
+                            <MudText Typo="Typo.caption">@selectedOwner.Email</MudText>
+                        </div>
+                    </div>
+                </MudPaper>
+            </div>
+        }
+
+        <MudDivider />
+        <MudNavMenu>
+            <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.All">
+                داشبورد
+            </MudNavLink>
+            <MudNavLink Href="/admin/owner-select" Icon="@Icons.Material.Filled.ManageAccounts">
+                انتخاب مالک
+            </MudNavLink>
+            <MudNavLink Href="/admin/kanban" Icon="@Icons.Material.Filled.ViewKanban">
+                بورد کانبان
+            </MudNavLink>
+            <MudNavLink Href="/admin/contacts" Icon="@Icons.Material.Filled.People">
+                مخاطبین
+            </MudNavLink>
+            <MudNavLink Href="/admin/deals" Icon="@Icons.Material.Filled.Business">
+                معاملات
+            </MudNavLink>
+            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Filled.Analytics">
+                گزارش و تحلیل
+            </MudNavLink>
+            <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">
+                تنظیمات
+            </MudNavLink>
+        </MudNavMenu>
+        
+        <MudSpacer />
+        <div class="pa-4 pb-8">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Error" 
+                       StartIcon="@Icons.Material.Filled.Logout" 
+                       FullWidth="true"
+                       OnClick="HandleLogout">
+                خروج
+            </MudButton>
+        </div>
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private AdminUserInfo? adminInfo;
+    private HubSpotOwner? selectedOwner;
+    private bool showOwnerWarning = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check admin access
+        var hasAccess = await AuthHandler.EnsureAdminAccessAsync();
+        if (!hasAccess) return;
+
+        // Load admin info
+        adminInfo = await AuthHandler.GetAdminUserInfoAsync();
+
+        // Initialize admin state
+        await AdminState.InitializeAsync();
+        selectedOwner = AdminState.GetSelectedOwner();
+
+        // Subscribe to state changes
+        AdminState.OnStateChanged += HandleStateChanged;
+
+        // Show warning if no owner selected and not on owner select page
+        CheckOwnerWarning();
+    }
+
+    private void HandleStateChanged()
+    {
+        selectedOwner = AdminState.GetSelectedOwner();
+        CheckOwnerWarning();
+        StateHasChanged();
+    }
+
+    private void CheckOwnerWarning()
+    {
+        var currentPath = new Uri(Navigation.Uri).AbsolutePath;
+        showOwnerWarning = selectedOwner == null && 
+                          currentPath != "/admin/owner-select" &&
+                          currentPath != "/admin/dashboard";
+    }
+
+    private async Task ClearOwner()
+    {
+        await AdminState.ClearSelectedOwnerAsync();
+    }
+
+    private void HandleLogout()
+    {
+        Navigation.NavigateTo("/auth/logout", true);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    public void Dispose()
+    {
+        AdminState.OnStateChanged -= HandleStateChanged;
+    }
+}

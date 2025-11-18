@@ -5,77 +5,88 @@
 @inject AdminLoginViewModel AdminViewModel
 @inject NavigationManager Navigation
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
-    <MudPaper Elevation="4" Class="pa-6" Style="border-radius: 16px;">
+<link href="/css/auth.css" rel="stylesheet" />
+
+<div class="auth-container">
+    <div class="auth-card">
         
-        <div class="d-flex flex-column align-center mb-6">
-            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-            <MudText Typo="Typo.h4" Align="Align.Center">خوش آمدید</MudText>
-            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
-                @(isAdminMode ? "ورود مدیر" : "کد ملی خود را وارد کنید")
-            </MudText>
+        <div class="auth-icon">
+            <i class="bi bi-lock-fill"></i>
         </div>
+        
+        <h1 class="auth-title">خوش آمدید</h1>
+        <p class="auth-subtitle">
+            @(isAdminMode ? "ورود مدیر" : "کد ملی خود را وارد کنید")
+        </p>
 
         @if (CurrentViewModel.HasError)
         {
-            <MudAlert Severity="Severity.Error" Class="mb-4">
-                @CurrentViewModel.ErrorMessage
-            </MudAlert>
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>@CurrentViewModel.ErrorMessage</div>
+            </div>
         }
 
-        <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" FullWidth="true" Class="mb-4">
-            <MudButton OnClick="@(() => isAdminMode = false)" 
-                       Variant="@(isAdminMode ? Variant.Outlined : Variant.Filled)"
-                       StartIcon="@Icons.Material.Filled.Person">
+        <div class="btn-group w-100 mb-4" role="group">
+            <button type="button" 
+                    class="btn @(isAdminMode ? "btn-outline-primary" : "btn-primary")" 
+                    @onclick="@(() => isAdminMode = false)">
+                <i class="bi bi-person me-2"></i>
                 ورود کاربر
-            </MudButton>
-            <MudButton OnClick="@(() => isAdminMode = true)"
-                       Variant="@(isAdminMode ? Variant.Filled : Variant.Outlined)" 
-                       StartIcon="@Icons.Material.Filled.Shield">
+            </button>
+            <button type="button" 
+                    class="btn @(isAdminMode ? "btn-primary" : "btn-outline-primary")" 
+                    @onclick="@(() => isAdminMode = true)">
+                <i class="bi bi-shield-fill-check me-2"></i>
                 ورود مدیر
-            </MudButton>
-        </MudButtonGroup>
+            </button>
+        </div>
 
         @if (!isAdminMode)
         {
             <EditForm Model="@UserViewModel" OnValidSubmit="HandleUserLogin">
                 <DataAnnotationsValidator />
                 
-                <MudTextField @bind-Value="UserViewModel.NationalCode"
-                              Label="کد ملی"
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.CreditCard"
-                              MaxLength="10"
-                              Disabled="@UserViewModel.IsLoading"
-                              HelperText="کد ملی 10 رقمی خود را وارد کنید"
-                              Class="mb-4" />
+                <div class="mb-3">
+                    <label for="nationalCode" class="form-label">کد ملی</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-credit-card"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="nationalCode"
+                               @bind="UserViewModel.NationalCode"
+                               maxlength="10"
+                               disabled="@UserViewModel.IsLoading"
+                               placeholder="کد ملی 10 رقمی خود را وارد کنید" />
+                    </div>
+                    <small class="text-muted">کد ملی 10 رقمی خود را وارد کنید</small>
+                </div>
 
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Size="Size.Large"
-                           Disabled="@UserViewModel.IsLoading">
+                <button type="submit"
+                        class="btn btn-primary btn-lg w-100"
+                        disabled="@UserViewModel.IsLoading">
                     @if (UserViewModel.IsLoading)
                     {
-                        <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" />
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         <span>در حال ورود...</span>
                     }
                     else
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.Login" Class="me-2" />
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
                         <span>ورود به سیستم</span>
                     }
-                </MudButton>
+                </button>
             </EditForm>
 
-            <MudDivider Class="my-4" />
+            <hr class="my-4" />
 
             <div class="text-center">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    حساب کاربری ندارید؟ <MudButton Href="/auth/register" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">ثبت نام کنید</MudButton>
-                </MudText>
+                <p class="text-muted mb-0">
+                    حساب کاربری ندارید؟ 
+                    <a href="/auth/register" class="text-decoration-none fw-bold">ثبت نام کنید</a>
+                </p>
             </div>
         }
         else
@@ -83,59 +94,72 @@
             <EditForm Model="@AdminViewModel" OnValidSubmit="HandleAdminLogin">
                 <DataAnnotationsValidator />
                 
-                <MudTextField @bind-Value="AdminViewModel.Email"
-                              Label="ایمیل"
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Email"
-                              InputType="InputType.Email"
-                              Disabled="@AdminViewModel.IsLoading"
-                              Class="mb-3" />
+                <div class="mb-3">
+                    <label for="email" class="form-label">ایمیل</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <input type="email" 
+                               class="form-control" 
+                               id="email"
+                               @bind="AdminViewModel.Email"
+                               disabled="@AdminViewModel.IsLoading"
+                               placeholder="ایمیل خود را وارد کنید" />
+                    </div>
+                </div>
 
-                <MudTextField @bind-Value="AdminViewModel.Password"
-                              Label="رمز عبور"
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Lock"
-                              InputType="InputType.Password"
-                              Disabled="@AdminViewModel.IsLoading"
-                              Class="mb-3" />
+                <div class="mb-3">
+                    <label for="password" class="form-label">رمز عبور</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="password"
+                               @bind="AdminViewModel.Password"
+                               disabled="@AdminViewModel.IsLoading"
+                               placeholder="رمز عبور خود را وارد کنید" />
+                    </div>
+                </div>
 
-                <MudCheckBox @bind-Value="AdminViewModel.RememberMe"
-                             Label="مرا به خاطر بسپار"
-                             Color="Color.Primary"
-                             Disabled="@AdminViewModel.IsLoading"
-                             Class="mb-4" />
+                <div class="form-check mb-4">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           id="rememberMe"
+                           @bind="AdminViewModel.RememberMe"
+                           disabled="@AdminViewModel.IsLoading" />
+                    <label class="form-check-label" for="rememberMe">
+                        مرا به خاطر بسپار
+                    </label>
+                </div>
 
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Size="Size.Large"
-                           Disabled="@AdminViewModel.IsLoading"
-                           Class="mb-4">
+                <button type="submit"
+                        class="btn btn-primary btn-lg w-100 mb-4"
+                        disabled="@AdminViewModel.IsLoading">
                     @if (AdminViewModel.IsLoading)
                     {
-                        <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" />
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         <span>در حال ورود...</span>
                     }
                     else
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.Login" Class="me-2" />
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
                         <span>ورود به پنل مدیریت</span>
                     }
-                </MudButton>
+                </button>
 
-                <MudAlert Severity="Severity.Info" Dense="true">
+                <div class="alert alert-info" role="alert">
                     <strong>Demo:</strong><br />
                     ایمیل: <code>admin@picoplus.app</code><br />
                     رمز عبور: <code>Admin@123</code>
-                </MudAlert>
+                </div>
             </EditForm>
         }
         
-    </MudPaper>
-</MudContainer>
+    </div>
+</div>
 
 @code {
     private bool isAdminMode = false;
