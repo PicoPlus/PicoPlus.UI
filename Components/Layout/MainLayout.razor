@@ -1,14 +1,17 @@
 ﻿@inherits LayoutComponentBase
 @using PicoPlus.Components.Shared
 
-<link href="/css/toast.css" rel="stylesheet" />
-
-<div class="container-fluid py-2 d-flex justify-content-end">
-    <CultureSwitcher />
-</div>
-
-<div class="page">
-    @Body
-</div>
+<MudLayout>
+    <MudAppBar Elevation="0" Dense="true">
+        <MudSpacer />
+        <CultureSwitcher />
+    </MudAppBar>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
 <ToastContainer />
