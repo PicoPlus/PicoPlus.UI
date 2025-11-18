@@ -4,9 +4,11 @@
 @using ContactModel = PicoPlus.Models.CRM.Objects.Contact
 @using PicoPlus.State.Admin
 @using PicoPlus.Services.Admin
+@using Microsoft.JSInterop
 @inject ContactService ContactService
 @inject AdminStateService AdminState
 @inject ILogger<ContactManagement> Logger
+@inject IJSRuntime JSRuntime
 
 <PageTitle>?????? ??????? - ??? ??????</PageTitle>
 
@@ -153,6 +155,90 @@
     }
 </div>
 
+<!-- Create/Edit Modal -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi @(isEditMode ? "bi-pencil" : "bi-person-plus") me-2"></i>
+                        @(isEditMode ? "ویرایش مخاطب" : "افزودن مخاطب جدید")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">نام <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" @bind="contactForm.FirstName" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" @bind="contactForm.LastName" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ایمیل</label>
+                                <input type="email" class="form-control" @bind="contactForm.Email" 
+                                       placeholder="example@email.com" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">تلفن</label>
+                                <input type="tel" class="form-control" @bind="contactForm.Phone" 
+                                       placeholder="09123456789" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شرکت</label>
+                                <input type="text" class="form-control" @bind="contactForm.Company" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">موقعیت شغلی</label>
+                                <input type="text" class="form-control" @bind="contactForm.JobTitle" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شهر</label>
+                                <input type="text" class="form-control" @bind="contactForm.City" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">کشور</label>
+                                <input type="text" class="form-control" @bind="contactForm.Country" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">وبسایت</label>
+                                <input type="url" class="form-control" @bind="contactForm.Website" 
+                                       placeholder="https://example.com" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">کد ملی</label>
+                                <input type="text" class="form-control" @bind="contactForm.NationalCode" 
+                                       placeholder="0123456789" maxlength="10" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">یادداشت</label>
+                                <textarea class="form-control" @bind="contactForm.Notes" 
+                                          rows="3" placeholder="یادداشت‌های اضافی در مورد این مخاطب..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">انصراف</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveContact" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        <i class="bi bi-check-lg me-2"></i>
+                        @(isEditMode ? "ذخیره تغییرات" : "ایجاد مخاطب")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool isLoading = true;
     private Models.Admin.HubSpotOwner? selectedOwner;
@@ -160,6 +246,12 @@
     private List<ContactModel.Search.Response.Result> filteredContacts = new();
     private string searchTerm = string.Empty;
     private int pageSize = 50;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string? editingContactId = null;
+
+    private ContactFormModel contactForm = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -222,21 +314,42 @@
 
     private void ShowCreateDialog()
     {
-        Logger.LogInformation("Opening create contact dialog");
+        contactForm = new ContactFormModel();
+        isEditMode = false;
+        editingContactId = null;
+        showModal = true;
     }
 
     private void ViewContact(ContactModel.Search.Response.Result contact)
     {
         Logger.LogInformation("Viewing contact: {Id}", contact.id);
+        // TODO: Implement view details page
     }
 
     private void EditContact(ContactModel.Search.Response.Result contact)
     {
-        Logger.LogInformation("Editing contact: {Id}", contact.id);
+        contactForm = new ContactFormModel
+        {
+            FirstName = contact.properties?.firstname ?? "",
+            LastName = contact.properties?.lastname ?? "",
+            Email = contact.properties?.email ?? "",
+            Phone = contact.properties?.phone ?? "",
+            NationalCode = contact.properties?.natcode ?? ""
+        };
+        
+        editingContactId = contact.id;
+        isEditMode = true;
+        showModal = true;
     }
 
     private async Task DeleteContact(ContactModel.Search.Response.Result contact)
     {
+        var name = GetFullName(contact);
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"آیا مطمئن هستید که می‌خواهید مخاطب '{name}' را حذف کنید؟");
+        
+        if (!confirmed) return;
+
         try
         {
             await ContactService.Delete(contact.id);
@@ -249,11 +362,109 @@
         }
     }
 
+    private async Task SaveContact()
+    {
+        if (string.IsNullOrWhiteSpace(contactForm.FirstName) || string.IsNullOrWhiteSpace(contactForm.LastName))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "لطفاً نام و نام خانوادگی را وارد کنید");
+            return;
+        }
+
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var properties = new Dictionary<string, string>
+            {
+                ["firstname"] = contactForm.FirstName,
+                ["lastname"] = contactForm.LastName
+            };
+
+            if (!string.IsNullOrWhiteSpace(contactForm.Email))
+                properties["email"] = contactForm.Email;
+            if (!string.IsNullOrWhiteSpace(contactForm.Phone))
+                properties["phone"] = contactForm.Phone;
+            if (!string.IsNullOrWhiteSpace(contactForm.Company))
+                properties["company"] = contactForm.Company;
+            if (!string.IsNullOrWhiteSpace(contactForm.JobTitle))
+                properties["jobtitle"] = contactForm.JobTitle;
+            if (!string.IsNullOrWhiteSpace(contactForm.City))
+                properties["city"] = contactForm.City;
+            if (!string.IsNullOrWhiteSpace(contactForm.Country))
+                properties["country"] = contactForm.Country;
+            if (!string.IsNullOrWhiteSpace(contactForm.Website))
+                properties["website"] = contactForm.Website;
+            if (!string.IsNullOrWhiteSpace(contactForm.NationalCode))
+                properties["natcode"] = contactForm.NationalCode;
+            if (!string.IsNullOrWhiteSpace(contactForm.Notes))
+                properties["notes"] = contactForm.Notes;
+
+            if (isEditMode && !string.IsNullOrEmpty(editingContactId))
+            {
+                await ContactService.Update(editingContactId, properties);
+            }
+            else
+            {
+                var request = new ContactModel.Create.Request
+                {
+                    properties = new ContactModel.Create.Request.Properties
+                    {
+                        firstname = contactForm.FirstName,
+                        lastname = contactForm.LastName,
+                        email = contactForm.Email,
+                        phone = contactForm.Phone,
+                        natcode = contactForm.NationalCode
+                    }
+                };
+                await ContactService.Create(request);
+            }
+
+            CloseModal();
+            await LoadContacts();
+            
+            Logger.LogInformation("Contact {Action}: {Name}", isEditMode ? "updated" : "created", 
+                $"{contactForm.FirstName} {contactForm.LastName}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving contact");
+            await JSRuntime.InvokeVoidAsync("alert", $"خطا در ذخیره مخاطب: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        contactForm = new ContactFormModel();
+        isEditMode = false;
+        editingContactId = null;
+    }
+
     private string GetFullName(ContactModel.Search.Response.Result contact)
     {
         var firstName = contact.properties?.firstname ?? "";
         var lastName = contact.properties?.lastname ?? "";
         var fullName = $"{firstName} {lastName}".Trim();
-        return string.IsNullOrEmpty(fullName) ? "???? ???" : fullName;
+        return string.IsNullOrEmpty(fullName) ? "بدون نام" : fullName;
+    }
+
+    private class ContactFormModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
+        public string JobTitle { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public string NationalCode { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
     }
 }
