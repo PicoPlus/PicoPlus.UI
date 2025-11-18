@@ -34,15 +34,40 @@ public class PluginManager
         _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<PluginManager>();
 
-        // Default plugins directory in the application root
-        _pluginsDirectory = Path.Combine(_environment.ContentRootPath, "Plugins");
+        // Determine plugins directory with configurable path support
+        // Priority: 1) PICOPLUS_PLUGINS_PATH env var, 2) /tmp/Plugins, 3) ContentRootPath/Plugins
+        var envPluginsPath = Environment.GetEnvironmentVariable("PICOPLUS_PLUGINS_PATH");
+        
+        if (!string.IsNullOrWhiteSpace(envPluginsPath))
+        {
+            _pluginsDirectory = envPluginsPath;
+            _logger.LogInformation("Using plugins directory from PICOPLUS_PLUGINS_PATH: {PluginsDirectory}", _pluginsDirectory);
+        }
+        else if (Directory.Exists("/tmp") || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            _pluginsDirectory = "/tmp/Plugins";
+            _logger.LogInformation("Using default writable plugins directory: {PluginsDirectory}", _pluginsDirectory);
+        }
+        else
+        {
+            _pluginsDirectory = Path.Combine(_environment.ContentRootPath, "Plugins");
+            _logger.LogInformation("Using application root plugins directory: {PluginsDirectory}", _pluginsDirectory);
+        }
+
         _pluginStateFile = Path.Combine(_pluginsDirectory, "plugin-state.json");
 
         // Ensure plugins directory exists
-        if (!Directory.Exists(_pluginsDirectory))
+        try
         {
-            Directory.CreateDirectory(_pluginsDirectory);
-            _logger.LogInformation("Created plugins directory: {PluginsDirectory}", _pluginsDirectory);
+            if (!Directory.Exists(_pluginsDirectory))
+            {
+                Directory.CreateDirectory(_pluginsDirectory);
+                _logger.LogInformation("Created plugins directory: {PluginsDirectory}", _pluginsDirectory);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create plugins directory: {PluginsDirectory}. The application may not function correctly.", _pluginsDirectory);
         }
     }
 
