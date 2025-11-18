@@ -1,0 +1,21 @@
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card.border-success {
+    border-width: 2px;
+}
+
+.toast-container {
+    z-index: 1050;
+}
+
+.btn-group .btn {
+    flex: 1;
+}

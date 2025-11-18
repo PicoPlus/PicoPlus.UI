@@ -5,6 +5,7 @@ using PicoPlus.Infrastructure.Authorization;
 using PicoPlus.Infrastructure.Http;
 using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
+using PicoPlus.Infrastructure.Plugins;
 using PicoPlus.Services.Admin;
 using PicoPlus.Services.Auth;
 using PicoPlus.State.Admin;
@@ -184,7 +185,34 @@ builder.Services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();
 
 builder.Services.AddRazorPages();
 
+// Plugin System - Initialize PluginManager as a singleton
+// Note: We need to create it after services are configured but before app is built
+var tempServiceProvider = builder.Services.BuildServiceProvider();
+var pluginManager = new PluginManager(
+    builder.Services,
+    tempServiceProvider,
+    builder.Configuration,
+    builder.Environment,
+    tempServiceProvider.GetRequiredService<ILoggerFactory>()
+);
+
+// Register PluginManager as singleton for injection
+builder.Services.AddSingleton(pluginManager);
+
 var app = builder.Build();
+
+// Load plugins after app is built
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Discovering and loading plugins...");
+try
+{
+    await pluginManager.DiscoverAndLoadPluginsAsync();
+    logger.LogInformation("Plugin system initialized successfully");
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "Failed to initialize plugin system");
+}
 
 // Development logging
 if (app.Environment.IsDevelopment())
