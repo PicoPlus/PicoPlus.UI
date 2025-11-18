@@ -212,7 +212,14 @@ public partial class RegisterViewModel : BaseViewModel
 
             // Generate OTP
             var otp = _otpService.GenerateOtp();
-            _otpService.StoreOtp(Phone, otp);
+            
+            // Store OTP with rate limiting
+            if (!_otpService.StoreOtp(Phone, otp, out var rateLimitError))
+            {
+                ErrorMessage = rateLimitError;
+                HasError = true;
+                return;
+            }
 
             // Send OTP via SMS
             await _smsService.SendOtpAsync(Phone, otp);

@@ -192,9 +192,14 @@
         isLoading = true;
         try
         {
-            // Generate and store OTP
+            // Generate and store OTP with rate limiting
             var otp = OtpService.GenerateOtp();
-            OtpService.StoreOtp(newMobile, otp);
+            
+            if (!OtpService.StoreOtp(newMobile, otp, out var rateLimitError))
+            {
+                errorMessage = rateLimitError;
+                return;
+            }
 
             // Send OTP via SMS
             await SmsService.SendOtpAsync(newMobile, otp);

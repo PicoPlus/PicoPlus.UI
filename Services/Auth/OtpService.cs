@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace PicoPlus.Services.Auth;
 
@@ -9,7 +10,10 @@ public class OtpService
 {
     private readonly ILogger<OtpService> _logger;
     private readonly Dictionary<string, OtpData> _otpStore = new();
+    private readonly Dictionary<string, RateLimitData> _rateLimitStore = new();
     private readonly TimeSpan _otpExpiration = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _rateLimitWindow = TimeSpan.FromMinutes(15);
+    private const int MaxOtpRequestsPerWindow = 5;
 
     public OtpService(ILogger<OtpService> logger)
     {
@@ -17,22 +21,31 @@ public class OtpService
     }
 
     /// <summary>
-    /// Generate a new 6-digit OTP code
+    /// Generate a new 6-digit OTP code using cryptographically secure random number generation
     /// </summary>
     public string GenerateOtp()
     {
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
-        _logger.LogDebug("Generated OTP code: {Code}", code);
+        // Use cryptographically secure random number generator
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        _logger.LogDebug("Generated OTP code");
         return code;
     }
 
     /// <summary>
-    /// Store OTP code for a phone number
+    /// Store OTP code for a phone number with rate limiting
     /// </summary>
-    public void StoreOtp(string phoneNumber, string otpCode)
+    public bool StoreOtp(string phoneNumber, string otpCode, out string errorMessage)
     {
+        errorMessage = string.Empty;
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
+
+        // Check rate limit
+        if (!CheckRateLimit(normalizedPhone))
+        {
+            errorMessage = "تعداد درخواست‌های OTP بیش از حد مجاز است. لطفاً بعداً تلاش کنید.";
+            _logger.LogWarning("Rate limit exceeded for phone: {Phone}", normalizedPhone);
+            return false;
+        }
 
         _otpStore[normalizedPhone] = new OtpData
         {
@@ -42,8 +55,47 @@ public class OtpService
             AttemptCount = 0
         };
 
-        _logger.LogInformation("OTP stored for phone: {Phone}, Code: {Code}, expires at: {ExpiresAt}",
-            normalizedPhone, otpCode, _otpStore[normalizedPhone].ExpiresAt);
+        _logger.LogInformation("OTP stored for phone: {Phone}, expires at: {ExpiresAt}",
+            normalizedPhone, _otpStore[normalizedPhone].ExpiresAt);
+        
+        return true;
+    }
+
+    /// <summary>
+    /// Check if rate limit is exceeded for a phone number
+    /// </summary>
+    private bool CheckRateLimit(string normalizedPhone)
+    {
+        var now = DateTime.UtcNow;
+        
+        if (!_rateLimitStore.ContainsKey(normalizedPhone))
+        {
+            _rateLimitStore[normalizedPhone] = new RateLimitData
+            {
+                WindowStart = now,
+                RequestCount = 1
+            };
+            return true;
+        }
+
+        var rateLimitData = _rateLimitStore[normalizedPhone];
+        
+        // Reset window if expired
+        if (now - rateLimitData.WindowStart > _rateLimitWindow)
+        {
+            rateLimitData.WindowStart = now;
+            rateLimitData.RequestCount = 1;
+            return true;
+        }
+
+        // Check if limit exceeded
+        if (rateLimitData.RequestCount >= MaxOtpRequestsPerWindow)
+        {
+            return false;
+        }
+
+        rateLimitData.RequestCount++;
+        return true;
     }
 
     /// <summary>
@@ -53,7 +105,7 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        _logger.LogInformation("Validating OTP - Phone: {Phone}, Entered Code: {EnteredCode}", normalizedPhone, enteredCode);
+        _logger.LogInformation("Validating OTP for phone: {Phone}", normalizedPhone);
 
         if (!_otpStore.ContainsKey(normalizedPhone))
         {
@@ -67,8 +119,8 @@ public class OtpService
 
         var otpData = _otpStore[normalizedPhone];
 
-        _logger.LogInformation("Stored OTP - Code: {StoredCode}, CreatedAt: {CreatedAt}, ExpiresAt: {ExpiresAt}, Attempts: {Attempts}",
-            otpData.Code, otpData.CreatedAt, otpData.ExpiresAt, otpData.AttemptCount);
+        _logger.LogInformation("Stored OTP - CreatedAt: {CreatedAt}, ExpiresAt: {ExpiresAt}, Attempts: {Attempts}",
+            otpData.CreatedAt, otpData.ExpiresAt, otpData.AttemptCount);
 
         // Check expiration
         if (DateTime.UtcNow > otpData.ExpiresAt)
@@ -101,8 +153,8 @@ public class OtpService
         var normalizedStoredCode = otpData.Code.Trim();
         var normalizedEnteredCode = enteredCode.Trim();
 
-        _logger.LogInformation("Comparing codes - Stored: '{StoredCode}' (Length: {StoredLength}), Entered: '{EnteredCode}' (Length: {EnteredLength})",
-            normalizedStoredCode, normalizedStoredCode.Length, normalizedEnteredCode, normalizedEnteredCode.Length);
+        _logger.LogInformation("Comparing codes - Stored Length: {StoredLength}, Entered Length: {EnteredLength}",
+            normalizedStoredCode.Length, normalizedEnteredCode.Length);
 
         // Validate code
         if (normalizedStoredCode == normalizedEnteredCode)
@@ -217,6 +269,12 @@ public class OtpService
         public DateTime CreatedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
         public int AttemptCount { get; set; }
+    }
+
+    private class RateLimitData
+    {
+        public DateTime WindowStart { get; set; }
+        public int RequestCount { get; set; }
     }
 }
 

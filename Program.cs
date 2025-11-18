@@ -1,5 +1,6 @@
 using Blazored.SessionStorage;
 using Blazored.LocalStorage;
+using MudBlazor.Services;
 using PicoPlus.Components;
 using PicoPlus.Infrastructure.Authorization;
 using PicoPlus.Infrastructure.Http;
@@ -69,6 +70,19 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
+});
+
+// MudBlazor Services
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomLeft;
+    config.SnackbarConfiguration.PreventDuplicates = false;
+    config.SnackbarConfiguration.NewestOnTop = false;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 3000;
+    config.SnackbarConfiguration.HideTransitionDuration = 500;
+    config.SnackbarConfiguration.ShowTransitionDuration = 500;
+    config.SnackbarConfiguration.SnackbarVariant = MudBlazor.Variant.Filled;
 });
 
 // Razor Components
