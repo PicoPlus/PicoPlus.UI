@@ -2,6 +2,7 @@
 
 using PicoPlus.Infrastructure.Plugins;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace SamplePlugin;
 

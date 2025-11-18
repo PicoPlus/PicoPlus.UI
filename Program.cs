@@ -201,8 +201,10 @@ builder.Services.AddSingleton(pluginManager);
 
 var app = builder.Build();
 
-// Load plugins after app is built
+// Get logger for both plugin initialization and development logging
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+// Load plugins after app is built
 logger.LogInformation("Discovering and loading plugins...");
 try
 {
@@ -217,8 +219,6 @@ catch (Exception ex)
 // Development logging
 if (app.Environment.IsDevelopment())
 {
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
     logger.LogInformation("=== Configuration Sources ===");
     logger.LogInformation(".env file loaded: {EnvFileExists}", File.Exists(envPath));
     logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
