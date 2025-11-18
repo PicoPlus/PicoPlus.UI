@@ -33,13 +33,13 @@
             <div class="role-tabs">
                 <button type="button"
                         class="@(isAdminMode ? "role-tab" : "role-tab active")"
-                        @onclick="SwitchToUser"
+                        onclick="@SwitchToUser"
                         disabled="@UserViewModel.IsLoading">
                     <i class="bi bi-person me-2"></i>@L["UserLogin"]
                 </button>
                 <button type="button"
                         class="@(isAdminMode ? "role-tab active" : "role-tab")"
-                        @onclick="SwitchToAdmin"
+                        onclick="@SwitchToAdmin"
                         disabled="@AdminViewModel.IsLoading">
                     <i class="bi bi-shield-check me-2"></i>@L["AdminLogin"]
                 </button>
