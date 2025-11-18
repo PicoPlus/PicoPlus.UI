@@ -1,0 +1,487 @@
+@page "/admin/products"
+@layout Components.Layout.AdminLayout
+@using ProductService = PicoPlus.Services.CRM.Commerce.Product
+@using ProductModel = PicoPlus.Models.CRM.Commerce.Products
+@using PicoPlus.State.Admin
+@using Microsoft.JSInterop
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@inject ProductService ProductService
+@inject AdminStateService AdminState
+@inject ILogger<ProductManagement> Logger
+@inject IJSRuntime JSRuntime
+
+<PageTitle>مدیریت محصولات - پنل ادمین</PageTitle>
+
+<div class="products-page">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h2 class="mb-2">
+                <i class="bi bi-box-seam me-2"></i>
+                مدیریت محصولات
+            </h2>
+            @if (selectedOwner != null)
+            {
+                <p class="text-muted mb-0">کاربر: <strong>@selectedOwner.FullName</strong></p>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" @onclick="ShowCreateDialog">
+                <i class="bi bi-plus-circle me-2"></i>
+                افزودن محصول جدید
+            </button>
+            <button class="btn btn-primary" @onclick="LoadProducts">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                بروزرسانی
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">کل محصولات</div>
+                    <div class="stat-value">@allProducts.Count</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">محصولات فعال</div>
+                    <div class="stat-value">@filteredProducts.Count</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-info">
+                    <i class="bi bi-currency-exchange"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">میانگین قیمت</div>
+                    <div class="stat-value">@GetAveragePrice()</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="جستجو بر اساس نام محصول یا SKU..."
+                               @bind="searchTerm"
+                               @bind:event="oninput"
+                               @onkeyup="HandleSearch" />
+                        @if (!string.IsNullOrWhiteSpace(searchTerm))
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" @bind="sortBy" @bind:after="ApplyFilters">
+                        <option value="name">مرتب‌سازی بر اساس نام</option>
+                        <option value="price_asc">قیمت (کم به زیاد)</option>
+                        <option value="price_desc">قیمت (زیاد به کم)</option>
+                        <option value="newest">جدیدترین</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+            <p class="mt-3 text-muted">در حال بارگذاری محصولات...</p>
+        </div>
+    }
+    else if (!filteredProducts.Any())
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-box-seam display-1 text-muted"></i>
+                <h4 class="mt-3">هیچ محصولی یافت نشد</h4>
+                <p class="text-muted">با کلیک بر روی دکمه "افزودن محصول جدید" اولین محصول خود را ایجاد کنید</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Products Grid -->
+        <div class="row g-4">
+            @foreach (var product in filteredProducts)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="product-card">
+                        <div class="product-header">
+                            <div class="product-icon">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewProduct(product)"
+                                        title="مشاهده جزئیات">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" 
+                                        @onclick="() => EditProduct(product)"
+                                        title="ویرایش">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        @onclick="() => DeleteProduct(product)"
+                                        title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="product-body">
+                            <h5 class="product-name">@product.properties.name</h5>
+                            @if (!string.IsNullOrWhiteSpace(product.properties.hs_sku))
+                            {
+                                <div class="product-sku">SKU: @product.properties.hs_sku</div>
+                            }
+                            <div class="product-price">
+                                @FormatPrice(product.properties.price)
+                            </div>
+                            @if (product.properties.description != null)
+                            {
+                                <div class="product-description">
+                                    @product.properties.description?.ToString()
+                                </div>
+                            }
+                        </div>
+                        <div class="product-footer">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar me-1"></i>
+                                @product.createdAt.ToString("yyyy-MM-dd")
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Create/Edit Modal -->
+    @if (showModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi @(isEditMode ? "bi-pencil" : "bi-plus-circle") me-2"></i>
+                            @(isEditMode ? "ویرایش محصول" : "افزودن محصول جدید")
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">نام محصول <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="productForm.Name" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">قیمت (ریال) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" @bind="productForm.Price" 
+                                           required min="0" step="1000" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SKU</label>
+                                    <input type="text" class="form-control" @bind="productForm.SKU" 
+                                           placeholder="کد محصول" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">توضیحات</label>
+                                    <textarea class="form-control" @bind="productForm.Description" 
+                                              rows="4" placeholder="توضیحات محصول..."></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">انصراف</button>
+                        <button type="button" class="btn btn-primary" @onclick="SaveProduct" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            <i class="bi bi-check-lg me-2"></i>
+                            @(isEditMode ? "ذخیره تغییرات" : "ایجاد محصول")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private Models.Admin.HubSpotOwner? selectedOwner;
+    private List<ProductModel.Get.Response.Result> allProducts = new();
+    private List<ProductModel.Get.Response.Result> filteredProducts = new();
+    private string searchTerm = string.Empty;
+    private string sortBy = "name";
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string? editingProductId = null;
+
+    private ProductFormModel productForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AdminState.InitializeAsync();
+            selectedOwner = AdminState.GetSelectedOwner();
+
+            allProducts = await ProductService.ListAsync();
+            ApplyFilters();
+            
+            Logger.LogInformation("Loaded {Count} products", allProducts.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading products");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleSearch()
+    {
+        ApplyFilters();
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredProducts = allProducts;
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLower();
+            filteredProducts = filteredProducts.Where(p =>
+                (p.properties.name?.ToLower().Contains(term) ?? false) ||
+                (p.properties.hs_sku?.ToLower().Contains(term) ?? false)
+            ).ToList();
+        }
+
+        // Sort
+        filteredProducts = sortBy switch
+        {
+            "price_asc" => filteredProducts.OrderBy(p => ParsePrice(p.properties.price)).ToList(),
+            "price_desc" => filteredProducts.OrderByDescending(p => ParsePrice(p.properties.price)).ToList(),
+            "newest" => filteredProducts.OrderByDescending(p => p.createdAt).ToList(),
+            _ => filteredProducts.OrderBy(p => p.properties.name).ToList()
+        };
+    }
+
+    private void ShowCreateDialog()
+    {
+        productForm = new ProductFormModel();
+        isEditMode = false;
+        editingProductId = null;
+        showModal = true;
+    }
+
+    private void ViewProduct(ProductModel.Get.Response.Result product)
+    {
+        Logger.LogInformation("Viewing product: {Id}", product.id);
+        // TODO: Implement view details
+    }
+
+    private void EditProduct(ProductModel.Get.Response.Result product)
+    {
+        productForm = new ProductFormModel
+        {
+            Name = product.properties.name ?? "",
+            Price = ParsePrice(product.properties.price),
+            SKU = product.properties.hs_sku ?? "",
+            Description = product.properties.description?.ToString() ?? ""
+        };
+        
+        editingProductId = product.id;
+        isEditMode = true;
+        showModal = true;
+    }
+
+    private async Task DeleteProduct(ProductModel.Get.Response.Result product)
+    {
+        var name = product.properties.name ?? "این محصول";
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"آیا مطمئن هستید که می‌خواهید محصول '{name}' را حذف کنید؟");
+        
+        if (!confirmed) return;
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("HubSpot");
+            var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? Configuration["HubSpot:Token"];
+            
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"/crm/v3/objects/products/{product.id}");
+            request.Headers.Add("Authorization", $"Bearer {token}");
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            await LoadProducts();
+            Logger.LogInformation("Product deleted: {Id}", product.id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting product: {Id}", product.id);
+            await JSRuntime.InvokeVoidAsync("alert", $"خطا در حذف محصول: {ex.Message}");
+        }
+    }
+
+    private async Task SaveProduct()
+    {
+        if (string.IsNullOrWhiteSpace(productForm.Name))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "لطفاً نام محصول را وارد کنید");
+            return;
+        }
+
+        if (productForm.Price <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "لطفاً قیمت معتبر وارد کنید");
+            return;
+        }
+
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("HubSpot");
+            var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? Configuration["HubSpot:Token"];
+
+            var properties = new Dictionary<string, string>
+            {
+                ["name"] = productForm.Name,
+                ["price"] = productForm.Price.ToString()
+            };
+
+            if (!string.IsNullOrWhiteSpace(productForm.SKU))
+                properties["hs_sku"] = productForm.SKU;
+            if (!string.IsNullOrWhiteSpace(productForm.Description))
+                properties["description"] = productForm.Description;
+
+            var payload = new { properties };
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            HttpRequestMessage request;
+            if (isEditMode && !string.IsNullOrEmpty(editingProductId))
+            {
+                request = new HttpRequestMessage(HttpMethod.Patch, $"/crm/v3/objects/products/{editingProductId}");
+            }
+            else
+            {
+                request = new HttpRequestMessage(HttpMethod.Post, "/crm/v3/objects/products");
+            }
+
+            request.Headers.Add("Authorization", $"Bearer {token}");
+            request.Content = content;
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            CloseModal();
+            await LoadProducts();
+            
+            Logger.LogInformation("Product {Action}: {Name}", isEditMode ? "updated" : "created", productForm.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving product");
+            await JSRuntime.InvokeVoidAsync("alert", $"خطا در ذخیره محصول: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        productForm = new ProductFormModel();
+        isEditMode = false;
+        editingProductId = null;
+    }
+
+    private decimal ParsePrice(string? price)
+    {
+        if (string.IsNullOrWhiteSpace(price)) return 0;
+        return decimal.TryParse(price, out var result) ? result : 0;
+    }
+
+    private string FormatPrice(string? price)
+    {
+        var value = ParsePrice(price);
+        return value >= 1_000_000
+            ? $"{(value / 1_000_000):F1}M ریال"
+            : $"{value:N0} ریال";
+    }
+
+    private string GetAveragePrice()
+    {
+        if (!allProducts.Any()) return "0 ریال";
+        var avg = allProducts.Average(p => ParsePrice(p.properties.price));
+        return FormatPrice(avg.ToString());
+    }
+
+    private class ProductFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; } = 0;
+        public string SKU { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+}
