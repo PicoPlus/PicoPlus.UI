@@ -13,7 +13,7 @@ namespace PicoPlus.ViewModels.Auth;
 /// ViewModel for Login page
 /// Handles national code verification and HubSpot contact lookup
 /// </summary>
-public partial class LoginViewModel : BaseViewModel
+public partial class LoginViewModel : BaseViewModel, IAuthBaseViewModel
 {
     private readonly ContactService _contactService;
     private readonly ContactUpdateService _contactUpdateService;
