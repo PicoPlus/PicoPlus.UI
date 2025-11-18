@@ -139,6 +139,14 @@ public partial class AdminLoginViewModel : ObservableObject, IAuthBaseViewModel
 
     private async Task<bool> ValidateAdminCredentialsAsync()
     {
+        // Normalize email for comparison
+        var normalizedEmail = Email?.Trim().ToLowerInvariant();
+        
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return false;
+        }
+
         var validAdmins = new Dictionary<string, string>
         {
             { "admin@picoplus.app", "Admin@123" },
@@ -146,9 +154,9 @@ public partial class AdminLoginViewModel : ObservableObject, IAuthBaseViewModel
             { "manager@picoplus.app", "Manager@123" }
         };
 
-        if (validAdmins.TryGetValue(Email.ToLowerInvariant(), out var validPassword))
+        if (validAdmins.TryGetValue(normalizedEmail, out var validPassword))
         {
-            return Password == validPassword;
+            return !string.IsNullOrWhiteSpace(Password) && Password == validPassword;
         }
 
         return false;
@@ -156,11 +164,19 @@ public partial class AdminLoginViewModel : ObservableObject, IAuthBaseViewModel
 
     private string GetAdminName(string email)
     {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return "Admin";
+        }
+
         var atIndex = email.IndexOf('@');
         if (atIndex > 0)
         {
             var name = email.Substring(0, atIndex);
-            return char.ToUpper(name[0]) + name.Substring(1);
+            if (!string.IsNullOrWhiteSpace(name) && name.Length > 0)
+            {
+                return char.ToUpper(name[0]) + name.Substring(1);
+            }
         }
         return "Admin";
     }

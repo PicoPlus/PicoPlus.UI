@@ -43,13 +43,19 @@ public class AdminAuthorizationHandler
             // Check for admin role in session storage
             var adminRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
             
+            if (string.IsNullOrWhiteSpace(adminRole))
+            {
+                _logger.LogWarning("User role is null or empty");
+                return false;
+            }
+            
             if (adminRole == "Admin" || adminRole == "SuperAdmin")
             {
                 _logger.LogInformation("User has admin access: {Role}", adminRole);
                 return true;
             }
 
-            _logger.LogWarning("User does not have admin role: {Role}", adminRole ?? "None");
+            _logger.LogWarning("User does not have admin role: {Role}", adminRole);
             return false;
         }
         catch (Exception ex)
@@ -84,17 +90,27 @@ public class AdminAuthorizationHandler
         try
         {
             var isAdmin = await IsAdminAsync(cancellationToken);
-            if (!isAdmin) return null;
+            if (!isAdmin) 
+            {
+                _logger.LogWarning("Cannot get admin user info: user is not an admin");
+                return null;
+            }
 
             var userName = await _sessionStorage.GetItemAsync<string>("user_name", cancellationToken);
             var userEmail = await _sessionStorage.GetItemAsync<string>("user_email", cancellationToken);
             var userRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
 
+            if (string.IsNullOrWhiteSpace(userRole))
+            {
+                _logger.LogWarning("User role is null or empty in session storage");
+                return null;
+            }
+
             return new AdminUserInfo
             {
-                Name = userName ?? "Admin",
+                Name = string.IsNullOrWhiteSpace(userName) ? "Admin" : userName,
                 Email = userEmail ?? "",
-                Role = userRole ?? "Admin"
+                Role = userRole
             };
         }
         catch (Exception ex)
