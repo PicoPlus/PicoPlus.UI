@@ -1,0 +1,301 @@
+@page "/admin/crm-hub"
+@layout Components.Layout.AdminLayout
+@using PicoPlus.State.Admin
+@inject AdminStateService AdminState
+@inject NavigationManager Navigation
+@inject ILogger<CRMHub> Logger
+
+<PageTitle>مرکز مدیریت CRM - PicoPlus</PageTitle>
+
+<div class="crm-hub-page">
+    <!-- Welcome Header -->
+    <div class="welcome-section mb-5">
+        <div class="text-center">
+            <div class="hub-icon mb-3">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+            </div>
+            <h1 class="display-5 fw-bold mb-3">مرکز مدیریت جامع HubSpot CRM</h1>
+            <p class="lead text-muted mb-4">
+                دسترسی کامل به تمام عملیات CRUD برای مدیریت اطلاعات HubSpot
+            </p>
+            @if (selectedOwner != null)
+            {
+                <div class="selected-owner-badge">
+                    <i class="bi bi-person-check-fill me-2"></i>
+                    کاربر فعال: <strong>@selectedOwner.FullName</strong>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CRM Objects Grid -->
+    <div class="row g-4 mb-5">
+        <!-- Contacts Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/contacts\")">
+                <div class="card-icon contacts-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <h3 class="card-title">مخاطبین (Contacts)</h3>
+                <p class="card-description">
+                    مدیریت کامل مخاطبین شامل ایجاد، ویرایش، حذف و جستجوی پیشرفته
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-plus-circle"></i> ایجاد</span>
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-pencil"></i> ویرایش</span>
+                    <span class="feature-badge"><i class="bi bi-trash"></i> حذف</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت مخاطبین</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deals Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/deals\")">
+                <div class="card-icon deals-icon">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <h3 class="card-title">معاملات (Deals)</h3>
+                <p class="card-description">
+                    مدیریت کامل معاملات با امکان ردیابی pipeline و مراحل مختلف
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-plus-circle"></i> ایجاد</span>
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-pencil"></i> ویرایش</span>
+                    <span class="feature-badge"><i class="bi bi-trash"></i> حذف</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت معاملات</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Companies Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/companies\")">
+                <div class="card-icon companies-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <h3 class="card-title">شرکت‌ها (Companies)</h3>
+                <p class="card-description">
+                    مدیریت اطلاعات شرکت‌ها و سازمان‌های مرتبط با کسب و کار
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-plus-circle"></i> ایجاد</span>
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-pencil"></i> ویرایش</span>
+                    <span class="feature-badge"><i class="bi bi-trash"></i> حذف</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت شرکت‌ها</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/tickets\")">
+                <div class="card-icon tickets-icon">
+                    <i class="bi bi-ticket-perforated-fill"></i>
+                </div>
+                <h3 class="card-title">تیکت‌ها (Tickets)</h3>
+                <p class="card-description">
+                    مدیریت تیکت‌های پشتیبانی و درخواست‌های مشتریان
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-plus-circle"></i> ایجاد</span>
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-pencil"></i> ویرایش</span>
+                    <span class="feature-badge"><i class="bi bi-trash"></i> حذف</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت تیکت‌ها</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/products\")">
+                <div class="card-icon products-icon">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+                <h3 class="card-title">محصولات (Products)</h3>
+                <p class="card-description">
+                    مدیریت کاتالوگ محصولات، قیمت‌گذاری و موجودی
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-plus-circle"></i> ایجاد</span>
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-pencil"></i> ویرایش</span>
+                    <span class="feature-badge"><i class="bi bi-trash"></i> حذف</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت محصولات</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipelines Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="crm-object-card" @onclick="() => NavigateTo(\"/admin/pipelines\")">
+                <div class="card-icon pipelines-icon">
+                    <i class="bi bi-funnel-fill"></i>
+                </div>
+                <h3 class="card-title">خطوط فروش (Pipelines)</h3>
+                <p class="card-description">
+                    مدیریت و پیکربندی خطوط فروش و مراحل معاملات
+                </p>
+                <div class="card-features">
+                    <span class="feature-badge"><i class="bi bi-eye"></i> مشاهده</span>
+                    <span class="feature-badge"><i class="bi bi-gear"></i> تنظیمات</span>
+                    <span class="feature-badge"><i class="bi bi-diagram-3"></i> مراحل</span>
+                </div>
+                <div class="card-action">
+                    <span>مدیریت Pipeline</span>
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Features Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="section-header mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-stars me-2"></i>
+                    امکانات پیشرفته
+                </h2>
+            </div>
+        </div>
+
+        <!-- Batch Operations -->
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card" @onclick="() => NavigateTo(\"/admin/batch-operations\")">
+                <div class="feature-icon">
+                    <i class="bi bi-layers-fill"></i>
+                </div>
+                <h4>عملیات گروهی</h4>
+                <p>ایجاد، ویرایش و حذف دسته‌جمعی رکوردها</p>
+            </div>
+        </div>
+
+        <!-- Import/Export -->
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card" @onclick="() => NavigateTo(\"/admin/import-export\")">
+                <div class="feature-icon">
+                    <i class="bi bi-arrow-down-up"></i>
+                </div>
+                <h4>درون‌ریزی و برون‌ریزی</h4>
+                <p>انتقال داده‌ها از/به فرمت‌های مختلف</p>
+            </div>
+        </div>
+
+        <!-- Advanced Search -->
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card" @onclick="() => NavigateTo(\"/admin/advanced-search\")">
+                <div class="feature-icon">
+                    <i class="bi bi-search-heart"></i>
+                </div>
+                <h4>جستجوی پیشرفته</h4>
+                <p>جستجو با فیلترهای پیچیده و شرایط چندگانه</p>
+            </div>
+        </div>
+
+        <!-- Associations -->
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card" @onclick="() => NavigateTo(\"/admin/associations\")">
+                <div class="feature-icon">
+                    <i class="bi bi-diagram-3-fill"></i>
+                </div>
+                <h4>مدیریت ارتباطات</h4>
+                <p>ایجاد و مدیریت ارتباطات بین اشیاء</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="section-header mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-bar-chart-line-fill me-2"></i>
+                    آمار سریع
+                </h2>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card-mini">
+                <div class="stat-icon-mini bg-primary">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stat-content-mini">
+                    <div class="stat-label-mini">مخاطبین</div>
+                    <div class="stat-value-mini">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card-mini">
+                <div class="stat-icon-mini bg-success">
+                    <i class="bi bi-briefcase"></i>
+                </div>
+                <div class="stat-content-mini">
+                    <div class="stat-label-mini">معاملات فعال</div>
+                    <div class="stat-value-mini">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card-mini">
+                <div class="stat-icon-mini bg-warning">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="stat-content-mini">
+                    <div class="stat-label-mini">شرکت‌ها</div>
+                    <div class="stat-value-mini">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card-mini">
+                <div class="stat-icon-mini bg-info">
+                    <i class="bi bi-ticket-perforated"></i>
+                </div>
+                <div class="stat-content-mini">
+                    <div class="stat-label-mini">تیکت‌های باز</div>
+                    <div class="stat-value-mini">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Models.Admin.HubSpotOwner? selectedOwner;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AdminState.InitializeAsync();
+        selectedOwner = AdminState.GetSelectedOwner();
+    }
+
+    private void NavigateTo(string path)
+    {
+        Navigation.NavigateTo(path);
+    }
+}

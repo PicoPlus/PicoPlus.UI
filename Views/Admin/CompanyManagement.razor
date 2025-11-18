@@ -1,0 +1,559 @@
+@page "/admin/companies"
+@layout Components.Layout.AdminLayout
+@using CompanyService = PicoPlus.Services.CRM.Objects.Company
+@using PicoPlus.State.Admin
+@using PicoPlus.Services.Admin
+@using Microsoft.JSInterop
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@inject AdminStateService AdminState
+@inject ILogger<CompanyManagement> Logger
+@inject IJSRuntime JSRuntime
+
+<PageTitle>مدیریت شرکت‌ها - پنل ادمین</PageTitle>
+
+<div class="companies-page">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h2 class="mb-2">
+                <i class="bi bi-building me-2"></i>
+                مدیریت شرکت‌ها
+            </h2>
+            @if (selectedOwner != null)
+            {
+                <p class="text-muted mb-0">کاربر: <strong>@selectedOwner.FullName</strong></p>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" @onclick="ShowCreateDialog">
+                <i class="bi bi-building-add me-2"></i>
+                افزودن شرکت جدید
+            </button>
+            <button class="btn btn-primary" @onclick="LoadCompanies">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                بروزرسانی
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="جستجو بر اساس نام شرکت، دامنه، یا شهر..."
+                               @bind="searchTerm"
+                               @bind:event="oninput"
+                               @onkeyup="HandleSearch" />
+                        @if (!string.IsNullOrWhiteSpace(searchTerm))
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" @bind="pageSize" @bind:after="LoadCompanies">
+                        <option value="20">20 مورد</option>
+                        <option value="50">50 مورد</option>
+                        <option value="100">100 مورد</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+            <p class="mt-3 text-muted">در حال بارگذاری شرکت‌ها...</p>
+        </div>
+    }
+    else if (!filteredCompanies.Any())
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-building display-1 text-muted"></i>
+                <h4 class="mt-3">هیچ شرکتی یافت نشد</h4>
+                <p class="text-muted">با کلیک بر روی دکمه "افزودن شرکت جدید" شرکت اول خود را ایجاد کنید</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Companies Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">لیست شرکت‌ها (@filteredCompanies.Count)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نام شرکت</th>
+                                <th>دامنه</th>
+                                <th>شهر</th>
+                                <th>تعداد کارمند</th>
+                                <th>تاریخ ایجاد</th>
+                                <th class="text-center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var company in filteredCompanies)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="company-avatar me-2">
+                                                <i class="bi bi-building"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">@GetCompanyName(company)</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@GetProperty(company, "domain")</td>
+                                    <td>@GetProperty(company, "city")</td>
+                                    <td>@GetProperty(company, "numberofemployees")</td>
+                                    <td>@GetCreatedDate(company)</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" 
+                                                    @onclick="() => ViewCompany(company)"
+                                                    title="مشاهده جزئیات">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" 
+                                                    @onclick="() => EditCompany(company)"
+                                                    title="ویرایش">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" 
+                                                    @onclick="() => DeleteCompany(company)"
+                                                    title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Create/Edit Modal -->
+    @if (showModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi @(isEditMode ? "bi-pencil" : "bi-building-add") me-2"></i>
+                            @(isEditMode ? "ویرایش شرکت" : "افزودن شرکت جدید")
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">نام شرکت <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="companyForm.Name" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">دامنه</label>
+                                    <input type="text" class="form-control" @bind="companyForm.Domain" 
+                                           placeholder="example.com" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">شهر</label>
+                                    <input type="text" class="form-control" @bind="companyForm.City" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">کشور</label>
+                                    <input type="text" class="form-control" @bind="companyForm.Country" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">تلفن</label>
+                                    <input type="tel" class="form-control" @bind="companyForm.Phone" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">تعداد کارمند</label>
+                                    <input type="number" class="form-control" @bind="companyForm.NumberOfEmployees" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">نوع صنعت</label>
+                                    <input type="text" class="form-control" @bind="companyForm.Industry" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">وبسایت</label>
+                                    <input type="url" class="form-control" @bind="companyForm.Website" 
+                                           placeholder="https://example.com" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">توضیحات</label>
+                                    <textarea class="form-control" @bind="companyForm.Description" 
+                                              rows="3"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">انصراف</button>
+                        <button type="button" class="btn btn-primary" @onclick="SaveCompany" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            <i class="bi bi-check-lg me-2"></i>
+                            @(isEditMode ? "ذخیره تغییرات" : "ایجاد شرکت")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private Models.Admin.HubSpotOwner? selectedOwner;
+    private List<System.Text.Json.JsonElement> allCompanies = new();
+    private List<System.Text.Json.JsonElement> filteredCompanies = new();
+    private string searchTerm = string.Empty;
+    private int pageSize = 50;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string? editingCompanyId = null;
+
+    private CompanyFormModel companyForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompanies();
+    }
+
+    private async Task LoadCompanies()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AdminState.InitializeAsync();
+            selectedOwner = AdminState.GetSelectedOwner();
+
+            // Load companies from HubSpot
+            var httpClient = HttpClientFactory.CreateClient("HubSpot");
+            var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? Configuration["HubSpot:Token"];
+            
+            var url = "/crm/v3/objects/companies?limit=" + pageSize + 
+                      "&properties=name&properties=domain&properties=city&properties=country" +
+                      "&properties=phone&properties=numberofemployees&properties=industry" +
+                      "&properties=website&properties=description";
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("Authorization", $"Bearer {token}");
+
+            var response = await httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var result = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+                
+                if (result.TryGetProperty("results", out var results))
+                {
+                    allCompanies = new List<System.Text.Json.JsonElement>();
+                    foreach (var item in results.EnumerateArray())
+                    {
+                        allCompanies.Add(item);
+                    }
+                }
+            }
+
+            ApplyFilters();
+            var count = allCompanies.Count;
+            Logger.LogInformation("Loaded {Count} companies", count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading companies");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleSearch()
+    {
+        ApplyFilters();
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredCompanies = allCompanies;
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLower();
+            filteredCompanies = filteredCompanies.Where(c =>
+            {
+                var name = GetCompanyName(c).ToLower();
+                var domain = GetProperty(c, "domain").ToLower();
+                var city = GetProperty(c, "city").ToLower();
+                return name.Contains(term) || domain.Contains(term) || city.Contains(term);
+            }).ToList();
+        }
+    }
+
+    private void ShowCreateDialog()
+    {
+        companyForm = new CompanyFormModel();
+        isEditMode = false;
+        editingCompanyId = null;
+        showModal = true;
+    }
+
+    private void ViewCompany(System.Text.Json.JsonElement company)
+    {
+        var id = GetProperty(company, "id");
+        var logMessage = $"Viewing company: {id}";
+        Logger.LogInformation(logMessage);
+        // TODO: Implement view details
+    }
+
+    private void EditCompany(System.Text.Json.JsonElement company)
+    {
+        try
+        {
+            var properties = company.GetProperty("properties");
+            
+            companyForm = new CompanyFormModel
+            {
+                Name = GetPropertyValue(properties, "name"),
+                Domain = GetPropertyValue(properties, "domain"),
+                City = GetPropertyValue(properties, "city"),
+                Country = GetPropertyValue(properties, "country"),
+                Phone = GetPropertyValue(properties, "phone"),
+                NumberOfEmployees = GetPropertyValue(properties, "numberofemployees"),
+                Industry = GetPropertyValue(properties, "industry"),
+                Website = GetPropertyValue(properties, "website"),
+                Description = GetPropertyValue(properties, "description")
+            };
+            
+            editingCompanyId = company.GetProperty("id").GetString();
+            isEditMode = true;
+            showModal = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error editing company");
+        }
+    }
+
+    private async Task DeleteCompany(System.Text.Json.JsonElement company)
+    {
+        var id = company.GetProperty("id").GetString();
+        var name = GetCompanyName(company);
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"آیا مطمئن هستید که می‌خواهید شرکت '{name}' را حذف کنید؟");
+        
+        if (!confirmed) return;
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("HubSpot");
+            var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? Configuration["HubSpot:Token"];
+            
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"/crm/v3/objects/companies/{id}");
+            request.Headers.Add("Authorization", $"Bearer {token}");
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            await LoadCompanies();
+            var logMessage = $"Company deleted: {id}";
+            Logger.LogInformation(logMessage);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = $"Error deleting company: {id}";
+            Logger.LogError(ex, errorMessage);
+        }
+    }
+
+    private async Task SaveCompany()
+    {
+        if (string.IsNullOrWhiteSpace(companyForm.Name))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "لطفاً نام شرکت را وارد کنید");
+            return;
+        }
+
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("HubSpot");
+            var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? Configuration["HubSpot:Token"];
+
+            var properties = new Dictionary<string, string>
+            {
+                ["name"] = companyForm.Name
+            };
+
+            if (!string.IsNullOrWhiteSpace(companyForm.Domain))
+                properties["domain"] = companyForm.Domain;
+            if (!string.IsNullOrWhiteSpace(companyForm.City))
+                properties["city"] = companyForm.City;
+            if (!string.IsNullOrWhiteSpace(companyForm.Country))
+                properties["country"] = companyForm.Country;
+            if (!string.IsNullOrWhiteSpace(companyForm.Phone))
+                properties["phone"] = companyForm.Phone;
+            if (!string.IsNullOrWhiteSpace(companyForm.NumberOfEmployees))
+                properties["numberofemployees"] = companyForm.NumberOfEmployees;
+            if (!string.IsNullOrWhiteSpace(companyForm.Industry))
+                properties["industry"] = companyForm.Industry;
+            if (!string.IsNullOrWhiteSpace(companyForm.Website))
+                properties["website"] = companyForm.Website;
+            if (!string.IsNullOrWhiteSpace(companyForm.Description))
+                properties["description"] = companyForm.Description;
+
+            var payload = new { properties };
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            HttpRequestMessage request;
+            if (isEditMode && !string.IsNullOrEmpty(editingCompanyId))
+            {
+                request = new HttpRequestMessage(HttpMethod.Patch, $"/crm/v3/objects/companies/{editingCompanyId}");
+            }
+            else
+            {
+                request = new HttpRequestMessage(HttpMethod.Post, "/crm/v3/objects/companies");
+            }
+
+            request.Headers.Add("Authorization", $"Bearer {token}");
+            request.Content = content;
+
+            var response = await httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            CloseModal();
+            await LoadCompanies();
+            
+            var logMessage = $"Company {(isEditMode ? "updated" : "created")}: {companyForm.Name}";
+            Logger.LogInformation(logMessage);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving company");
+            await JSRuntime.InvokeVoidAsync("alert", $"خطا در ذخیره شرکت: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        companyForm = new CompanyFormModel();
+        isEditMode = false;
+        editingCompanyId = null;
+    }
+
+    private string GetCompanyName(System.Text.Json.JsonElement company)
+    {
+        try
+        {
+            if (company.TryGetProperty("properties", out var properties))
+            {
+                if (properties.TryGetProperty("name", out var name))
+                    return name.GetString() ?? "بدون نام";
+            }
+        }
+        catch { }
+        return "بدون نام";
+    }
+
+    private string GetProperty(System.Text.Json.JsonElement company, string propertyName)
+    {
+        try
+        {
+            if (company.TryGetProperty("properties", out var properties))
+            {
+                if (properties.TryGetProperty(propertyName, out var value))
+                    return value.GetString() ?? "-";
+            }
+        }
+        catch { }
+        return "-";
+    }
+
+    private string GetPropertyValue(System.Text.Json.JsonElement properties, string propertyName)
+    {
+        try
+        {
+            if (properties.TryGetProperty(propertyName, out var value))
+                return value.GetString() ?? "";
+        }
+        catch { }
+        return "";
+    }
+
+    private string GetCreatedDate(System.Text.Json.JsonElement company)
+    {
+        try
+        {
+            if (company.TryGetProperty("createdAt", out var createdAtElement))
+            {
+                var dateStr = createdAtElement.GetString();
+                if (DateTime.TryParse(dateStr, out var dt))
+                    return dt.ToString("yyyy-MM-dd");
+            }
+        }
+        catch { }
+        return "-";
+    }
+
+    private class CompanyFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Domain { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string NumberOfEmployees { get; set; } = string.Empty;
+        public string Industry { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+}
