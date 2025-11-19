@@ -7,6 +7,8 @@
 @inject AdminStateService AdminState
 @inject NavigationManager Navigation
 @inject ILogger<OwnerSelect> Logger
+   
+@inject PicoPlus.Infrastructure.Authorization.AdminAuthorizationHandler AdminAuthHandler
 
 <PageTitle>?????? ???? - ??? ??????</PageTitle>
 
@@ -174,7 +176,6 @@
     private List<HubSpotOwner> recentOwners = new();
     private HubSpotOwner? selectedOwner;
     
-    @inject PicoPlus.Infrastructure.Authorization.AdminAuthorizationHandler AdminAuthHandler
 
    private bool? isAdmin = null;
 
