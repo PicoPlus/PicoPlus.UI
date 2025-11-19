@@ -33,6 +33,7 @@ public class AdminAuthorizationHandler
     {
         try
         {
+            // Check authentication first
             var isAuthenticated = await _authState.IsAuthenticatedAsync();
             if (!isAuthenticated)
             {
@@ -40,9 +41,11 @@ public class AdminAuthorizationHandler
                 return false;
             }
 
-          
-            
-            if (adminRole == "Admin" || adminRole == "SuperAdmin")
+            // Load role from session storage
+            var adminRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
+
+            // Check allowed admin roles
+            if (adminRole is "Admin" or "SuperAdmin")
             {
                 _logger.LogInformation("User has admin access: {Role}", adminRole);
                 return true;
@@ -64,7 +67,7 @@ public class AdminAuthorizationHandler
     public async Task<bool> EnsureAdminAccessAsync(CancellationToken cancellationToken = default)
     {
         var isAdmin = await IsAdminAsync(cancellationToken);
-        
+
         if (!isAdmin)
         {
             _logger.LogWarning("Unauthorized admin access attempt. Redirecting to admin login.");
@@ -92,7 +95,7 @@ public class AdminAuthorizationHandler
             return new AdminUserInfo
             {
                 Name = userName ?? "Admin",
-                Email = userEmail ?? "",
+                Email = userEmail ?? string.Empty,
                 Role = userRole ?? "Admin"
             };
         }
