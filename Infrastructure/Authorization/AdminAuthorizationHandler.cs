@@ -40,8 +40,7 @@ public class AdminAuthorizationHandler
                 return false;
             }
 
-            // Check for admin role in session storage
-            var adminRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
+          
             
             if (adminRole == "Admin" || adminRole == "SuperAdmin")
             {
