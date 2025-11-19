@@ -173,15 +173,18 @@
     private List<HubSpotOwner> filteredOwners = new();
     private List<HubSpotOwner> recentOwners = new();
     private HubSpotOwner? selectedOwner;
+    
+    @inject PicoPlus.Infrastructure.Authorization.AdminAuthorizationHandler AdminAuthHandler
 
-    protected override async Task OnInitializedAsync()
+   private bool? isAdmin = null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadOwners();
-        
-        // Load admin state
-        await AdminState.InitializeAsync();
-        selectedOwner = AdminState.GetSelectedOwner();
-        recentOwners = AdminState.Context.RecentOwners;
+        if (firstRender)
+        {
+            isAdmin = await AdminAuthHandler.IsAdminAsync();
+            StateHasChanged(); // Force UI update
+        }
     }
 
     private async Task LoadOwners()
