@@ -6,13 +6,27 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq; // حتما این رو اضافه کن برای پارس کردن اولیه
+using Newtonsoft.Json.Linq;
 
 namespace PicoPlus.Services.Identity
 {
-    /// <summary>
-    /// Zibal Inquiry Services - Complete implementation with Advanced Error Handling
-    /// </summary>
+    #region Custom Exception
+
+    public class ZibalApiException : Exception
+    {
+        public int ResultCode { get; }
+        public string FaMessage { get; }
+
+        public ZibalApiException(int resultCode, string message, string faMessage) 
+            : base($"Zibal Error [{resultCode}]: {message} | {faMessage}")
+        {
+            ResultCode = resultCode;
+            FaMessage = faMessage;
+        }
+    }
+
+    #endregion
+
     public class Zibal
     {
         private readonly HttpClient _httpClient;
@@ -27,17 +41,13 @@ namespace PicoPlus.Services.Identity
             _configuration = configuration;
             _logger = logger;
 
-            // دریافت توکن با اولویت متغیر محیطی
             _token = Environment.GetEnvironmentVariable("ZIBAL_TOKEN")
                      ?? configuration["Zibal:Token"]
-                     ?? throw new InvalidOperationException("Zibal token is missing! کجاست این توکن بینوایان؟");
+                     ?? throw new InvalidOperationException("Zibal token is not configured.");
         }
 
-        #region Private Helper Methods (The Brain 🧠)
+        #region Private Helper Methods
 
-        /// <summary>
-        /// متد هوشمند ارسال درخواست که خطاها را طبق مستندات زیبال ترجمه می‌کند
-        /// </summary>
         private async Task<TResponse> SendRequestAsync<TRequest, TResponse>(string endpoint, TRequest requestDto)
         {
             string resultString = string.Empty;
@@ -56,55 +66,62 @@ namespace PicoPlus.Services.Identity
                 var response = await _httpClient.SendAsync(requestMessage);
                 resultString = await response.Content.ReadAsStringAsync();
 
-                // لاگ کردن وضعیت
                 _logger.LogDebug("📩 Zibal Response ({StatusCode}): {Response}", response.StatusCode, resultString);
 
-                // مرحله ۱: بررسی خطاهای عمومی HTTP (مثل 401, 500 و...)
-                // طبق مستندات: 400, 403, 500 یعنی خطا. اما ما باید بادی رو بخونیم تا بفهمیم کدوم کد خطاست.
-                
-                // تلاش می‌کنیم بفهمیم کد result چی بوده
+                // --- FIX FOR CS8600 & CS8604 Start ---
                 int zibalResultCode = -1;
                 string zibalMessage = "Unknown Error";
+                bool isJsonParsed = false;
 
                 try
                 {
                     var jObject = JObject.Parse(resultString);
-                    if (jObject["result"] != null)
+                    
+                    // اصلاح: چک کردن نال بودن توکن قبل از کست کردن به int
+                    var resultToken = jObject["result"];
+                    if (resultToken != null && resultToken.Type != JTokenType.Null)
                     {
-                        zibalResultCode = (int)jObject["result"];
+                        zibalResultCode = (int)resultToken;
+                        isJsonParsed = true;
                     }
-                    if (jObject["message"] != null)
-                    {
-                        zibalMessage = (string)jObject["message"];
-                    }
+
+                    // اصلاح: استفاده از کست نال‌پذیر و مقدار پیش‌فرض
+                    zibalMessage = (string?)jObject["message"] ?? "Unknown Error";
                 }
                 catch
                 {
-                    // اگر جیسون نبود یا فرمت عجیب بود و ریسپانس کد هم اوکی نبود
-                    if (!response.IsSuccessStatusCode)
-                    {
-                         throw new HttpRequestException($"HTTP Error {response.StatusCode}: {resultString}");
-                    }
+                    // Parsing failed
+                }
+                // --- FIX End ---
+
+                if (!isJsonParsed && !response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Zibal HTTP Error {response.StatusCode}: {resultString}");
                 }
 
-                // مرحله ۲: بررسی کد result طبق جدول درخواستی
-                if (zibalResultCode != 1) // 1 یعنی موفقیت
+                if (isJsonParsed && zibalResultCode != 1)
                 {
                     var persianError = GetPersianErrorMessage(zibalResultCode);
-                    
-                    _logger.LogWarning("⚠️ Zibal Business Error: Code={Code}, Message={FaMessage}", zibalResultCode, persianError);
-                    
-                    // پرتاب اکسپشن اختصاصی که کنترلر شما بتونه اون رو بگیره و به کاربر نشون بده
+                    _logger.LogWarning("⚠️ Zibal Logic Error: Code={Code}, Message={FaMessage}", zibalResultCode, persianError);
                     throw new ZibalApiException(zibalResultCode, zibalMessage, persianError);
                 }
 
-                // مرحله ۳: اگر همه چیز گل و بلبل بود (result == 1)
+                response.EnsureSuccessStatusCode();
+
                 var result = JsonConvert.DeserializeObject<TResponse>(resultString);
+
+                // اصلاح: هندل کردن وضعیت نال بودن خروجی Deserialize (CS8603)
+                if (result == null)
+                {
+                    throw new Exception("Zibal response was null or could not be deserialized.");
+                }
+
+                _logger.LogDebug("✅ Zibal request successful: {Endpoint}", endpoint);
                 return result;
             }
             catch (ZibalApiException)
             {
-                throw; // اینو که خودمون ساختیم، ردش کن بره بالا
+                throw;
             }
             catch (Exception ex)
             {
@@ -113,33 +130,30 @@ namespace PicoPlus.Services.Identity
             }
         }
 
-        /// <summary>
-        /// مترجم کدهای خطای زیبال به زبان شیرین فارسی
-        /// </summary>
         private string GetPersianErrorMessage(int resultCode)
         {
             return resultCode switch
             {
-                1 => "عملیات با موفقیت انجام شد",
-                2 => "API Key به درستی ارسال نشده است",
-                3 => "API Key صحیح نیست",
-                4 => "اجازه دسترسی به این سرویس صادر نشده‌است (مجوز نداری داداش!)",
-                5 => "آدرس بازگشت (callbackUrl) نامعتبر است",
-                6 => "مقدار ورودی نامعتبر است (دیتای پرت فرستادی)",
-                7 => "IP ارسال‌کننده درخواست نامعتبر می‌باشد",
-                8 => "API Key غیرفعال است",
-                9 => "حداقل مبلغ باید 1000 ریال باشد (پول خرد قبول نمیکنیم)",
-                21 => "شماره شبای وارد شده معتبر نیست (26 کاراکتر، شروع با IR، بدون خط تیره و فاصله)",
-                29 => "موجودی کیف‌پول کارمزد برای این عملیات کافی نیست (کفگیر خورده ته دیگ!)",
-                44 => "با ورودی‌های داده شده شبای مورد نظر یافت نشد",
-                45 => "سرویس‌دهنده‌ها برای استعلام در دسترس نیستند (سیستم قطعه، بعدا تماس بگیرید)",
+                1 => "موفق",
+                2 => "API Key به درستی ارسال نشده است.",
+                3 => "API Key صحیح نیست.",
+                4 => "اجازه دسترسی به این سرویس صادر نشده‌است.",
+                5 => "callbackUrl نامعتبر است.",
+                6 => "مقدار ورودی نامعتبر است.",
+                7 => "IP ارسال‌کننده درخواست نامعتبر می‌باشد.",
+                8 => "API Key غیرفعال است.",
+                9 => "حداقل مبلغ باید 1000 ریال باشد.",
+                21 => "شماره شبای وارد شده معتبر نیست.",
+                29 => "موجودی کیف‌پول کارمزد کافی نیست.",
+                44 => "با ورودی‌های داده شده، شبای مورد نظر یافت نشد.",
+                45 => "سرویس‌دهنده‌ها در دسترس نیستند.",
                 _ => "خطای ناشناخته از سمت سرویس دهنده"
             };
         }
 
         #endregion
 
-        #region National Identity Inquiry (استعلام هویت)
+        #region Public Methods
 
         public async Task<Models.Services.Identity.Zibal.NationalIdentityInquiry.Response> NationalIdentityInquiryAsync(
             Models.Services.Identity.Zibal.NationalIdentityInquiry.Request requestDto)
@@ -149,13 +163,12 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.NationalIdentityInquiry.Response>(
                     "nationalIdentityInquiry", requestDto);
         }
-
+        
+        // Backward compatibility
         public async Task<Models.Services.Identity.Zibal.NationalIdentityInquiry.Response> NationalIdentityInquiry(
-            Models.Services.Identity.Zibal.NationalIdentityInquiry.Request requestDto) => await NationalIdentityInquiryAsync(requestDto);
+           Models.Services.Identity.Zibal.NationalIdentityInquiry.Request requestDto) => 
+           await NationalIdentityInquiryAsync(requestDto);
 
-        #endregion
-
-        #region Shahkar Inquiry (استعلام شاهکار)
 
         public async Task<Models.Services.Identity.Zibal.ShahkarInquiry.Response> ShahkarInquiryAsync(
             Models.Services.Identity.Zibal.ShahkarInquiry.Request requestDto)
@@ -165,13 +178,10 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.ShahkarInquiry.Response>(
                     "shahkarInquiry", requestDto);
         }
-
-        public async Task<Models.Services.Identity.Zibal.ShahkarInquiry.Response> ShahkerInquiry(
-            Models.Services.Identity.Zibal.ShahkarInquiry.Request requestDto) => await ShahkarInquiryAsync(requestDto);
-
-        #endregion
-
-        #region Postal Code Inquiry (استعلام کد پستی)
+        
+         public async Task<Models.Services.Identity.Zibal.ShahkarInquiry.Response> ShahkerInquiry(
+            Models.Services.Identity.Zibal.ShahkarInquiry.Request requestDto) => 
+            await ShahkarInquiryAsync(requestDto);
 
         public async Task<Models.Services.Identity.Zibal.PostalCodeInquiry.Response> PostalCodeInquiryAsync(
             Models.Services.Identity.Zibal.PostalCodeInquiry.Request requestDto)
@@ -189,28 +199,27 @@ namespace PicoPlus.Services.Identity
                 var request = new Models.Services.Identity.Zibal.PostalCodeInquiry.Request { postalCode = postalCode };
                 var response = await PostalCodeInquiryAsync(request);
 
+                // اصلاح برای جلوگیری از نال رفرنس در زنجیره دسترسی‌ها
                 if (response?.data?.address != null)
                 {
                     var addr = response.data.address;
                     return $"{addr.province}, {addr.town}, {addr.district}, {addr.street}, {addr.street2}, پلاک {addr.number}, طبقه {addr.floor}, واحد {addr.sideFloor}, نام ساختمان {addr.buildingName}";
                 }
-                return "اطلاعات یافت نشد";
+
+                return response?.message ?? "اطلاعات یافت نشد";
             }
             catch (ZibalApiException ex)
             {
                 return $"خطا: {ex.FaMessage}";
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting postal code address: {PostalCode}", postalCode);
                 return "خطا در دریافت اطلاعات";
             }
         }
-
+        
         public async Task<string> GetPostalCode(string zipCode) => await GetPostalCodeAddressAsync(zipCode);
-
-        #endregion
-
-        #region IBAN Inquiry (استعلام شبا)
 
         public async Task<Models.Services.Identity.Zibal.IbanInquiry.Response> IbanInquiryAsync(
             Models.Services.Identity.Zibal.IbanInquiry.Request requestDto)
@@ -221,10 +230,6 @@ namespace PicoPlus.Services.Identity
                     "ibanInquiry", requestDto);
         }
 
-        #endregion
-
-        #region Bank Account Inquiry (استعلام حساب بانکی)
-
         public async Task<Models.Services.Identity.Zibal.BankAccountInquiry.Response> BankAccountInquiryAsync(
             Models.Services.Identity.Zibal.BankAccountInquiry.Request requestDto)
         {
@@ -233,10 +238,6 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.BankAccountInquiry.Response>(
                     "bankAccountInquiry", requestDto);
         }
-
-        #endregion
-
-        #region Card Number Inquiry (استعلام شماره کارت)
 
         public async Task<Models.Services.Identity.Zibal.CardNumberInquiry.Response> CardNumberInquiryAsync(
             Models.Services.Identity.Zibal.CardNumberInquiry.Request requestDto)
@@ -247,10 +248,6 @@ namespace PicoPlus.Services.Identity
                     "cardNumberInquiry", requestDto);
         }
 
-        #endregion
-
-        #region License Plate Inquiry (استعلام پلاک خودرو)
-
         public async Task<Models.Services.Identity.Zibal.LicensePlateInquiry.Response> LicensePlateInquiryAsync(
             Models.Services.Identity.Zibal.LicensePlateInquiry.Request requestDto)
         {
@@ -259,10 +256,6 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.LicensePlateInquiry.Response>(
                     "licensePlateInquiry", requestDto);
         }
-
-        #endregion
-
-        #region Birth Certificate Inquiry (استعلام شناسنامه)
 
         public async Task<Models.Services.Identity.Zibal.BirthCertificateInquiry.Response> BirthCertificateInquiryAsync(
             Models.Services.Identity.Zibal.BirthCertificateInquiry.Request requestDto)
@@ -273,10 +266,6 @@ namespace PicoPlus.Services.Identity
                     "birthCertificateInquiry", requestDto);
         }
 
-        #endregion
-
-        #region Phone Number Inquiry (استعلام تلفن ثابت)
-
         public async Task<Models.Services.Identity.Zibal.PhoneNumberInquiry.Response> PhoneNumberInquiryAsync(
             Models.Services.Identity.Zibal.PhoneNumberInquiry.Request requestDto)
         {
@@ -285,10 +274,6 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.PhoneNumberInquiry.Response>(
                     "phoneNumberInquiry", requestDto);
         }
-
-        #endregion
-
-        #region Company Inquiry (استعلام شرکت)
 
         public async Task<Models.Services.Identity.Zibal.CompanyInquiry.Response> CompanyInquiryAsync(
             Models.Services.Identity.Zibal.CompanyInquiry.Request requestDto)
@@ -299,10 +284,6 @@ namespace PicoPlus.Services.Identity
                     "companyInquiry", requestDto);
         }
 
-        #endregion
-
-        #region Passport Inquiry (استعلام گذرنامه)
-
         public async Task<Models.Services.Identity.Zibal.PassportInquiry.Response> PassportInquiryAsync(
             Models.Services.Identity.Zibal.PassportInquiry.Request requestDto)
         {
@@ -311,10 +292,6 @@ namespace PicoPlus.Services.Identity
                 Models.Services.Identity.Zibal.PassportInquiry.Response>(
                     "passportInquiry", requestDto);
         }
-
-        #endregion
-
-        #region National Card Image Inquiry (دریافت تصویر کارت ملی)
 
         public async Task<Models.Services.Identity.Zibal.NationalCardImageInquiry.Response> NationalCardImageInquiryAsync(
             Models.Services.Identity.Zibal.NationalCardImageInquiry.Request requestDto)
