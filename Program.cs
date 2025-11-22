@@ -71,8 +71,26 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 // ==========================================
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddBlazoredLocalStorage();
-builder.Services.AddScoped<ISessionStorageService, SessionStorageServiceWrapper>();
-builder.Services.AddScoped<ILocalStorageService, LocalStorageServiceWrapper>();
+
+// NOTE:
+// There are two different ISessionStorageService / ILocalStorageService types in the solution:
+// - Blazored.SessionStorage.ISessionStorageService
+// - PicoPlus.Infrastructure.Services.ISessionStorageService
+//
+// To avoid ambiguous reference errors we register the PicoPlus interfaces using fully-qualified type names.
+// Ensure that the wrapper classes actually implement the PicoPlus interfaces. If they don't, either
+// update the wrapper implementations or map the PicoPlus interfaces to adapters that delegate to the Blazored implementations.
+//
+// If your SessionStorageServiceWrapper and LocalStorageServiceWrapper implement
+// PicoPlus.Infrastructure.Services.ISessionStorageService and PicoPlus.Infrastructure.Services.ILocalStorageService
+// respectively, the following registrations will be correct:
+builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ISessionStorageService, PicoPlus.Infrastructure.Services.SessionStorageServiceWrapper>();
+builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ILocalStorageService, PicoPlus.Infrastructure.Services.LocalStorageServiceWrapper>();
+
+// If the wrappers instead implement the Blazored interfaces, change the registration to bind the PicoPlus interfaces
+// to adapter implementations (not shown here) that translate calls to the Blazored implementations.
+
+// Other UI / helper services
 builder.Services.AddSingleton<ToastService>();
 builder.Services.AddScoped<IDialogService, DialogServiceWrapper>();
 builder.Services.AddScoped<INavigationService, NavigationService>();
