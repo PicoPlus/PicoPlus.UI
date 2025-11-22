@@ -1,52 +1,45 @@
-using Blazored.SessionStorage;
 using Blazored.LocalStorage;
+using Blazored.SessionStorage;
+using DotNetEnv;
+using Microsoft.AspNetCore.Localization;
 using PicoPlus.Components;
 using PicoPlus.Infrastructure.Authorization;
 using PicoPlus.Infrastructure.Http;
+using PicoPlus.Infrastructure.Plugins;
 using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
-using PicoPlus.Infrastructure.Plugins;
 using PicoPlus.Services.Admin;
 using PicoPlus.Services.Auth;
 using PicoPlus.State.Admin;
-using DotNetEnv;
-using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env file if it exists
+// ==========================================
+// 1. Configuration & Environment
+// ==========================================
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 if (File.Exists(envPath))
 {
     Env.Load(envPath);
 }
 
-// Configuration - Load from appsettings.json, environment variables, and user secrets
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
     .AddUserSecrets<Program>(optional: true);
 
-// Configure Kestrel for production (HTTP only) and development (HTTPS)
-builder.WebHost.ConfigureKestrel(options =>
-{
-    if (builder.Environment.IsProduction())
-    {
-        // Production: HTTP only on port 5000 (Liara/Docker)
-        options.ListenAnyIP(5000);
-    }
-    // Development uses default HTTPS configuration from launchSettings.json
-});
-
-// Logging - optimized for production
+// ==========================================
+// 2. Logging & Kestrel
+// ==========================================
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 if (builder.Environment.IsProduction())
 {
+    builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(5000)); // HTTP only for Docker/Liara
     builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
     builder.Logging.AddFilter("System", LogLevel.Warning);
     builder.Logging.SetMinimumLevel(LogLevel.Information);
@@ -56,7 +49,9 @@ else
     builder.Logging.SetMinimumLevel(LogLevel.Debug);
 }
 
-// Localization
+// ==========================================
+// 3. Core Services (Localization, Cache, Razor)
+// ==========================================
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 var supportedCultures = new[] { new CultureInfo("fa-IR"), new CultureInfo("en-US") };
 builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -66,127 +61,119 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedUICultures = supportedCultures;
 });
 
-// Response compression for better performance
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-});
+builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
+builder.Services.AddMemoryCache();
+builder.Services.AddRazorPages();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-// Razor Components
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-// Storage: Session + Local (for remember-me / persistence)
+// ==========================================
+// 4. Storage & State Management
+// ==========================================
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddBlazoredLocalStorage();
-
-builder.Services.AddScoped<INavigationService, NavigationService>();
+builder.Services.AddScoped<ISessionStorageService, SessionStorageServiceWrapper>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageServiceWrapper>();
 builder.Services.AddSingleton<ToastService>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.IDialogService, DialogServiceWrapper>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ISessionStorageService, SessionStorageServiceWrapper>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ILocalStorageService, LocalStorageServiceWrapper>();
+builder.Services.AddScoped<IDialogService, DialogServiceWrapper>();
+builder.Services.AddScoped<INavigationService, NavigationService>();
 builder.Services.AddSingleton<AuthenticationStateService>();
 
-// Admin Services
+// ==========================================
+// 5. Auth & Admin Services
+// ==========================================
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminAuthorizationHandler>();
 builder.Services.AddScoped<AdminStateService>();
 builder.Services.AddScoped<AdminOwnerService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<KanbanService>();
 
-// Authentication Service
-builder.Services.AddScoped<AuthService>();
+// ==========================================
+// 6. CRM & External APIs (HttpClients)
+// ==========================================
 
-// HttpClient with Shecan
+// HubSpot Client
 builder.Services.AddHttpClient("HubSpot", (sp, client) =>
 {
-    var configuration = sp.GetRequiredService<IConfiguration>();
-
+    var config = sp.GetRequiredService<IConfiguration>();
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 
-    var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                ?? configuration["HubSpot:Token"];
-
+    var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? config["HubSpot:Token"];
     if (!string.IsNullOrEmpty(token))
     {
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-})
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
-
-// Zibal API
-builder.Services.AddHttpClient<PicoPlus.Services.Identity.Zibal>((sp, client) =>
+// Zibal Client
+builder.Services.AddHttpClient<PicoPlus.Services.Identity.Zibal>(client =>
 {
     client.BaseAddress = new Uri("https://api.zibal.ir");
     client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
+});
 
-// CRM
+// CRM Objects
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Contact>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Deal>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Company>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Ticket>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.ContactUpdateService>();
-
-builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.Product>((sp, client) =>
-{
-    client.BaseAddress = new Uri("https://api.hubapi.com");
-    client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
-
-builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.LineItem>((sp, client) =>
-{
-    client.BaseAddress = new Uri("https://api.hubapi.com");
-    client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
-
 builder.Services.AddScoped<PicoPlus.Services.CRM.Pipelines>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Associate>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Owners>();
 
-// SMS
-builder.Services.AddHttpClient<PicoPlus.Services.SMS.SmsIr>((sp, client) =>
+// CRM Commerce HttpClients
+builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.Product>(client =>
+{
+    client.BaseAddress = new Uri("https://api.hubapi.com");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.LineItem>(client =>
+{
+    client.BaseAddress = new Uri("https://api.hubapi.com");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// ==========================================
+// 7. SMS Services (Cleaned - No Shecan)
+// ==========================================
+builder.Services.AddHttpClient<PicoPlus.Services.SMS.SmsIr>(client =>
 {
     client.BaseAddress = new Uri("https://api.sms.ir");
     client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
+});
+// Note: ConfigurePrimaryHttpMessageHandler removed here to bypass Shecan
 
 builder.Services.AddScoped<PicoPlus.Services.SMS.SMS.Send>();
 builder.Services.AddScoped<PicoPlus.Services.SMS.SmsIrService>();
 builder.Services.AddScoped<PicoPlus.Services.SMS.FarazSmsService>();
 builder.Services.AddScoped<PicoPlus.Services.SMS.SmsServiceFactory>();
 builder.Services.AddScoped<PicoPlus.Services.SMS.ISmsService, PicoPlus.Services.SMS.SmsService>();
-
 builder.Services.AddSingleton<OtpService>();
 
-// ViewModels
+// ==========================================
+// 8. ViewModels & UI Services
+// ==========================================
+#region ViewModels
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.LoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.AdminLoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.RegisterViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.User.UserHomeViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateDialogViewModel>();
+#endregion
 
-// User Panel
 builder.Services.AddSingleton<PicoPlus.Services.UserPanel.IPersianDateService, PicoPlus.Services.UserPanel.PersianDateService>();
 builder.Services.AddScoped<PicoPlus.Services.UserPanel.IUserPanelService, PicoPlus.Services.UserPanel.UserPanelService>();
-
-builder.Services.AddMemoryCache();
 builder.Services.AddScoped<PicoPlus.Views.Deal.Create>();
-
 builder.Services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();
 
-builder.Services.AddRazorPages();
-
-// Plugin System - Initialize PluginManager as a singleton
-// Note: We need to create it after services are configured but before app is built
+// ==========================================
+// 9. Plugin System Initialization
+// ==========================================
+// Warning: Building a temp provider can be risky, ensure plugins don't depend on singletons created here later.
 var tempServiceProvider = builder.Services.BuildServiceProvider();
 var pluginManager = new PluginManager(
     builder.Services,
@@ -195,67 +182,47 @@ var pluginManager = new PluginManager(
     builder.Environment,
     tempServiceProvider.GetRequiredService<ILoggerFactory>()
 );
-
-// Register PluginManager as singleton for injection
 builder.Services.AddSingleton(pluginManager);
 
 var app = builder.Build();
 
-// Get logger for both plugin initialization and development logging
+// ==========================================
+// 10. Post-Build Setup (Plugins & Pipeline)
+// ==========================================
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-// Load plugins after app is built
-logger.LogInformation("Discovering and loading plugins...");
+logger.LogInformation("🚀 Starting Plugin Discovery...");
 try
 {
     await pluginManager.DiscoverAndLoadPluginsAsync();
-    logger.LogInformation("Plugin system initialized successfully");
+    logger.LogInformation("✅ Plugins loaded successfully.");
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Failed to initialize plugin system");
+    logger.LogError(ex, "❌ Failed to initialize plugin system.");
 }
 
-// Development logging
+// Debug Info Logging
 if (app.Environment.IsDevelopment())
 {
-    logger.LogInformation("=== Configuration Sources ===");
-    logger.LogInformation(".env file loaded: {EnvFileExists}", File.Exists(envPath));
-    logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
-
-    var hubspotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN");
-    var zibalToken = Environment.GetEnvironmentVariable("ZIBAL_TOKEN");
-
-    logger.LogInformation("HubSpot Token configured: {IsConfigured} (Source: {Source})",
-        !string.IsNullOrEmpty(hubspotToken),
-        hubspotToken != null ? "Environment Variable" : "Configuration File");
-
-    logger.LogInformation("Zibal Token configured: {IsConfigured} (Source: {Source})",
-        !string.IsNullOrEmpty(zibalToken),
-        zibalToken != null ? "Environment Variable" : "Configuration File");
-
-    logger.LogInformation("===========================");
+    logger.LogInformation("--- Debug Configuration ---");
+    logger.LogInformation("Env File Loaded: {HasEnv}", File.Exists(envPath));
+    logger.LogInformation("HubSpot Token Set: {HasHubSpot}", !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? app.Configuration["HubSpot:Token"]));
+    logger.LogInformation("---------------------------");
 }
 
-// Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
-// Localization middleware
 var locOptions = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value;
 app.UseRequestLocalization(locOptions);
-
-// Enable response compression
 app.UseResponseCompression();
 
-// Static files with caching in production
-var cacheMaxAge = app.Environment.IsProduction()
-    ? TimeSpan.FromDays(30)
-    : TimeSpan.FromSeconds(0);
-
+// Static Files Caching
+var cacheMaxAge = app.Environment.IsProduction() ? TimeSpan.FromDays(30) : TimeSpan.FromSeconds(0);
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -264,7 +231,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// Culture switch endpoint
+// Culture Switching Helper
 app.MapGet("/set-culture/{culture}", (string culture, string? redirectUri, HttpContext httpContext) =>
 {
     if (!string.IsNullOrWhiteSpace(culture))
@@ -278,9 +245,7 @@ app.MapGet("/set-culture/{culture}", (string culture, string? redirectUri, HttpC
 });
 
 app.UseAntiforgery();
-
 app.MapRazorPages();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();
