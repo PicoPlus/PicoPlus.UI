@@ -11,8 +11,9 @@
             <div class="modal-dark-header">
                 <h5 class="modal-dark-title">
                     <i class="bi bi-briefcase-fill me-2"></i>
-                    ????? ?????? ????
+                    ایجاد معامله جدید
                 </h5>
+
                 <button type="button" class="btn-close-dark" @onclick="HandleCancel">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -20,8 +21,9 @@
 
             <EditForm Model="@ViewModel" OnValidSubmit="@HandleSubmit">
                 <DataAnnotationsValidator />
-                
+
                 <div class="modal-dark-body" dir="rtl">
+
                     @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
                     {
                         <div class="alert alert-danger" role="alert">
@@ -31,14 +33,16 @@
                     }
 
                     <div class="row g-3">
+
                         <!-- Deal Name -->
                         <div class="col-12">
                             <label class="dark-label">
-                                <i class="bi bi-tag me-2"></i>????? ?????? <span class="text-danger">*</span>
+                                <i class="bi bi-tag me-2"></i>نام معامله <span class="text-danger">*</span>
                             </label>
-                            <InputText class="dark-input persian-text" 
+
+                            <InputText class="dark-input persian-text"
                                        @bind-Value="ViewModel.DealName"
-                                       placeholder="??????? ?????? ?? ???? ????"
+                                       placeholder="مثلاً خرید سرویس جدید"
                                        disabled="@ViewModel.IsLoading" />
                             <ValidationMessage For="@(() => ViewModel.DealName)" />
                         </div>
@@ -46,13 +50,15 @@
                         <!-- Pipeline -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-diagram-3 me-2"></i>????? (Pipeline) <span class="text-danger">*</span>
+                                <i class="bi bi-diagram-3 me-2"></i>پایپ‌لاین <span class="text-danger">*</span>
                             </label>
-                            <InputSelect class="dark-input" 
+
+                            <InputSelect class="dark-input"
                                          @bind-Value="ViewModel.SelectedPipelineId"
                                          disabled="@ViewModel.IsLoading">
-                                <option value="">-- ?????? ???? --</option>
-                                @if (ViewModel.Pipelines != null)
+                                <option value="">-- انتخاب کنید --</option>
+
+                                @if (ViewModel.Pipelines is not null)
                                 {
                                     @foreach (var pipeline in ViewModel.Pipelines)
                                     {
@@ -60,19 +66,22 @@
                                     }
                                 }
                             </InputSelect>
+
                             <ValidationMessage For="@(() => ViewModel.SelectedPipelineId)" />
                         </div>
 
                         <!-- Deal Stage -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-flag me-2"></i>??????? ?????? <span class="text-danger">*</span>
+                                <i class="bi bi-flag me-2"></i>مرحله معامله <span class="text-danger">*</span>
                             </label>
-                            <InputSelect class="dark-input" 
+
+                            <InputSelect class="dark-input"
                                          @bind-Value="ViewModel.SelectedDealStage"
                                          disabled="@(ViewModel.IsLoading || string.IsNullOrEmpty(ViewModel.SelectedPipelineId))">
-                                <option value="">-- ?????? ???? --</option>
-                                @if (ViewModel.DealStages != null)
+                                <option value="">-- انتخاب کنید --</option>
+
+                                @if (ViewModel.DealStages is not null)
                                 {
                                     @foreach (var stage in ViewModel.DealStages)
                                     {
@@ -80,17 +89,19 @@
                                     }
                                 }
                             </InputSelect>
+
                             <ValidationMessage For="@(() => ViewModel.SelectedDealStage)" />
                         </div>
 
-                        <!-- Deal Description -->
+                        <!-- Description -->
                         <div class="col-12">
                             <label class="dark-label">
-                                <i class="bi bi-text-paragraph me-2"></i>????????? ??????
+                                <i class="bi bi-text-paragraph me-2"></i>توضیحات
                             </label>
-                            <InputTextArea class="dark-input persian-text" 
+
+                            <InputTextArea class="dark-input persian-text"
                                            @bind-Value="ViewModel.Description"
-                                           placeholder="????????? ?????? (??????)"
+                                           placeholder="توضیحات معامله (دلخواه)"
                                            rows="3"
                                            disabled="@ViewModel.IsLoading" />
                         </div>
@@ -98,36 +109,38 @@
                         <!-- Close Date -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-calendar-check me-2"></i>????? ???? ???
+                                <i class="bi bi-calendar-check me-2"></i>تاریخ بستن
                             </label>
-                            <InputDate class="dark-input" 
+
+                            <InputDate class="dark-input"
                                        @bind-Value="ViewModel.CloseDate"
                                        disabled="@ViewModel.IsLoading" />
-                            <small class="text-muted">????? ?????? ???? ????? ??????</small>
                         </div>
 
                         <!-- Amount -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-cash-coin me-2"></i>?????? ?????? (??)
+                                <i class="bi bi-cash-coin me-2"></i>مبلغ معامله (ریال)
                             </label>
-                            <InputNumber class="dark-input" 
+
+                            <InputNumber class="dark-input"
                                          @bind-Value="ViewModel.Amount"
                                          placeholder="0"
                                          disabled="@ViewModel.IsLoading" />
-                            <small class="text-muted">?????? ???????? ????? ??????</small>
                         </div>
 
-                        <!-- Deal Owner -->
+                        <!-- Owner -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-person-badge me-2"></i>??????? ?????? <span class="text-danger">*</span>
+                                <i class="bi bi-person-badge me-2"></i>مالک معامله <span class="text-danger">*</span>
                             </label>
-                            <InputSelect class="dark-input" 
+
+                            <InputSelect class="dark-input"
                                          @bind-Value="ViewModel.SelectedOwnerId"
                                          disabled="@ViewModel.IsLoading">
-                                <option value="">-- ?????? ???? --</option>
-                                @if (ViewModel.Owners != null)
+                                <option value="">-- انتخاب کنید --</option>
+
+                                @if (ViewModel.Owners is not null)
                                 {
                                     @foreach (var owner in ViewModel.Owners)
                                     {
@@ -135,58 +148,62 @@
                                     }
                                 }
                             </InputSelect>
+
                             <ValidationMessage For="@(() => ViewModel.SelectedOwnerId)" />
                         </div>
 
-                        <!-- Tax Amount -->
+                        <!-- Tax -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-receipt me-2"></i>?????? ?????? (??)
+                                <i class="bi bi-receipt me-2"></i>مالیات (ریال)
                             </label>
-                            <InputNumber class="dark-input" 
+
+                            <InputNumber class="dark-input"
                                          @bind-Value="ViewModel.TaxAmount"
                                          placeholder="0"
                                          disabled="@ViewModel.IsLoading" />
-                            <small class="text-muted">????? ?????? ??????</small>
                         </div>
 
                         <!-- Deal Type -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-box-seam me-2"></i>????? ??????
+                                <i class="bi bi-box-seam me-2"></i>نوع معامله
                             </label>
-                            <InputSelect class="dark-input" 
+
+                            <InputSelect class="dark-input"
                                          @bind-Value="ViewModel.DealType"
                                          disabled="@ViewModel.IsLoading">
-                                <option value="">-- ?????? ???? --</option>
-                                <option value="newbusiness">??? ? ??? ????</option>
-                                <option value="existingbusiness">??? ? ??? ?????</option>
-                                <option value="renewal">??????? ???????</option>
-                                <option value="upgrade">?????</option>
+                                <option value="">-- انتخاب کنید --</option>
+                                <option value="newbusiness">جدید</option>
+                                <option value="existingbusiness">مشتری فعلی</option>
+                                <option value="renewal">تمدید</option>
+                                <option value="upgrade">ارتقاء</option>
                             </InputSelect>
                         </div>
 
                         <!-- Priority -->
                         <div class="col-md-6">
                             <label class="dark-label">
-                                <i class="bi bi-exclamation-diamond me-2"></i>?????
+                                <i class="bi bi-exclamation-diamond me-2"></i>اولویت
                             </label>
-                            <InputSelect class="dark-input" 
+
+                            <InputSelect class="dark-input"
                                          @bind-Value="ViewModel.Priority"
                                          disabled="@ViewModel.IsLoading">
-                                <option value="">-- ?????? ???? --</option>
-                                <option value="low">??</option>
-                                <option value="medium">??</option>
-                                <option value="high">????</option>
+                                <option value="">-- انتخاب کنید --</option>
+                                <option value="low">کم</option>
+                                <option value="medium">متوسط</option>
+                                <option value="high">زیاد</option>
                             </InputSelect>
                         </div>
 
-                        <!-- Associate Deal With Contact -->
+                        <!-- Associate With Contact -->
                         <div class="col-12">
                             <div class="info-box-dark">
                                 <label class="dark-label mb-2">
-                                    <i class="bi bi-person-lines-fill me-2"></i>????? ?? ??
+                                    <i class="bi bi-person-lines-fill me-2"></i>ارتباط با مخاطب
                                 </label>
+
                                 @if (!string.IsNullOrEmpty(ContactName))
                                 {
                                     <div class="d-flex align-items-center gap-2">
@@ -194,50 +211,55 @@
                                             <i class="bi bi-person-check me-1"></i>
                                             @ContactName
                                         </span>
-                                        <small class="text-muted">????? ?????? ?? @ContactName ???? ?? ??</small>
+                                        <small class="text-muted">
+                                            این معامله به @ContactName متصل خواهد شد
+                                        </small>
                                     </div>
                                 }
                                 else
                                 {
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        ??? ?????? ?????? ???? ???
+                                        هنوز مخاطبی انتخاب نشده است
                                     </small>
                                 }
                             </div>
                         </div>
 
-                        <!-- Add Line Items Section -->
+                        <!-- Line Items -->
                         <div class="col-12">
                             <div class="line-item-section">
                                 <label class="dark-label mb-3">
-                                    <i class="bi bi-list-ul me-2"></i>??????? ?????? (Line Items)
+                                    <i class="bi bi-list-ul me-2"></i>آیتم‌های معامله
                                 </label>
                                 <SeletedLineItemPane @ref="lineItemPane" />
                             </div>
                         </div>
+
                     </div>
                 </div>
 
                 <div class="modal-dark-footer">
-                    <button type="button" 
-                            class="btn-secondary-dark" 
+                    <button type="button"
+                            class="btn-secondary-dark"
                             @onclick="HandleCancel"
                             disabled="@ViewModel.IsLoading">
-                        <i class="bi bi-x-lg me-2"></i>?????
+                        <i class="bi bi-x-lg me-2"></i>لغو
                     </button>
-                    <button type="submit" 
-                            class="btn-primary-dark" 
+
+                    <button type="submit"
+                            class="btn-primary-dark"
                             disabled="@ViewModel.IsLoading">
+
                         @if (ViewModel.IsLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-2"></span>
-                            <span>?? ??? ??...</span>
+                            <span>در حال ذخیره...</span>
                         }
                         else
                         {
                             <i class="bi bi-check-circle me-2"></i>
-                            <span>??????? ??????</span>
+                            <span>ثبت معامله</span>
                         }
                     </button>
                 </div>
@@ -247,65 +269,54 @@
 }
 
 @code {
-    [Parameter]
-    public bool IsVisible { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string? ContactId { get; set; }
+    [Parameter] public string? ContactName { get; set; }
+    [Parameter] public EventCallback<string> OnDealCreated { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
 
-    [Parameter]
-    public string? ContactId { get; set; }
-
-    [Parameter]
-    public string? ContactName { get; set; }
-
-    [Parameter]
-    public EventCallback<string> OnDealCreated { get; set; }
-
-    [Parameter]
-    public EventCallback OnCancel { get; set; }
-
-    private SeletedLineItemPane lineItemPane;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await ViewModel.InitializeAsync(ContactId);
-    }
+    private SeletedLineItemPane? lineItemPane;
+    private string? lastLoadedContactId;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible && !string.IsNullOrEmpty(ContactId))
+        // Only reinitialize when component becomes visible OR contact changes
+        if (IsVisible && ContactId != lastLoadedContactId)
         {
+            lastLoadedContactId = ContactId;
             await ViewModel.InitializeAsync(ContactId);
         }
     }
 
     private async Task HandleSubmit()
     {
-        if (lineItemPane != null)
+        try
         {
-            ViewModel.LineItems = lineItemPane.GetLineItems();
+            if (lineItemPane is not null)
+                ViewModel.LineItems = lineItemPane.GetLineItems();
+
+            var dealId = await ViewModel.CreateDealAsync();
+
+            if (!string.IsNullOrEmpty(dealId))
+                await OnDealCreated.InvokeAsync(dealId);
         }
-        var dealId = await ViewModel.CreateDealAsync();
-        if (!string.IsNullOrEmpty(dealId))
+        catch (Exception ex)
         {
-            await OnDealCreated.InvokeAsync(dealId);
+            // This prevents silent UI failures
+            ViewModel.ErrorMessage = "خطا در ذخیره معامله: " + ex.Message;
         }
     }
 
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-    }
+    private async Task HandleCancel() => await OnCancel.InvokeAsync();
 
     private async Task HandleOverlayClick()
     {
         if (!ViewModel.IsLoading)
-        {
             await HandleCancel();
-        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        // Cleanup if needed
         await Task.CompletedTask;
     }
 }
