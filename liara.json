@@ -1,7 +1,7 @@
 {
   "app": "ipicoplus",
   "port": 5000,
-  "platform": "dotnet",
+  "platform": "docker",
   "build": {
     "location": "iran"
   },
@@ -10,9 +10,5 @@
       "name": "picoapp",
       "mountTo": "/app/data"
     }
-  ],
-  "env": {
-    "ASPNETCORE_ENVIRONMENT": "Production",
-    "ASPNETCORE_URLS": "http://+:5000"
-  }
+  ]
 }

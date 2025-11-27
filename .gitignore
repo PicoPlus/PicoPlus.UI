@@ -110,3 +110,12 @@ bower_components/
 *.vbw
 .localhistory/
 healthchecksdb
+
+## ============================
+## Plugins
+## ============================
+# Ignore plugin DLL files (but track plugin state)
+Plugins/*.dll
+Plugins/*.pdb
+!Plugins/README.md
+!Plugins/plugin-state.json

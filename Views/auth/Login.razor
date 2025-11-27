@@ -11,66 +11,52 @@
 
 <div class="auth-container">
     <div class="auth-card">
-        <!-- Logo/Icon -->
+
         <div class="auth-icon">
             <i class="bi bi-shield-lock"></i>
         </div>
 
-        <!-- Title -->
         <h1 class="auth-title">@L["Welcome"]</h1>
         <p class="auth-subtitle">
-            @if (isAdminMode)
-            {
-                <span>@L["AdminLogin"]</span>
-            }
-            else
-            {
-                <span>@L["EnterNationalCode"]</span>
-            }
+            @(isAdminMode ? L["AdminLogin"] : L["EnterNationalCode"])
         </p>
 
-        <!-- Error Alert -->
-        @if ((!isAdminMode && UserViewModel.HasError) || (isAdminMode && AdminViewModel.HasError))
+        @if (CurrentViewModel.HasError)
         {
             <div class="auth-alert auth-alert-danger" role="alert">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                @(isAdminMode ? AdminViewModel.ErrorMessage : UserViewModel.ErrorMessage)
+                @CurrentViewModel.ErrorMessage
             </div>
         }
 
-        <!-- Role Selection Tabs -->
         <div class="mb-4">
             <div class="role-tabs">
-                <button type="button" 
-                        class="role-tab @(!isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(false)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-person me-2"></i>
-                    @L["UserLogin"]
+                <button type="button"
+                        class="@(isAdminMode ? "role-tab" : "role-tab active")"
+                        onclick="@SwitchToUser"
+                        disabled="@UserViewModel.IsLoading">
+                    <i class="bi bi-person me-2"></i>@L["UserLogin"]
                 </button>
-                <button type="button" 
-                        class="role-tab @(isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(true)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-shield-check me-2"></i>
-                    @L["AdminLogin"]
+                <button type="button"
+                        class="@(isAdminMode ? "role-tab active" : "role-tab")"
+                        onclick="@SwitchToAdmin"
+                        disabled="@AdminViewModel.IsLoading">
+                    <i class="bi bi-shield-check me-2"></i>@L["AdminLogin"]
                 </button>
             </div>
         </div>
 
         @if (!isAdminMode)
         {
-            <!-- User Login Form -->
-            <EditForm Model="@UserViewModel" OnValidSubmit="@HandleUserLogin" class="auth-form">
+            <!-- USER LOGIN -->
+            <EditForm Model="@UserViewModel" OnValidSubmit="HandleUserLogin" class="auth-form">
                 <DataAnnotationsValidator />
 
-                <!-- National Code Input -->
                 <div class="mb-4">
                     <label for="nationalCode" class="form-label">@L["NationalCode"]</label>
+
                     <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-card-text"></i>
-                        </span>
+                        <span class="input-group-text"><i class="bi bi-card-text"></i></span>
                         <InputText id="nationalCode"
                                    class="form-control"
                                    @bind-Value="UserViewModel.NationalCode"
@@ -79,16 +65,15 @@
                                    disabled="@UserViewModel.IsLoading"
                                    autocomplete="off" />
                     </div>
+
                     <ValidationMessage For="@(() => UserViewModel.NationalCode)" />
                     <small class="auth-helper">
-                        <i class="bi bi-info-circle me-1"></i>
-                        @L["EnterNationalCode"]
+                        <i class="bi bi-info-circle me-1"></i>@L["EnterNationalCode"]
                     </small>
                 </div>
 
-                <!-- Login Button -->
-                <button type="submit" 
-                        class="btn auth-btn auth-btn-primary w-100 mb-3" 
+                <button type="submit"
+                        class="btn auth-btn auth-btn-primary w-100 mb-3"
                         disabled="@UserViewModel.IsLoading">
                     @if (UserViewModel.IsLoading)
                     {
@@ -105,15 +90,13 @@
         }
         else
         {
-            <!-- Admin Login Form -->
-            <EditForm Model="@AdminViewModel" OnValidSubmit="@HandleAdminLogin" class="auth-form">
+            <!-- ADMIN LOGIN -->
+            <EditForm Model="@AdminViewModel" OnValidSubmit="HandleAdminLogin" class="auth-form">
                 <DataAnnotationsValidator />
 
-                <!-- Email Field -->
                 <div class="mb-3">
                     <label for="adminEmail" class="form-label">
-                        <i class="bi bi-envelope me-2"></i>
-                        @L["Email"]
+                        <i class="bi bi-envelope me-2"></i>@L["Email"]
                     </label>
                     <InputText id="adminEmail"
                                type="email"
@@ -124,11 +107,9 @@
                                autocomplete="email" />
                 </div>
 
-                <!-- Password Field -->
                 <div class="mb-3">
                     <label for="adminPassword" class="form-label">
-                        <i class="bi bi-lock me-2"></i>
-                        @L["Password"]
+                        <i class="bi bi-lock me-2"></i>@L["Password"]
                     </label>
                     <InputText id="adminPassword"
                                type="password"
@@ -139,19 +120,15 @@
                                autocomplete="current-password" />
                 </div>
 
-                <!-- Remember Me -->
                 <div class="form-check mb-3">
-                    <InputCheckbox class="form-check-input" 
+                    <InputCheckbox class="form-check-input"
                                    id="rememberMe"
                                    @bind-Value="AdminViewModel.RememberMe"
                                    disabled="@AdminViewModel.IsLoading" />
-                    <label class="form-check-label" for="rememberMe">
-                        @L["RememberMe"]
-                    </label>
+                    <label class="form-check-label" for="rememberMe">@L["RememberMe"]</label>
                 </div>
 
-                <!-- Login Button -->
-                <button type="submit" 
+                <button type="submit"
                         class="btn auth-btn auth-btn-primary w-100 mb-3"
                         disabled="@AdminViewModel.IsLoading">
                     @if (AdminViewModel.IsLoading)
@@ -166,11 +143,10 @@
                     }
                 </button>
 
-                <!-- Admin Credentials Info -->
                 <div class="alert alert-info mt-3">
                     <small>
-                        <strong>Demo:</strong><br/>
-                        @L["Email"]: <code>admin@picoplus.app</code><br/>
+                        <strong>Demo:</strong><br />
+                        @L["Email"]: <code>admin@picoplus.app</code><br />
                         @L["Password"]: <code>Admin@123</code>
                     </small>
                 </div>
@@ -179,18 +155,13 @@
 
         @if (!isAdminMode)
         {
-            <!-- Divider -->
-            <div class="auth-divider">
-                <span class="px-2">—</span>
-            </div>
+            <div class="auth-divider"><span class="px-2">—</span></div>
 
-            <!-- Register Link -->
             <div class="text-center">
                 <p class="mb-0" style="color: var(--auth-text-muted);">
                     @L["NotRegistered"]
                     <a href="/auth/register" class="auth-link">
-                        @L["Register"]
-                        <i class="bi bi-arrow-left me-1"></i>
+                        @L["Register"] <i class="bi bi-arrow-left me-1"></i>
                     </a>
                 </p>
             </div>
@@ -199,13 +170,25 @@
 </div>
 
 @code {
-    private bool isAdminMode = false;
+    private bool isAdminMode;
 
-    private void SwitchMode(bool toAdmin)
+    private IAuthBaseViewModel CurrentViewModel =>
+        isAdminMode ? (IAuthBaseViewModel)AdminViewModel : UserViewModel;
+
+    private void SwitchToUser()
     {
-        isAdminMode = toAdmin;
-        
-        // Clear errors when switching
+        isAdminMode = false;
+        ClearErrors();
+    }
+
+    private void SwitchToAdmin()
+    {
+        isAdminMode = true;
+        ClearErrors();
+    }
+
+    private void ClearErrors()
+    {
         UserViewModel.HasError = false;
         UserViewModel.ErrorMessage = string.Empty;
         AdminViewModel.HasError = false;
@@ -222,4 +205,10 @@
     {
         await AdminViewModel.LoginCommand.ExecuteAsync(default);
     }
+}
+
+public interface IAuthBaseViewModel
+{
+    bool HasError { get; set; }
+    string ErrorMessage { get; set; }
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace PicoPlus.ViewModels.Auth;
 
-public partial class AdminLoginViewModel : ObservableObject
+public partial class AdminLoginViewModel : ObservableObject, IAuthBaseViewModel
 {
     private readonly AuthenticationStateService _authState;
     private readonly ISessionStorageService _sessionStorage;
