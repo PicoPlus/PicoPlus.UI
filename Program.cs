@@ -124,6 +124,13 @@ builder.Services.AddHttpClient<PicoPlus.Services.Identity.Zibal>((sp, client) =>
 })
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
+// Liara API
+builder.Services.AddHttpClient<PicoPlus.Services.Utils.LiaraApiService>((sp, client) =>
+{
+    client.BaseAddress = new Uri("https://api.iran.liara.ir");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 // CRM
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Contact>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Deal>();

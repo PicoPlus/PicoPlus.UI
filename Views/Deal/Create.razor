@@ -22,13 +22,13 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="pipeline" class="form-label">کاریز</label>
-                                <select class="form-select" id="pipeline" @bind="SelectedPipID" required>
+                                <select class="form-select" id="pipeline" @onchange="OnPipelineChanged" required>
                                     <option value="">-- انتخاب کنید --</option>
                                     @if (IsInit)
                                     {
                                         @foreach (var pipeline in PipList.results)
                                         {
-                                            <option value="@pipeline.id">@pipeline.label</option>
+                                            <option value="@pipeline.id" selected="@(pipeline.id == SelectedPipID)">@pipeline.label</option>
                                         }
                                     }
                                 </select>
@@ -36,17 +36,17 @@
 
                             <div class="col-md-6">
                                 <label for="dealStage" class="form-label">وضعیت سفارش</label>
-                                <select class="form-select" id="dealStage" @bind="SelectedDealStage" required>
+                                <select class="form-select" id="dealStage" @bind="SelectedDealStage" required disabled="@string.IsNullOrEmpty(SelectedPipID)">
                                     <option value="">-- انتخاب کنید --</option>
                                     @if (IsInit && !string.IsNullOrEmpty(SelectedPipID))
                                     {
                                         @foreach (var pip in PipList.results)
                                         {
-                                            if (pip.id == SelectedPipID)
+                                            if (pip.id == SelectedPipID && pip.stages != null)
                                             {
                                                 @foreach (var stage in pip.stages)
                                                 {
-                                                    <option value="@stage.id">@stage.label</option>
+                                                    <option value="@stage.id" selected="@(stage.id == SelectedDealStage)">@stage.label</option>
                                                 }
                                             }
                                         }
@@ -168,6 +168,20 @@
     private async Task LoadOwners()
     {
         OwnerList = await OwnerService.GetAll();
+    }
+
+    private async Task OnPipelineChanged(ChangeEventArgs e)
+    {
+        var newPipelineId = e.Value?.ToString() ?? string.Empty;
+        
+        // Only reset stage if changing to a different pipeline
+        if (newPipelineId != SelectedPipID)
+        {
+            SelectedDealStage = string.Empty;
+        }
+        
+        SelectedPipID = newPipelineId;
+        StateHasChanged();
     }
 
     private async Task SubmitFinal()

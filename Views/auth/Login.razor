@@ -6,6 +6,7 @@
 @inject LoginViewModel UserViewModel
 @inject AdminLoginViewModel AdminViewModel
 @inject NavigationManager Navigation
+@inject PicoPlus.Services.Utils.LiaraApiService LiaraService
 
 <link href="/css/auth.css" rel="stylesheet" />
 
@@ -195,11 +196,36 @@
                 </p>
             </div>
         }
+
+        <!-- Build Version -->
+        @if (!string.IsNullOrEmpty(buildVersion))
+        {
+            <div class="text-center mt-4" style="opacity: 0.6;">
+                <small style="color: var(--auth-text-muted); font-size: 0.75rem;">
+                    <i class="bi bi-gear me-1"></i>
+                    نسخه @buildVersion
+                </small>
+            </div>
+        }
     </div>
 </div>
 
 @code {
-    private bool isAdminMode = false;
+private bool isAdminMode = false;
+private string? buildVersion = null;
+
+protected override async Task OnInitializedAsync()
+{
+    try
+    {
+        buildVersion = await LiaraService.GetCurrentBuildVersionAsync();
+    }
+    catch (Exception)
+    {
+        // Silently fail - build version is not critical
+        buildVersion = null;
+    }
+}
 
     private void SwitchMode(bool toAdmin)
     {

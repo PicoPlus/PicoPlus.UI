@@ -3,12 +3,13 @@
 @inject IJSRuntime Js
 @inject PicoPlus.Services.CRM.Commerce.Product ProductService
 @inject PicoPlus.Services.CRM.Commerce.LineItem LineItemService
+@inject PicoPlus.Infrastructure.Services.IDialogService DialogService
 
 <BSCard Header="مدیریت آیتم‌های سفارش" HeaderIcon="bag-plus-fill">
     
     <!-- Product Selection -->
     <div class="row mb-4">
-        <div class="col-md-8">
+        <div class="col-md-7">
             <label for="productSelect" class="form-label">انتخاب خدمت/محصول</label>
             <div class="input-group">
                 <span class="input-group-text">
@@ -25,13 +26,22 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-4 d-flex align-items-end">
+        <div class="col-md-3 d-flex align-items-end">
             <button type="button" 
                     class="btn btn-info w-100" 
                     @onclick="AddToList"
                     disabled="@(!IsProductSelected)">
                 <i class="bi bi-@(IsEditing ? "arrow-repeat" : "plus-lg") me-2"></i>
                 @(IsEditing ? "بروزرسانی" : "افزودن به لیست")
+            </button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="button" 
+                    class="btn btn-success w-100" 
+                    @onclick="ShowCustomLineItemDialog"
+                    title="افزودن آیتم سفارشی">
+                <i class="bi bi-plus-circle me-1"></i>
+                سفارشی
             </button>
         </div>
     </div>
@@ -103,7 +113,13 @@
                     @foreach (var item in FilteredLineItems)
                     {
                         <tr class="@(IsEditing && item == ItemBeingEdited ? "table-warning" : "")">
-                            <td>@item.properties.hs_sku</td>
+                            <td>
+                                @item.properties.hs_sku
+                                @if (string.IsNullOrEmpty(item.properties.hs_product_id))
+                                {
+                                    <span class="badge bg-primary ms-1" title="آیتم سفارشی">سفارشی</span>
+                                }
+                            </td>
                             <td>@item.properties.name</td>
                             <td>@FormatNumber(item.properties.price)</td>
                             <td>@item.properties.quantity</td>
@@ -150,26 +166,126 @@
     }
 </BSCard>
 
+<!-- Custom Line Item Dialog -->
+@if (showCustomDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        افزودن آیتم سفارشی
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseCustomDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نام آیتم <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control @(string.IsNullOrWhiteSpace(customName) && customValidationAttempted ? "is-invalid" : "")" 
+                               @bind="customName"
+                               placeholder="نام خدمت یا محصول سفارشی" />
+                        @if (string.IsNullOrWhiteSpace(customName) && customValidationAttempted)
+                        {
+                            <div class="invalid-feedback d-block">نام آیتم الزامی است</div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">شناسه (SKU) <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control @(string.IsNullOrWhiteSpace(customSku) && customValidationAttempted ? "is-invalid" : "")" 
+                               @bind="customSku"
+                               placeholder="مثال: CUSTOM-001" />
+                        @if (string.IsNullOrWhiteSpace(customSku) && customValidationAttempted)
+                        {
+                            <div class="invalid-feedback d-block">شناسه الزامی است</div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">قیمت واحد (ریال) <span class="text-danger">*</span></label>
+                        <input type="number" 
+                               class="form-control @(customPrice <= 0 && customValidationAttempted ? "is-invalid" : "")" 
+                               @bind="customPrice"
+                               min="0"
+                               step="1000"
+                               placeholder="0" />
+                        @if (customPrice <= 0 && customValidationAttempted)
+                        {
+                            <div class="invalid-feedback d-block">قیمت باید بیشتر از صفر باشد</div>
+                        }
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تعداد <span class="text-danger">*</span></label>
+                            <input type="number" 
+                                   class="form-control @(customQuantity < 1 && customValidationAttempted ? "is-invalid" : "")" 
+                                   @bind="customQuantity"
+                                   min="1"
+                                   placeholder="1" />
+                            @if (customQuantity < 1 && customValidationAttempted)
+                            {
+                                <div class="invalid-feedback d-block">تعداد باید حداقل 1 باشد</div>
+                            }
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تخفیف (%)</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   @bind="customDiscount"
+                                   min="0"
+                                   max="100"
+                                   step="0.1"
+                                   placeholder="0" />
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>مجموع:</strong> @FormatNumber(CalculateCustomTotal()) ریال
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCustomDialog">
+                        <i class="bi bi-x-lg me-2"></i>انصراف
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="AddCustomLineItem">
+                        <i class="bi bi-check-lg me-2"></i>افزودن
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    private bool IsInit { get; set; }
-    private long Quantity { get; set; } = 1;
-    private decimal Percentage { get; set; } = 0m;
-    private string? SelectedProductID { get; set; }
-    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> PList { get; set; } = new();
-    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> FilteredProducts { get; set; } = new();
-    private List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> LineItems { get; set; } = new();
+private bool IsInit { get; set; }
+private long Quantity { get; set; } = 1;
+private decimal Percentage { get; set; } = 0m;
+private string? SelectedProductID { get; set; }
+private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> PList { get; set; } = new();
+private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> FilteredProducts { get; set; } = new();
+private List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> LineItems { get; set; } = new();
 
-    private string LineItemsSearch { get; set; } = string.Empty;
-    private bool IsEditing { get; set; } = false;
-    private PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input? ItemBeingEdited { get; set; }
-    private bool IsProductSelected => !string.IsNullOrEmpty(SelectedProductID);
+private string LineItemsSearch { get; set; } = string.Empty;
+private bool IsEditing { get; set; } = false;
+private PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input? ItemBeingEdited { get; set; }
+private bool IsProductSelected => !string.IsNullOrEmpty(SelectedProductID);
     
-    private bool quantityError = false;
-    private bool percentageError = false;
+private bool quantityError = false;
+private bool percentageError = false;
 
-    [Parameter]
-    public EventCallback<decimal> OnTotalPriceChanged { get; set; }
-    private decimal TotalPrice { get; set; } = 0m;
+// Custom line item dialog fields
+private bool showCustomDialog = false;
+private string customName = string.Empty;
+private string customSku = string.Empty;
+private decimal customPrice = 0m;
+private long customQuantity = 1;
+private decimal customDiscount = 0m;
+private bool customValidationAttempted = false;
+
+[Parameter]
+public EventCallback<decimal> OnTotalPriceChanged { get; set; }
+private decimal TotalPrice { get; set; } = 0m;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -200,6 +316,68 @@
             Quantity = 1;
             Percentage = 0m;
         }
+    }
+
+    private void ShowCustomLineItemDialog()
+    {
+        customName = string.Empty;
+        customSku = string.Empty;
+        customPrice = 0m;
+        customQuantity = 1;
+        customDiscount = 0m;
+        customValidationAttempted = false;
+        showCustomDialog = true;
+    }
+
+    private void CloseCustomDialog()
+    {
+        showCustomDialog = false;
+        customValidationAttempted = false;
+    }
+
+    private decimal CalculateCustomTotal()
+    {
+        if (customPrice <= 0 || customQuantity < 1) return 0m;
+        return customPrice * customQuantity * (1 - (customDiscount / 100));
+    }
+
+    private async Task AddCustomLineItem()
+    {
+        customValidationAttempted = true;
+
+        // Validate
+        if (string.IsNullOrWhiteSpace(customName) || 
+            string.IsNullOrWhiteSpace(customSku) || 
+            customPrice <= 0 || 
+            customQuantity < 1)
+        {
+            return;
+        }
+
+        var totalPriceForItem = CalculateCustomTotal();
+        
+        var newItem = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input
+        {
+            properties = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Properties
+            {
+                name = customName,
+                hs_product_id = null, // Custom items don't have a product ID
+                price = customPrice,
+                quantity = customQuantity,
+                hs_discount_percentage = customDiscount.ToString("0.##"),
+                hs_sku = customSku,
+                TotalPrice = totalPriceForItem
+            }
+        };
+
+        LineItems.Add(newItem);
+        TotalPrice += totalPriceForItem;
+        await OnTotalPriceChanged.InvokeAsync(TotalPrice);
+
+        await DialogService.ShowSuccessAsync("موفق", $"آیتم سفارشی '{customName}' با موفقیت اضافه شد");
+        
+        CloseCustomDialog();
+        StateHasChanged();
     }
 
     private async Task AddToList()
@@ -308,4 +486,4 @@
     }
 
     public string GetTotalAmount() => TotalPrice.ToString();
-}}
+}
