@@ -6,31 +6,58 @@ using PicoPlus.Services.CRM;
 namespace PicoPlus.Services.Admin;
 
 /// <summary>
-/// Service for dashboard statistics and analytics
+/// High-performance service for dashboard statistics and analytics with caching
 /// </summary>
 public class DashboardService
 {
     private readonly ContactService _contactService;
     private readonly DealService _dealService;
     private readonly Pipelines _pipelineService;
+    private readonly CacheService _cacheService;
+    private readonly PerformanceMonitorService _performanceMonitor;
     private readonly ILogger<DashboardService> _logger;
 
     public DashboardService(
         ContactService contactService,
         DealService dealService,
         Pipelines pipelineService,
+        CacheService cacheService,
+        PerformanceMonitorService performanceMonitor,
         ILogger<DashboardService> logger)
     {
         _contactService = contactService;
         _dealService = dealService;
         _pipelineService = pipelineService;
+        _cacheService = cacheService;
+        _performanceMonitor = performanceMonitor;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get comprehensive dashboard statistics
+    /// Get comprehensive dashboard statistics with caching
     /// </summary>
     public async Task<DashboardStatistics> GetDashboardStatisticsAsync(string? ownerId = null)
+    {
+        return await _cacheService.GetOrCreateDashboardStatsAsync(ownerId, async () =>
+        {
+            using var _ = _performanceMonitor.TrackOperation("api_dashboard_stats");
+            return await FetchDashboardStatisticsAsync(ownerId);
+        });
+    }
+
+    /// <summary>
+    /// Force refresh dashboard statistics (bypass cache)
+    /// </summary>
+    public async Task<DashboardStatistics> RefreshDashboardStatisticsAsync(string? ownerId = null)
+    {
+        _cacheService.InvalidateDashboardStats(ownerId);
+        return await GetDashboardStatisticsAsync(ownerId);
+    }
+
+    /// <summary>
+    /// Internal method to fetch dashboard statistics from HubSpot
+    /// </summary>
+    private async Task<DashboardStatistics> FetchDashboardStatisticsAsync(string? ownerId = null)
     {
         try
         {
@@ -133,9 +160,21 @@ public class DashboardService
     }
 
     /// <summary>
-    /// Get recent activities
+    /// Get recent activities with caching
     /// </summary>
     public async Task<List<RecentActivity>> GetRecentActivitiesAsync(string? ownerId = null, int limit = 10)
+    {
+        return await _cacheService.GetOrCreateRecentActivitiesAsync(ownerId, async () =>
+        {
+            using var _ = _performanceMonitor.TrackOperation("api_recent_activities");
+            return await FetchRecentActivitiesAsync(ownerId, limit);
+        });
+    }
+
+    /// <summary>
+    /// Internal method to fetch recent activities from HubSpot
+    /// </summary>
+    private async Task<List<RecentActivity>> FetchRecentActivitiesAsync(string? ownerId = null, int limit = 10)
     {
         try
         {

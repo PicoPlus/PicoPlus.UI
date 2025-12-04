@@ -90,6 +90,8 @@ builder.Services.AddSingleton<AuthenticationStateService>();
 builder.Services.AddScoped<AdminAuthorizationHandler>();
 builder.Services.AddScoped<AdminStateService>();
 builder.Services.AddScoped<AdminOwnerService>();
+builder.Services.AddSingleton<CacheService>();
+builder.Services.AddSingleton<PerformanceMonitorService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<KanbanService>();
 
