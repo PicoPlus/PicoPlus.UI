@@ -2,8 +2,9 @@
   "app": "ipicoplus",
   "port": 5000,
   "platform": "dotnet",
+  "runtime": "dotnet-9",
   "build": {
-    "location": "iran"
+    "location": "germany"
   },
   "disks": [
     {
