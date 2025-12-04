@@ -1,0 +1,347 @@
+@page "/admin/performance"
+@layout Components.Layout.AdminLayout
+@using PicoPlus.Services.Admin
+@using PicoPlus.State.Admin
+@inject PerformanceMonitorService PerformanceMonitor
+@inject CacheService CacheService
+@inject AdminStateService AdminState
+@implements IDisposable
+
+<PageTitle>عملکرد سیستم - پنل مدیریت</PageTitle>
+
+<div class="performance-page">
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2">
+                    <i class="bi bi-speedometer me-2"></i>
+                    نظارت بر عملکرد
+                </h2>
+                <p class="text-muted mb-0">مانیتورینگ بلادرنگ سیستم و متریک‌های عملکردی</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="RefreshMetrics">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    بروزرسانی
+                </button>
+                <button class="btn btn-outline-danger" @onclick="ClearMetrics">
+                    <i class="bi bi-trash me-2"></i>
+                    پاک کردن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Status Banner -->
+    <div class="health-banner @GetHealthStatusClass() mb-4">
+        <div class="health-icon">
+            <i class="bi @GetHealthStatusIcon()"></i>
+        </div>
+        <div class="health-content">
+            <h4 class="mb-1">وضعیت: @GetHealthStatusText()</h4>
+            <p class="mb-0">آخرین بروزرسانی: @performanceSummary.Timestamp.ToString("HH:mm:ss")</p>
+        </div>
+        <div class="health-indicator">
+            <span class="health-dot @GetHealthStatusClass()"></span>
+        </div>
+    </div>
+
+    <!-- RED Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Request Rate -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card metric-rate">
+                <div class="metric-header">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Rate</span>
+                </div>
+                <div class="metric-value">@redMetrics.RequestRate</div>
+                <div class="metric-label">درخواست‌های پردازش شده</div>
+                <div class="metric-sparkline">
+                    <div class="sparkline-bar" style="width: @GetSparklineWidth(redMetrics.RequestRate, 1000)%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Rate -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card metric-errors @(redMetrics.ErrorRate > 5 ? "warning" : "")">
+                <div class="metric-header">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Errors</span>
+                </div>
+                <div class="metric-value">@redMetrics.ErrorRate.ToString("F2")%</div>
+                <div class="metric-label">نرخ خطا</div>
+                <div class="metric-sparkline error">
+                    <div class="sparkline-bar" style="width: @GetSparklineWidth(redMetrics.ErrorRate, 100)%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Latency -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card metric-duration @(redMetrics.AverageLatencyMs > 200 ? "warning" : "")">
+                <div class="metric-header">
+                    <i class="bi bi-clock"></i>
+                    <span>Duration (Avg)</span>
+                </div>
+                <div class="metric-value">@redMetrics.AverageLatencyMs.ToString("F0")ms</div>
+                <div class="metric-label">میانگین تأخیر</div>
+                <div class="metric-sparkline">
+                    <div class="sparkline-bar" style="width: @GetSparklineWidth(redMetrics.AverageLatencyMs, 500)%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- P95 Latency -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card metric-p95 @(redMetrics.P95LatencyMs > 500 ? "warning" : "")">
+                <div class="metric-header">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Duration (P95)</span>
+                </div>
+                <div class="metric-value">@redMetrics.P95LatencyMs.ToString("F0")ms</div>
+                <div class="metric-label">صدک ۹۵ تأخیر</div>
+                <div class="metric-sparkline">
+                    <div class="sparkline-bar" style="width: @GetSparklineWidth(redMetrics.P95LatencyMs, 1000)%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operation Metrics Table -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>
+                        عملیات‌ها
+                    </h5>
+                    <span class="badge bg-primary">@performanceSummary.Operations.Count عملیات</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (performanceSummary.Operations.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>عملیات</th>
+                                        <th class="text-center">تعداد</th>
+                                        <th class="text-center">میانگین</th>
+                                        <th class="text-center">P95</th>
+                                        <th class="text-center">P99</th>
+                                        <th>وضعیت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var op in performanceSummary.Operations.OrderByDescending(o => o.Value.TotalCalls))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <code>@op.Key</code>
+                                            </td>
+                                            <td class="text-center">@op.Value.TotalCalls</td>
+                                            <td class="text-center">@op.Value.AverageMs.ToString("F1")ms</td>
+                                            <td class="text-center">@op.Value.P95Ms.ToString("F1")ms</td>
+                                            <td class="text-center">@op.Value.P99Ms.ToString("F1")ms</td>
+                                            <td>
+                                                <span class="badge @GetLatencyBadgeClass(op.Value.P95Ms)">
+                                                    @GetLatencyStatus(op.Value.P95Ms)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+                            <p class="mt-3 text-muted">هنوز داده‌ای ثبت نشده است</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Status -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-database me-2"></i>
+                        وضعیت کش
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="cache-status-item">
+                        <div class="d-flex justify-content-between">
+                            <span>ارائه‌دهنده</span>
+                            <span class="fw-bold">@cacheMetrics.CacheProvider</span>
+                        </div>
+                    </div>
+                    <div class="cache-status-item">
+                        <div class="d-flex justify-content-between">
+                            <span>وضعیت</span>
+                            <span class="badge bg-success">@cacheMetrics.Status</span>
+                        </div>
+                    </div>
+                    <div class="cache-status-item">
+                        <div class="d-flex justify-content-between">
+                            <span>آخرین بروزرسانی</span>
+                            <span>@cacheMetrics.LastUpdated.ToString("HH:mm:ss")</span>
+                        </div>
+                    </div>
+                    <hr />
+                    <button class="btn btn-outline-warning w-100" @onclick="InvalidateCache">
+                        <i class="bi bi-trash me-2"></i>
+                        پاکسازی کش
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Counters -->
+    @if (performanceSummary.Counters.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-123 me-2"></i>
+                    شمارنده‌ها
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach (var counter in performanceSummary.Counters)
+                    {
+                        <div class="col-md-3 col-sm-6">
+                            <div class="counter-card">
+                                <div class="counter-value">@counter.Value</div>
+                                <div class="counter-name">@counter.Key</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private PerformanceSummary performanceSummary = new();
+    private RedMetrics redMetrics = new();
+    private CacheMetrics cacheMetrics = new();
+    private System.Threading.Timer? refreshTimer;
+    private bool _disposed = false;
+
+    protected override void OnInitialized()
+    {
+        RefreshMetrics();
+        
+        // Auto-refresh every 5 seconds with proper exception handling
+        refreshTimer = new System.Threading.Timer(
+            _ => {
+                if (_disposed) return;
+                try
+                {
+                    InvokeAsync(() => {
+                        if (_disposed) return;
+                        RefreshMetrics();
+                        StateHasChanged();
+                    });
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Component was disposed, ignore
+                }
+            },
+            null,
+            TimeSpan.FromSeconds(5),
+            TimeSpan.FromSeconds(5));
+    }
+
+    private void RefreshMetrics()
+    {
+        performanceSummary = PerformanceMonitor.GetSummary();
+        redMetrics = PerformanceMonitor.GetRedMetrics();
+        cacheMetrics = CacheService.GetMetrics();
+    }
+
+    private void ClearMetrics()
+    {
+        PerformanceMonitor.ClearMetrics();
+        RefreshMetrics();
+    }
+
+    private void InvalidateCache()
+    {
+        CacheService.InvalidateAll();
+        RefreshMetrics();
+    }
+
+    private string GetHealthStatusClass()
+    {
+        return performanceSummary.HealthStatus switch
+        {
+            "Healthy" => "healthy",
+            "Warning" => "warning",
+            "Degraded" => "degraded",
+            _ => "unknown"
+        };
+    }
+
+    private string GetHealthStatusIcon()
+    {
+        return performanceSummary.HealthStatus switch
+        {
+            "Healthy" => "bi-check-circle-fill",
+            "Warning" => "bi-exclamation-triangle-fill",
+            "Degraded" => "bi-x-circle-fill",
+            _ => "bi-question-circle-fill"
+        };
+    }
+
+    private string GetHealthStatusText()
+    {
+        return performanceSummary.HealthStatus switch
+        {
+            "Healthy" => "سالم",
+            "Warning" => "هشدار",
+            "Degraded" => "کاهش عملکرد",
+            _ => "نامشخص"
+        };
+    }
+
+    private double GetSparklineWidth(double value, double max)
+    {
+        if (max <= 0) return 0;
+        return Math.Min(100, (value / max) * 100);
+    }
+
+    private string GetLatencyBadgeClass(double latencyMs)
+    {
+        if (latencyMs < 100) return "bg-success";
+        if (latencyMs < 300) return "bg-warning";
+        return "bg-danger";
+    }
+
+    private string GetLatencyStatus(double latencyMs)
+    {
+        if (latencyMs < 100) return "سریع";
+        if (latencyMs < 300) return "متوسط";
+        return "کند";
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        refreshTimer?.Dispose();
+    }
+}

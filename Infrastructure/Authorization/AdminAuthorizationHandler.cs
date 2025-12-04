@@ -11,17 +11,20 @@ public class AdminAuthorizationHandler
 {
     private readonly AuthenticationStateService _authState;
     private readonly ISessionStorageService _sessionStorage;
+    private readonly ILocalStorageService _localStorage;
     private readonly NavigationManager _navigation;
     private readonly ILogger<AdminAuthorizationHandler> _logger;
 
     public AdminAuthorizationHandler(
         AuthenticationStateService authState,
         ISessionStorageService sessionStorage,
+        ILocalStorageService localStorage,
         NavigationManager navigation,
         ILogger<AdminAuthorizationHandler> logger)
     {
         _authState = authState;
         _sessionStorage = sessionStorage;
+        _localStorage = localStorage;
         _navigation = navigation;
         _logger = logger;
     }
@@ -33,10 +36,35 @@ public class AdminAuthorizationHandler
     {
         try
         {
-            var isAuthenticated = await _authState.IsAuthenticatedAsync();
-            if (!isAuthenticated)
+            // First check session storage for login state
+            var loginState = await _sessionStorage.GetItemAsync<int>("LogInState", cancellationToken);
+            
+            // If not in session, check local storage (remember me)
+            if (loginState != 1)
             {
-                _logger.LogWarning("User is not authenticated");
+                loginState = await _localStorage.GetItemAsync<int>("LogInState", cancellationToken);
+                
+                // If found in local storage, restore to session
+                if (loginState == 1)
+                {
+                    var role = await _localStorage.GetItemAsync<string>("user_role", cancellationToken);
+                    var email = await _localStorage.GetItemAsync<string>("user_email", cancellationToken);
+                    var name = await _localStorage.GetItemAsync<string>("user_name", cancellationToken);
+                    
+                    await _sessionStorage.SetItemAsync("LogInState", loginState, cancellationToken);
+                    await _sessionStorage.SetItemAsync("user_role", role, cancellationToken);
+                    await _sessionStorage.SetItemAsync("user_email", email, cancellationToken);
+                    await _sessionStorage.SetItemAsync("user_name", name, cancellationToken);
+                    
+                    // Update auth state
+                    _authState.IsAuthenticated = true;
+                    _authState.LoginState = 1;
+                }
+            }
+            
+            if (loginState != 1)
+            {
+                _logger.LogWarning("User is not authenticated (LoginState: {State})", loginState);
                 return false;
             }
 
@@ -45,6 +73,10 @@ public class AdminAuthorizationHandler
             
             if (adminRole == "Admin" || adminRole == "SuperAdmin")
             {
+                // Ensure auth state is synced
+                _authState.IsAuthenticated = true;
+                _authState.LoginState = 1;
+                
                 _logger.LogInformation("User has admin access: {Role}", adminRole);
                 return true;
             }
@@ -68,8 +100,8 @@ public class AdminAuthorizationHandler
         
         if (!isAdmin)
         {
-            _logger.LogWarning("Unauthorized admin access attempt. Redirecting to admin login.");
-            _navigation.NavigateTo("/admin/login", true);
+            _logger.LogWarning("Unauthorized admin access attempt. Redirecting to login.");
+            _navigation.NavigateTo("/auth/login", true);
             return false;
         }
 
@@ -101,6 +133,33 @@ public class AdminAuthorizationHandler
         {
             _logger.LogError(ex, "Error getting admin user info");
             return null;
+        }
+    }
+    
+    /// <summary>
+    /// Logout the admin user
+    /// </summary>
+    public async Task LogoutAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _sessionStorage.RemoveItemAsync("LogInState", cancellationToken);
+            await _sessionStorage.RemoveItemAsync("user_role", cancellationToken);
+            await _sessionStorage.RemoveItemAsync("user_email", cancellationToken);
+            await _sessionStorage.RemoveItemAsync("user_name", cancellationToken);
+            
+            await _localStorage.RemoveItemAsync("LogInState", cancellationToken);
+            await _localStorage.RemoveItemAsync("user_role", cancellationToken);
+            await _localStorage.RemoveItemAsync("user_email", cancellationToken);
+            await _localStorage.RemoveItemAsync("user_name", cancellationToken);
+            
+            _authState.ClearAuthentication();
+            
+            _logger.LogInformation("Admin logged out successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during admin logout");
         }
     }
 }
