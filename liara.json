@@ -3,7 +3,8 @@
   "app": "ipicoplus",
   "port": 3000,
   "build": {
-    "location": "iran"
+    "location": "iran",
+    "image": "registry2.iran.liara.ir/platforms/dotnet-platform:release-2025-12-01T10-00-dotnet9-builder"
   },
   "disks": [
     {
