@@ -1,8 +1,8 @@
 {
   "app": "ipicoplus",
-  "port": 5000,
   "platform": "dotnet",
-  "runtime": "dotnet-9",
+  "runtime": "dotnet-8",
+  "port": 5000,
   "build": {
     "location": "iran"
   },
@@ -14,6 +14,6 @@
   ],
   "env": {
     "ASPNETCORE_ENVIRONMENT": "Production",
-    "ASPNETCORE_URLS": "http://+:5000"
+    "ASPNETCORE_URLS": "http://0.0.0.0:5000"
   }
 }
