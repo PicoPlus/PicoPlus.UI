@@ -1,8 +1,7 @@
 {
-  "app": "ipicoplus",
   "platform": "dotnet",
-  "runtime": "dotnet-8",
-  "port": 5000,
+  "app": "ipicoplus",
+  "port": 3000,
   "build": {
     "location": "iran"
   },
@@ -11,9 +10,5 @@
       "name": "picoapp",
       "mountTo": "/app/data"
     }
-  ],
-  "env": {
-    "ASPNETCORE_ENVIRONMENT": "Production",
-    "ASPNETCORE_URLS": "http://0.0.0.0:5000"
-  }
+  ]
 }
