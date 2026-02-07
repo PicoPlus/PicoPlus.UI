@@ -86,7 +86,10 @@ namespace PicoPlus.Services.CRM.Objects
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
 
             using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                await ThrowHubSpotRequestExceptionAsync(response, "Search");
+            }
 
             var responseJson = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<Models.CRM.Objects.Contact.Search.Response>(responseJson)!;
@@ -147,10 +150,38 @@ namespace PicoPlus.Services.CRM.Objects
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
 
             using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                await ThrowHubSpotRequestExceptionAsync(response, "SearchAdvanced");
+            }
 
             var responseJson = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<Models.CRM.Objects.Contact.Search.Response>(responseJson)!;
+        }
+
+        private async Task ThrowHubSpotRequestExceptionAsync(HttpResponseMessage response, string operation)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            _logger.LogError(
+                "HubSpot contact operation {Operation} failed. Status: {StatusCode}, Body: {ResponseBody}",
+                operation,
+                response.StatusCode,
+                responseBody);
+
+            var message = response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized =>
+                    "احراز هویت HubSpot نامعتبر است. لطفاً توکن را بررسی کنید.",
+                System.Net.HttpStatusCode.Forbidden =>
+                    "دسترسی HubSpot رد شد (403). احتمالاً دسترسی لازم برای مخاطبین فعال نیست یا توکن صحیح نیست.",
+                System.Net.HttpStatusCode.TooManyRequests =>
+                    "تعداد درخواست‌ها به HubSpot بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.",
+                _ =>
+                    $"خطا در ارتباط با HubSpot ({(int)response.StatusCode})."
+            };
+
+            throw new HttpRequestException(message, null, response.StatusCode);
         }
 
         /// <summary>

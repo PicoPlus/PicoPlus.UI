@@ -4,6 +4,7 @@ using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
 using PicoPlus.Models.CRM.Objects;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 using PicoPlus.Services.CRM;
 
@@ -63,27 +64,45 @@ public partial class LoginViewModel : BaseViewModel
             _logger.LogInformation("Attempting login for national code: {NationalCode}", NationalCode);
 
             // Search for contact in HubSpot
-            var searchResponse = await _contactService.Search(
-                query: NationalCode,
-                paramName: "natcode",
-                paramValue: NationalCode,
-                propertiesToInclude: new[]
-                {
-                    "firstname",
-                    "lastname",
-                    "email",
-                    "phone",
-                    "natcode",
-                    "dateofbirth",
-                    "father_name",
-                    "gender",
-                    "total_revenue",
-                    "shahkar_status",
-                    "wallet",
-                    "num_associated_deals",
-                    "contact_plan"
-                }
-            );
+            Models.CRM.Objects.Contact.Search.Response? searchResponse;
+            try
+            {
+                searchResponse = await _contactService.Search(
+                    query: NationalCode,
+                    paramName: "natcode",
+                    paramValue: NationalCode,
+                    propertiesToInclude: new[]
+                    {
+                        "firstname",
+                        "lastname",
+                        "email",
+                        "phone",
+                        "natcode",
+                        "dateofbirth",
+                        "father_name",
+                        "gender",
+                        "total_revenue",
+                        "shahkar_status",
+                        "wallet",
+                        "num_associated_deals",
+                        "contact_plan"
+                    }
+                );
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+            {
+                HasError = true;
+                ErrorMessage = "دسترسی به HubSpot رد شد (403). لطفاً سطح دسترسی Private App و توکن را بررسی کنید.";
+                _logger.LogWarning(ex, "HubSpot access denied while searching contact by national code");
+                return;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                HasError = true;
+                ErrorMessage = "توکن HubSpot نامعتبر است (401). لطفاً مقدار HUBSPOT_TOKEN را بررسی کنید.";
+                _logger.LogWarning(ex, "HubSpot token unauthorized while searching contact");
+                return;
+            }
 
             if (searchResponse?.results != null && searchResponse.results.Any())
             {
