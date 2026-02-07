@@ -489,3 +489,68 @@
     border-left: 2px solid var(--auth-border);
     border-radius: 0.5rem 0 0 0.5rem;
 }
+
+/* Login UX Enhancements */
+.auth-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.auth-highlight-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.auth-input-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+}
+
+.auth-char-counter {
+    color: var(--auth-text-muted);
+    font-size: 0.8rem;
+}
+
+.auth-ok {
+    color: var(--auth-success);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.auth-help-box {
+    border: 1px dashed #c7d2fe;
+    border-radius: 0.75rem;
+    background: #f8faff;
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.auth-help-title {
+    color: #3730a3;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.auth-help-list {
+    margin: 0;
+    padding-right: 1rem;
+    color: #4b5563;
+    font-size: 0.84rem;
+}
+
+.auth-help-list li {
+    margin-bottom: 0.2rem;
+}
