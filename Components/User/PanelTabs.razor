@@ -1,0 +1,36 @@
+@using PicoPlus.State.UserPanel
+
+@if (Statistics is not null)
+{
+    <div class="modern-tabs-container fade-in" style="animation-delay: 0.5s">
+        <div class="modern-tabs" role="tablist" aria-label="بخش‌های پنل کاربری">
+            <button type="button"
+                    class="modern-tab @(ActiveTab == TabType.Profile ? "active" : "")"
+                    @onclick="OnProfileClick"
+                    role="tab"
+                    aria-selected="@(ActiveTab == TabType.Profile)"
+                    aria-controls="profile-tab"
+                    tabindex="@(ActiveTab == TabType.Profile ? 0 : -1)">
+                <i class="bi bi-person-badge-fill me-2"></i>
+                اطلاعات شخصی
+            </button>
+            <button type="button"
+                    class="modern-tab @(ActiveTab == TabType.Deals ? "active" : "")"
+                    @onclick="OnDealsClick"
+                    role="tab"
+                    aria-selected="@(ActiveTab == TabType.Deals)"
+                    aria-controls="deals-tab"
+                    tabindex="@(ActiveTab == TabType.Deals ? 0 : -1)">
+                <i class="bi bi-briefcase-fill me-2"></i>
+                معاملات من (@Statistics.TotalDeals)
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public TabType ActiveTab { get; set; }
+    [Parameter] public UserStatistics? Statistics { get; set; }
+    [Parameter] public EventCallback OnProfileClick { get; set; }
+    [Parameter] public EventCallback OnDealsClick { get; set; }
+}

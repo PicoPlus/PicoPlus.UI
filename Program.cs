@@ -177,12 +177,14 @@ builder.Services.AddScoped<PicoPlus.ViewModels.Auth.LoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.AdminLoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.RegisterViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.User.UserHomeViewModel>();
+builder.Services.AddScoped<PicoPlus.ViewModels.User.UserPanelViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateDialogViewModel>();
 
 // User Panel
 builder.Services.AddSingleton<PicoPlus.Services.UserPanel.IPersianDateService, PicoPlus.Services.UserPanel.PersianDateService>();
 builder.Services.AddScoped<PicoPlus.Services.UserPanel.IUserPanelService, PicoPlus.Services.UserPanel.UserPanelService>();
+builder.Services.AddScoped<PicoPlus.Services.Backup.IGraphBackupService, PicoPlus.Services.Backup.Neo4jBackupService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<PicoPlus.Views.Deal.Create>();

@@ -1,0 +1,27 @@
+@using PicoPlus.State.UserPanel
+
+@if (Contact is not null)
+{
+    <div class="fade-in" style="animation-delay: 0.6s">
+        @if (ActiveTab == TabType.Profile)
+        {
+            <div id="profile-tab" role="tabpanel" aria-labelledby="profile-tab-button">
+                <ProfileTab Contact="@Contact" />
+            </div>
+        }
+
+        @if (ActiveTab == TabType.Deals)
+        {
+            <div id="deals-tab" role="tabpanel" aria-labelledby="deals-tab-button">
+                <DealsTable Deals="@Deals" OnDealSelected="OnDealSelected" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public TabType ActiveTab { get; set; }
+    [Parameter] public ContactInfo? Contact { get; set; }
+    [Parameter] public IReadOnlyList<DealSummary> Deals { get; set; } = Array.Empty<DealSummary>();
+    [Parameter] public EventCallback<DealSummary> OnDealSelected { get; set; }
+}

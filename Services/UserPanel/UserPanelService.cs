@@ -7,6 +7,7 @@ using PicoPlus.Services.CRM;
 using PicoPlus.Services.CRM.Objects;
 using PicoPlus.State.UserPanel;
 using PicoPlus.Extensions;
+using PicoPlus.Services.Backup;
 using ContactModel = PicoPlus.Models.CRM.Objects.Contact;
 using DealModel = PicoPlus.Models.CRM.Objects.Deal;
 
@@ -25,6 +26,7 @@ public class UserPanelService : IUserPanelService
     private readonly AuthenticationStateService _authState;
     private readonly IMemoryCache _cache;
     private readonly ILogger<UserPanelService> _logger;
+    private readonly IGraphBackupService _graphBackupService;
 
     private const string CacheKeyPrefix = "UserPanel_";
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
@@ -36,7 +38,8 @@ public class UserPanelService : IUserPanelService
         ISessionStorageService sessionStorage,
         AuthenticationStateService authState,
         IMemoryCache cache,
-        ILogger<UserPanelService> logger)
+        ILogger<UserPanelService> logger,
+        IGraphBackupService graphBackupService)
     {
         _contactService = contactService;
         _dealService = dealService;
@@ -45,6 +48,7 @@ public class UserPanelService : IUserPanelService
         _authState = authState;
         _cache = cache;
         _logger = logger;
+        _graphBackupService = graphBackupService;
     }
 
     public async Task<UserPanelState?> LoadUserPanelStateAsync(string contactId, CancellationToken cancellationToken = default)
@@ -121,6 +125,9 @@ public class UserPanelService : IUserPanelService
 
             // Cache the result
             _cache.Set(cacheKey, state, CacheDuration);
+
+            // Best-effort backup for resilience/reporting; failures are handled inside the service.
+            await _graphBackupService.BackupUserPanelStateAsync(contactId, state, cancellationToken);
 
             _logger.LogInformation("Successfully loaded user panel state for: {ContactId}, Deals: {DealCount}", contactId, deals.Count);
 
