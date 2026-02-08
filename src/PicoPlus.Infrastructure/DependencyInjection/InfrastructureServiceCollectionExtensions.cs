@@ -18,7 +18,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<INavigationService, NavigationService>();
-        services.AddSingleton<ToastService>();
+        services.AddSingleton<IToastService, ToastService>();
         services.AddScoped<IDialogService, DialogServiceWrapper>();
         services.AddScoped<ISessionStorageService, SessionStorageServiceWrapper>();
         services.AddScoped<ILocalStorageService, LocalStorageServiceWrapper>();

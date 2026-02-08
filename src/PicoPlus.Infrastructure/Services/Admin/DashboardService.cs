@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using PicoPlus.Models.Admin;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 using DealService = PicoPlus.Services.CRM.Objects.Deal;
