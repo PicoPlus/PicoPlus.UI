@@ -98,7 +98,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUserPanelService, PicoPlus.Services.UserPanel.UserPanelService>();
 
         services.AddMemoryCache();
-        services.AddScoped<PicoPlus.Views.Deal.Create>();
         services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();
 
         return services;
