@@ -12,6 +12,11 @@
 
 <div class="auth-container">
     <div class="auth-card">
+        <div class="auth-chip">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>ورود سریع و امن</span>
+        </div>
+
         <!-- Logo/Icon -->
         <div class="auth-icon">
             <i class="bi bi-shield-lock"></i>
@@ -29,6 +34,21 @@
                 <span>@L["EnterNationalCode"]</span>
             }
         </p>
+
+        <div class="auth-highlights">
+            <div class="auth-highlight-item">
+                <i class="bi bi-check2-circle"></i>
+                <span>اعتبارسنجی هوشمند اطلاعات</span>
+            </div>
+            <div class="auth-highlight-item">
+                <i class="bi bi-shield-check"></i>
+                <span>امنیت چندلایه برای حساب کاربری</span>
+            </div>
+            <div class="auth-highlight-item">
+                <i class="bi bi-clock-history"></i>
+                <span>کمتر از یک دقیقه تا ورود</span>
+            </div>
+        </div>
 
         <!-- Error Alert -->
         @if ((!isAdminMode && UserViewModel.HasError) || (isAdminMode && AdminViewModel.HasError))
@@ -87,6 +107,11 @@
                     </small>
                 </div>
 
+                <div class="auth-tip mb-3">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>پس از ورود، کد تایید به شماره ثبت‌شده شما ارسال می‌شود.</span>
+                </div>
+
                 <!-- Login Button -->
                 <button type="submit" 
                         class="btn auth-btn auth-btn-primary w-100 mb-3" 
@@ -131,13 +156,22 @@
                         <i class="bi bi-lock me-2"></i>
                         @L["Password"]
                     </label>
-                    <InputText id="adminPassword"
-                               type="password"
-                               class="form-control"
-                               @bind-Value="AdminViewModel.Password"
-                               placeholder="••••••••"
-                               disabled="@AdminViewModel.IsLoading"
-                               autocomplete="current-password" />
+                    <div class="input-group">
+                        <InputText id="adminPassword"
+                                   type="@(showAdminPassword ? "text" : "password")"
+                                   class="form-control"
+                                   @bind-Value="AdminViewModel.Password"
+                                   placeholder="••••••••"
+                                   disabled="@AdminViewModel.IsLoading"
+                                   autocomplete="current-password" />
+                        <button type="button"
+                                class="btn auth-input-action"
+                                @onclick="ToggleAdminPassword"
+                                disabled="@AdminViewModel.IsLoading"
+                                aria-label="نمایش یا پنهان کردن رمز عبور">
+                            <i class="bi bi-@(showAdminPassword ? "eye-slash" : "eye")"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Remember Me -->
@@ -197,6 +231,13 @@
             </div>
         }
 
+        <div class="auth-meta text-center mt-4">
+            <small>
+                <i class="bi bi-headset me-1"></i>
+                در صورت مشکل در ورود، با پشتیبانی تماس بگیرید.
+            </small>
+        </div>
+
         <!-- Build Version -->
         @if (!string.IsNullOrEmpty(buildVersion))
         {
@@ -213,6 +254,7 @@
 @code {
 private bool isAdminMode = false;
 private string? buildVersion = null;
+private bool showAdminPassword = false;
 
 protected override async Task OnInitializedAsync()
 {
@@ -230,6 +272,7 @@ protected override async Task OnInitializedAsync()
     private void SwitchMode(bool toAdmin)
     {
         isAdminMode = toAdmin;
+        showAdminPassword = false;
         
         // Clear errors when switching
         UserViewModel.HasError = false;
@@ -247,5 +290,10 @@ protected override async Task OnInitializedAsync()
     private async Task HandleAdminLogin()
     {
         await AdminViewModel.LoginCommand.ExecuteAsync(default);
+    }
+
+    private void ToggleAdminPassword()
+    {
+        showAdminPassword = !showAdminPassword;
     }
 }

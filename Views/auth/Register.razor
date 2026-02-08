@@ -12,6 +12,11 @@
 
 <div class="auth-container">
     <div class="auth-card auth-card-wide">
+        <div class="auth-chip auth-chip-success">
+            <i class="bi bi-stars"></i>
+            <span>ثبت‌نام مرحله‌ای با راهنمای کامل</span>
+        </div>
+
         <!-- Logo/Icon -->
         <div class="auth-icon">
             <i class="bi bi-person-plus"></i>
@@ -22,6 +27,11 @@
         <p class="auth-subtitle">
             برای ایجاد حساب کاربری جدید، مراحل زیر را تکمیل کنید
         </p>
+
+        <div class="auth-step-caption">
+            <i class="bi bi-signpost-2"></i>
+            <span>مرحله @ViewModel.CurrentStep از 4</span>
+        </div>
 
         <!-- Step Indicator -->
         <div class="auth-steps">
@@ -99,6 +109,11 @@
                         </small>
                     </div>
                 </div>
+
+                <div class="auth-tip auth-tip-neutral">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>اطلاعات هویتی شما تنها برای احراز هویت استفاده می‌شود.</span>
+                </div>
             }
 
             <!-- Step 2: Identity Verified - Show Results & Phone Input -->
@@ -107,6 +122,14 @@
                 <div class="auth-verified mb-4">
                     <i class="bi bi-check-circle-fill"></i>
                     <span>اطلاعات شما با موفقیت تأیید شد</span>
+                </div>
+
+                <div class="auth-summary mb-3">
+                    <div>
+                        <small>وضعیت مرحله</small>
+                        <strong>احراز هویت انجام شد</strong>
+                    </div>
+                    <i class="bi bi-patch-check-fill"></i>
                 </div>
 
                 <div class="row mb-3">
@@ -175,6 +198,11 @@
                         <p class="text-muted">
                             کد تایید 6 رقمی به شماره <strong>@ViewModel.Phone</strong> ارسال شد
                         </p>
+                    </div>
+
+                    <div class="auth-tip mb-3">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span>برای افزایش امنیت، کد تایید فقط برای مدت محدود معتبر است.</span>
                     </div>
 
                     <div class="mb-4">
@@ -322,6 +350,13 @@
                     <i class="bi bi-arrow-left me-1"></i>
                 </a>
             </p>
+        </div>
+
+        <div class="auth-meta text-center mt-4">
+            <small>
+                <i class="bi bi-check2-all me-1"></i>
+                بعد از تکمیل ثبت‌نام، به صورت خودکار وارد پنل کاربری خواهید شد.
+            </small>
         </div>
     </div>
 </div>
