@@ -1,0 +1,181 @@
+{
+  "structure": {
+    "solution": "PicoPlus.sln",
+    "project": "PicoPlus.csproj (ASP.NET Core Blazor Web App, net9.0, Interactive Server)",
+    "dependencies": {
+      "nuget": [
+        "Blazor.PersianDatePicker 3.7.2",
+        "Blazored.SessionStorage 2.4.0",
+        "Blazored.LocalStorage 4.5.0",
+        "CommunityToolkit.Mvvm 8.4.0",
+        "DotNetEnv 3.1.1",
+        "Newtonsoft.Json 13.0.4",
+        "RestSharp 112.1.1-alpha.0.8",
+        "SixLabors.ImageSharp 3.1.12",
+        "Telegram.Bot 22.7.5"
+      ]
+    },
+    "hierarchy": {
+      "Components": [
+        "App.razor",
+        "Routes.razor",
+        "Layout/*",
+        "Shared/*",
+        "Dialogs/*",
+        "User/*",
+        "Pages/*"
+      ],
+      "Pages": [
+        "User/Panel.razor (+ code-behind)"
+      ],
+      "Views": [
+        "auth/*",
+        "Admin/*",
+        "User/*",
+        "Deal/*",
+        "Demo/*",
+        "Invoice.razor"
+      ],
+      "Services": [
+        "Auth/*",
+        "UserPanel/*",
+        "Admin/*",
+        "CRM/*",
+        "SMS/*",
+        "Image/*",
+        "Utils/*"
+      ],
+      "Infrastructure": [
+        "Authorization/*",
+        "Http/*",
+        "Services/* wrappers",
+        "State/*"
+      ],
+      "State": [
+        "Admin/*",
+        "UserPanel/*"
+      ],
+      "ViewModels": [
+        "Auth/*",
+        "User/*",
+        "Deal/*",
+        "BaseViewModel"
+      ],
+      "Models": [
+        "CRM DTOs",
+        "Admin",
+        "Services/*"
+      ],
+      "Resources": [
+        "SharedResource.fa-IR.resx",
+        "SharedResource.en-US.resx"
+      ]
+    },
+    "identified_roles": {
+      "components": "UI primitives, dialogs, panel widgets",
+      "services": "HubSpot CRM, auth/session, OTP/SMS, admin/dashboard, image processing",
+      "models": "HubSpot DTO contracts + internal state models",
+      "shared_resources": "Localization resources + shared css/js"
+    },
+    "unusual_structure_findings": [
+      "Both `Views/*` and `Components/*` contain routable UI, creating mixed architecture.",
+      "`Views/Invoice.razor` is explicitly removed from publish as Content and re-added as None.",
+      "Repository contains suspicious stray files: `et --hard 78dc6c6`, `temp_fix.txt`, and `Views/auth/Login` (non-.razor file with stale Razor content)."
+    ]
+  },
+  "bugs_and_issues": [
+    {
+      "severity": "high",
+      "issue": "Session clearing uses `UserRole` while auth flow stores `user_role`; role can persist unexpectedly.",
+      "location": "Services/UserPanel/UserPanelService.cs"
+    },
+    {
+      "severity": "medium",
+      "issue": "Deal close date mapping parses `createdate` instead of `closedate`, leading to incorrect timeline data.",
+      "location": "Services/UserPanel/UserPanelService.cs"
+    },
+    {
+      "severity": "high",
+      "issue": "Admin login route (`/admin/login`) immediately redirects to `/auth/login`, making dedicated admin page unreachable by design.",
+      "location": "Views/Admin/AdminLogin.razor"
+    },
+    {
+      "severity": "medium",
+      "issue": "`ShouldRender()` override in panel always returns true and gives no optimization benefit.",
+      "location": "Pages/User/Panel.razor.cs"
+    },
+    {
+      "severity": "medium",
+      "issue": "Stale/accidental files checked into repo can confuse build/review and may leak internal history snippets.",
+      "location": "repo root + Views/auth/Login"
+    }
+  ],
+  "performance_risks": [
+    {
+      "severity": "high",
+      "risk": "Login flow performs synchronous chain: CRM search + optional contact update before navigation, increasing first-login latency.",
+      "location": "ViewModels/Auth/LoginViewModel.cs"
+    },
+    {
+      "severity": "medium",
+      "risk": "Large pages contain extensive inline markup and dynamic sections without virtualization/pagination for deal lists.",
+      "location": "Views/User/Home.razor, Pages/User/Panel.razor"
+    },
+    {
+      "severity": "medium",
+      "risk": "Many services call external APIs directly per user request; limited resilience (retry/circuit breaker policies not configured).",
+      "location": "Program.cs + Services/CRM/* + Services/SMS/*"
+    },
+    {
+      "severity": "low",
+      "risk": "Redundant/unused service registrations and mixed singleton/scoped state increase memory and complexity.",
+      "location": "Program.cs"
+    }
+  ],
+  "security_vulnerabilities": [
+    {
+      "severity": "critical",
+      "vulnerability": "TLS certificate validation is disabled globally for handlers using `ShecanDnsHttpClientHandler` (MITM risk).",
+      "location": "Infrastructure/Http/ShecanDnsHttpClientHandler.cs"
+    },
+    {
+      "severity": "critical",
+      "vulnerability": "Hard-coded admin credentials in source code.",
+      "location": "ViewModels/Auth/AdminLoginViewModel.cs"
+    },
+    {
+      "severity": "high",
+      "vulnerability": "OTP values are logged in plaintext; sensitive secret exposure in logs.",
+      "location": "Services/Auth/OtpService.cs and Services/SMS/SmsIrService.cs"
+    },
+    {
+      "severity": "high",
+      "vulnerability": "Authorization is primarily client/session-storage based; no robust server-side policy enforcement.",
+      "location": "Services/Auth/AuthService.cs, Infrastructure/Authorization/AdminAuthorizationHandler.cs"
+    },
+    {
+      "severity": "high",
+      "vulnerability": "Culture endpoint redirects to user-supplied `redirectUri` without local-url validation (open redirect risk).",
+      "location": "Program.cs"
+    },
+    {
+      "severity": "medium",
+      "vulnerability": "`OtpService` uses `Random` and non-thread-safe in-memory dictionary while registered singleton.",
+      "location": "Services/Auth/OtpService.cs + Program.cs"
+    }
+  ],
+  "recommendations": [
+    "Replace custom role/session auth with ASP.NET Core Authentication + Authorization policies and protected endpoints.",
+    "Move admin identities to secure store (Identity provider/DB), hash passwords with a strong KDF (Argon2/PBKDF2/bcrypt), remove hardcoded credentials.",
+    "Fix HTTP handler security: remove permissive `ServerCertificateCustomValidationCallback`; if needed use cert pinning or proper trust chain.",
+    "Sanitize redirect targets in `/set-culture` using `Url.IsLocalUrl` semantics before redirect.",
+    "Stop logging OTP codes and sensitive values; add structured redaction policy.",
+    "Use cryptographically secure OTP generation (`RandomNumberGenerator.GetInt32`) and thread-safe cache (`ConcurrentDictionary` + cleanup timer).",
+    "Correct UserPanel mapping bugs (`user_role` key consistency, `closedate` parsing) and add unit tests for mapping/auth-session behavior.",
+    "Unify UI architecture: prefer either `Components/*` route pages or `Views/*` route pages to reduce fragmentation.",
+    "Introduce resilience policies with `IHttpClientFactory` (retry with jitter, timeout, circuit breaker) for HubSpot/SMS/Zibal calls.",
+    "For Blazor Server: avoid storing trust decisions in browser storage; keep authoritative auth state server-side.",
+    "For potential WASM migration: isolate API clients behind backend-for-frontend; never expose HubSpot/SMS tokens to browser.",
+    "Remove stray files and enforce repo hygiene with CI checks (`dotnet format`, analyzers, secret scanning, and file allowlists)."
+  ]
+}
