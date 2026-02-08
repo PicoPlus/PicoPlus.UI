@@ -6,7 +6,7 @@ using PicoPlus.Infrastructure.State;
 using PicoPlus.Services.CRM;
 using PicoPlus.Services.CRM.Objects;
 using PicoPlus.Application.Dto.UserPanel;
-using PicoPlus.Extensions;
+using PicoPlus.Application.Extensions;
 using ContactModel = PicoPlus.Models.CRM.Objects.Contact;
 using DealModel = PicoPlus.Models.CRM.Objects.Deal;
 

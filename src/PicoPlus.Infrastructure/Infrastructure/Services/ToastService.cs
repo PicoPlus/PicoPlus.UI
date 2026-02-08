@@ -1,9 +1,11 @@
+using PicoPlus.Application.Abstractions.Services;
+
 namespace PicoPlus.Infrastructure.Services;
 
 /// <summary>
 /// Service for managing toast notifications
 /// </summary>
-public class ToastService
+public class ToastService : IToastService
 {
     public event Action<string, string, ToastType, int>? OnShow;
 
@@ -31,12 +33,4 @@ public class ToastService
     {
         ShowToast(title, message, ToastType.Warning, 5000);
     }
-}
-
-public enum ToastType
-{
-    Success,
-    Error,
-    Info,
-    Warning
 }
