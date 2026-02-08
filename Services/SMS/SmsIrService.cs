@@ -25,7 +25,7 @@ namespace PicoPlus.Services.SMS
         {
             try
             {
-                _logger.LogInformation("Sending OTP via SMS.ir to {Mobile}, Code: {Code}", mobile, otpCode);
+                _logger.LogInformation("Sending OTP via SMS.ir to {Mobile}", mobile);
 
                 var response = await _smsIr.SendOtpAsync(mobile, otpCode);
 

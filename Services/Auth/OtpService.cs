@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
 namespace PicoPlus.Services.Auth;
@@ -8,7 +10,7 @@ namespace PicoPlus.Services.Auth;
 public class OtpService
 {
     private readonly ILogger<OtpService> _logger;
-    private readonly Dictionary<string, OtpData> _otpStore = new();
+    private readonly ConcurrentDictionary<string, OtpData> _otpStore = new();
     private readonly TimeSpan _otpExpiration = TimeSpan.FromMinutes(5);
 
     public OtpService(ILogger<OtpService> logger)
@@ -21,9 +23,8 @@ public class OtpService
     /// </summary>
     public string GenerateOtp()
     {
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
-        _logger.LogDebug("Generated OTP code: {Code}", code);
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        _logger.LogDebug("Generated OTP code");
         return code;
     }
 
@@ -34,7 +35,7 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        _otpStore[normalizedPhone] = new OtpData
+        var otpData = new OtpData
         {
             Code = otpCode,
             CreatedAt = DateTime.UtcNow,
@@ -42,8 +43,10 @@ public class OtpService
             AttemptCount = 0
         };
 
-        _logger.LogInformation("OTP stored for phone: {Phone}, Code: {Code}, expires at: {ExpiresAt}",
-            normalizedPhone, otpCode, _otpStore[normalizedPhone].ExpiresAt);
+        _otpStore.AddOrUpdate(normalizedPhone, otpData, (_, _) => otpData);
+
+        _logger.LogInformation("OTP stored for phone: {Phone}, expires at: {ExpiresAt}",
+            normalizedPhone, otpData.ExpiresAt);
     }
 
     /// <summary>
@@ -53,32 +56,27 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        _logger.LogInformation("Validating OTP - Phone: {Phone}, Entered Code: {EnteredCode}", normalizedPhone, enteredCode);
+        _logger.LogInformation("Validating OTP for phone: {Phone}", normalizedPhone);
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        if (!_otpStore.TryGetValue(normalizedPhone, out var otpData))
         {
             _logger.LogWarning("OTP validation failed: No OTP found for phone: {Phone}", normalizedPhone);
             return new OtpValidationResult
             {
                 IsValid = false,
-                ErrorMessage = "?? ????? ???? ???. ????? ?????? ????? ????."
+                ErrorMessage = "کد تایید یافت نشد. لطفا مجددا درخواست دهید."
             };
         }
-
-        var otpData = _otpStore[normalizedPhone];
-
-        _logger.LogInformation("Stored OTP - Code: {StoredCode}, CreatedAt: {CreatedAt}, ExpiresAt: {ExpiresAt}, Attempts: {Attempts}",
-            otpData.Code, otpData.CreatedAt, otpData.ExpiresAt, otpData.AttemptCount);
 
         // Check expiration
         if (DateTime.UtcNow > otpData.ExpiresAt)
         {
             _logger.LogWarning("OTP validation failed: Expired OTP for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
+            _otpStore.TryRemove(normalizedPhone, out _);
             return new OtpValidationResult
             {
                 IsValid = false,
-                ErrorMessage = "?? ????? ????? ??? ???. ????? ?????? ????? ????."
+                ErrorMessage = "کد تایید منقضی شده است. لطفا مجددا درخواست دهید."
             };
         }
 
@@ -89,11 +87,11 @@ public class OtpService
         if (otpData.AttemptCount > 3)
         {
             _logger.LogWarning("OTP validation failed: Max attempts exceeded for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
+            _otpStore.TryRemove(normalizedPhone, out _);
             return new OtpValidationResult
             {
                 IsValid = false,
-                ErrorMessage = "????? ???????? ??? ??? ?? ?? ???. ????? ?????? ????? ????."
+                ErrorMessage = "تعداد تلاش‌ها بیش از حد مجاز است. لطفا مجددا درخواست دهید."
             };
         }
 
@@ -101,14 +99,11 @@ public class OtpService
         var normalizedStoredCode = otpData.Code.Trim();
         var normalizedEnteredCode = enteredCode.Trim();
 
-        _logger.LogInformation("Comparing codes - Stored: '{StoredCode}' (Length: {StoredLength}), Entered: '{EnteredCode}' (Length: {EnteredLength})",
-            normalizedStoredCode, normalizedStoredCode.Length, normalizedEnteredCode, normalizedEnteredCode.Length);
-
         // Validate code
         if (normalizedStoredCode == normalizedEnteredCode)
         {
             _logger.LogInformation("OTP validation successful for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
+            _otpStore.TryRemove(normalizedPhone, out _);
             return new OtpValidationResult
             {
                 IsValid = true,
@@ -122,7 +117,7 @@ public class OtpService
         return new OtpValidationResult
         {
             IsValid = false,
-            ErrorMessage = $"?? ????? ?????? ???. ({3 - otpData.AttemptCount} ??? ???? ?????????)"
+            ErrorMessage = $"کد تایید اشتباه است. ({3 - otpData.AttemptCount} بار دیگر مجاز هستید)"
         };
     }
 
@@ -133,10 +128,9 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        if (!_otpStore.TryGetValue(normalizedPhone, out var otpData))
             return false;
 
-        var otpData = _otpStore[normalizedPhone];
         return DateTime.UtcNow <= otpData.ExpiresAt;
     }
 
@@ -147,10 +141,9 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        if (!_otpStore.TryGetValue(normalizedPhone, out var otpData))
             return null;
 
-        var otpData = _otpStore[normalizedPhone];
         var remaining = otpData.ExpiresAt - DateTime.UtcNow;
 
         return remaining.TotalSeconds > 0 ? remaining : null;
@@ -162,7 +155,7 @@ public class OtpService
     public void ClearOtp(string phoneNumber)
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
-        _otpStore.Remove(normalizedPhone);
+        _otpStore.TryRemove(normalizedPhone, out _);
         _logger.LogDebug("OTP cleared for phone: {Phone}", normalizedPhone);
     }
 
@@ -179,7 +172,7 @@ public class OtpService
 
         foreach (var key in expiredKeys)
         {
-            _otpStore.Remove(key);
+            _otpStore.TryRemove(key, out _);
         }
 
         if (expiredKeys.Any())

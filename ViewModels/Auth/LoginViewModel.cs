@@ -90,12 +90,7 @@ public partial class LoginViewModel : BaseViewModel
                 // Contact exists - auto-update missing fields from Zibal
                 var contact = searchResponse.results.First();
 
-                _logger.LogInformation("Contact found: {ContactId}. Checking for missing fields...", contact.id);
-
-                // Auto-update missing fields (father_name, gender, shahkar_status, etc.)
-                contact = await _contactUpdateService.UpdateMissingFieldsAsync(contact, cancellationToken);
-
-                _logger.LogInformation("Contact data refreshed and updated if needed: {ContactId}", contact.id);
+                _logger.LogInformation("Contact found: {ContactId}. Proceeding with login flow.", contact.id);
 
                 // Set authentication state
                 _authState.SetAuthenticatedUser(contact);
@@ -117,6 +112,21 @@ public partial class LoginViewModel : BaseViewModel
                 {
                     _navigationService.NavigateTo("/user");
                 }
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var refreshed = await _contactUpdateService.UpdateMissingFieldsAsync(contact, CancellationToken.None);
+                        await _sessionStorage.SetItemAsync("ContactModel", refreshed, CancellationToken.None);
+                        await _localStorage.SetItemAsync("ContactModel", refreshed, CancellationToken.None);
+                        _logger.LogInformation("Contact data refreshed in background: {ContactId}", refreshed.id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Background contact refresh failed for: {ContactId}", contact.id);
+                    }
+                }, CancellationToken.None);
             }
             else
             {

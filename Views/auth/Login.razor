@@ -1,5 +1,6 @@
 @page "/auth/login"
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.WebUtilities
 @using PicoPlus.ViewModels.Auth
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<PicoPlus.Resources.SharedResource> L
@@ -167,14 +168,6 @@
                     }
                 </button>
 
-                <!-- Admin Credentials Info -->
-                <div class="alert alert-info mt-3">
-                    <small>
-                        <strong>Demo:</strong><br/>
-                        @L["Email"]: <code>admin@picoplus.app</code><br/>
-                        @L["Password"]: <code>Admin@123</code>
-                    </small>
-                </div>
             </EditForm>
         }
 
@@ -216,6 +209,15 @@ private string? buildVersion = null;
 
 protected override async Task OnInitializedAsync()
 {
+    var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+    var query = QueryHelpers.ParseQuery(uri.Query);
+
+    if (query.TryGetValue("mode", out var mode) &&
+        string.Equals(mode.ToString(), "admin", StringComparison.OrdinalIgnoreCase))
+    {
+        isAdminMode = true;
+    }
+
     try
     {
         buildVersion = await LiaraService.GetCurrentBuildVersionAsync();

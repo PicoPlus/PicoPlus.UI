@@ -153,7 +153,7 @@ public class UserPanelService : IUserPanelService
         {
             await _sessionStorage.RemoveItemAsync("LogInState", cancellationToken);
             await _sessionStorage.RemoveItemAsync("ContactModel", cancellationToken);
-            await _sessionStorage.RemoveItemAsync("UserRole", cancellationToken);
+            await _sessionStorage.RemoveItemAsync("user_role", cancellationToken);
             _authState.ClearAuthentication();
             _logger.LogInformation("User session cleared successfully");
         }
@@ -245,7 +245,7 @@ public class UserPanelService : IUserPanelService
             Stage = deal.properties?.dealstage.ParseDealStage() ?? DealStage.Unknown,
             CreatedAt = deal.createdAt,
             UpdatedAt = deal.updatedAt,
-            CloseDate = DateTime.TryParse(deal.properties?.createdate, out var closeDate) ? closeDate : null,
+            CloseDate = DateTime.TryParse(deal.properties?.closedate, out var closeDate) ? closeDate : null,
             Pipeline = deal.properties?.hs_object_id
         };
     }

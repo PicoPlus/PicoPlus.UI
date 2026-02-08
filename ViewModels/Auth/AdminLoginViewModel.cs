@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using PicoPlus.Infrastructure.State;
 using PicoPlus.Infrastructure.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 
 namespace PicoPlus.ViewModels.Auth;
 
@@ -13,6 +14,7 @@ public partial class AdminLoginViewModel : ObservableObject
     private readonly ILocalStorageService _localStorage;
     private readonly NavigationManager _navigationService;
     private readonly ILogger<AdminLoginViewModel> _logger;
+    private readonly IConfiguration _configuration;
 
     [ObservableProperty] private string email = string.Empty;
     [ObservableProperty] private string password = string.Empty;
@@ -26,13 +28,15 @@ public partial class AdminLoginViewModel : ObservableObject
         ISessionStorageService sessionStorage,
         ILocalStorageService localStorage,
         NavigationManager navigationService,
-        ILogger<AdminLoginViewModel> logger)
+        ILogger<AdminLoginViewModel> logger,
+        IConfiguration configuration)
     {
         _authState = authState;
         _sessionStorage = sessionStorage;
         _localStorage = localStorage;
         _navigationService = navigationService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [RelayCommand]
@@ -137,21 +141,21 @@ public partial class AdminLoginViewModel : ObservableObject
         }
     }
 
-    private async Task<bool> ValidateAdminCredentialsAsync()
+    private Task<bool> ValidateAdminCredentialsAsync()
     {
-        var validAdmins = new Dictionary<string, string>
-        {
-            { "admin@picoplus.app", "Admin@123" },
-            { "secgen.unity@gmail.com", "Secgen@2024" },
-            { "manager@picoplus.app", "Manager@123" }
-        };
+        var configuredEmail = _configuration["AdminAuth:Email"];
+        var configuredPassword = _configuration["AdminAuth:Password"];
 
-        if (validAdmins.TryGetValue(Email.ToLowerInvariant(), out var validPassword))
+        if (string.IsNullOrWhiteSpace(configuredEmail) || string.IsNullOrWhiteSpace(configuredPassword))
         {
-            return Password == validPassword;
+            _logger.LogError("AdminAuth credentials are not configured.");
+            return Task.FromResult(false);
         }
 
-        return false;
+        var isValid = string.Equals(Email, configuredEmail, StringComparison.OrdinalIgnoreCase)
+            && Password == configuredPassword;
+
+        return Task.FromResult(isValid);
     }
 
     private string GetAdminName(string email)

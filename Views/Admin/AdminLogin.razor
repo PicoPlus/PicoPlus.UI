@@ -4,6 +4,6 @@
 @code {
     protected override void OnInitialized()
     {
-        Navigation.NavigateTo("/auth/login");
+        Navigation.NavigateTo("/auth/login?mode=admin", true);
     }
 }

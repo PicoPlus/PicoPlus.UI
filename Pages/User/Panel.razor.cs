@@ -128,12 +128,6 @@ public partial class Panel : ComponentBase, IAsyncDisposable
         _errorMessage = null;
     }
 
-    protected override bool ShouldRender()
-    {
-        // Optimize re-renders - only render when state actually changes
-        return true;
-    }
-
     public async ValueTask DisposeAsync()
     {
         if (_cts != null)
