@@ -1,1 +1,1 @@
-﻿global using RestSharp;
+// Intentionally left empty.

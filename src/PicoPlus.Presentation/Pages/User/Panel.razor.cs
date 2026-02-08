@@ -3,7 +3,7 @@ using PicoPlus.Application.Abstractions.Services;
 using PicoPlus.Application.Abstractions.UserPanel;
 using PicoPlus.Application.Dto.UserPanel;
 
-namespace PicoPlus.Presentation.Pages.User;
+namespace PicoPlus.Pages.User;
 
 /// <summary>
 /// Code-behind for user panel page

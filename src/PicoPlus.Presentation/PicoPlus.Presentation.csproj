@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12.0</LangVersion>
+    <RootNamespace>PicoPlus</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
