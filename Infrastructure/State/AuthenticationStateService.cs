@@ -1,21 +1,17 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using PicoPlus.Models.CRM.Objects;
 
 namespace PicoPlus.Infrastructure.State;
 
 /// <summary>
-/// Application-wide authentication state management
+/// Application-wide authentication state management.
 /// </summary>
-public partial class AuthenticationStateService : ObservableObject
+public class AuthenticationStateService
 {
-    [ObservableProperty]
-    private bool isAuthenticated;
+    public bool IsAuthenticated { get; private set; }
 
-    [ObservableProperty]
-    private Contact.Search.Response.Result? currentUser;
+    public Contact.Search.Response.Result? CurrentUser { get; private set; }
 
-    [ObservableProperty]
-    private int loginState;
+    public int LoginState { get; private set; }
 
     public event EventHandler? AuthenticationStateChanged;
 
@@ -35,9 +31,6 @@ public partial class AuthenticationStateService : ObservableObject
         OnAuthenticationStateChanged();
     }
 
-    /// <summary>
-    /// Check if user is authenticated (async for compatibility)
-    /// </summary>
     public Task<bool> IsAuthenticatedAsync()
     {
         return Task.FromResult(IsAuthenticated);

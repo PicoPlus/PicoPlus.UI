@@ -1,251 +1,91 @@
 @page "/auth/login"
 @using Microsoft.AspNetCore.Components.Forms
-@using PicoPlus.ViewModels.Auth
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<PicoPlus.Resources.SharedResource> L
-@inject LoginViewModel UserViewModel
-@inject AdminLoginViewModel AdminViewModel
-@inject NavigationManager Navigation
-@inject PicoPlus.Services.Utils.LiaraApiService LiaraService
+@using PicoPlus.Infrastructure.Services
+@using PicoPlus.Services.Auth
+@inject AuthService AuthService
+@inject ISessionStorageService SessionStorage
 
 <link href="/css/auth.css" rel="stylesheet" />
 
 <div class="auth-container">
     <div class="auth-card">
-        <!-- Logo/Icon -->
-        <div class="auth-icon">
-            <i class="bi bi-shield-lock"></i>
-        </div>
+        <h1 class="auth-title">ورود</h1>
 
-        <!-- Title -->
-        <h1 class="auth-title">@L["Welcome"]</h1>
-        <p class="auth-subtitle">
-            @if (isAdminMode)
-            {
-                <span>@L["AdminLogin"]</span>
-            }
-            else
-            {
-                <span>@L["EnterNationalCode"]</span>
-            }
-        </p>
-
-        <!-- Error Alert -->
-        @if ((!isAdminMode && UserViewModel.HasError) || (isAdminMode && AdminViewModel.HasError))
+        @if (!string.IsNullOrWhiteSpace(_error))
         {
-            <div class="auth-alert auth-alert-danger" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                @(isAdminMode ? AdminViewModel.ErrorMessage : UserViewModel.ErrorMessage)
-            </div>
+            <div class="auth-alert auth-alert-danger" role="alert">@_error</div>
         }
 
-        <!-- Role Selection Tabs -->
         <div class="mb-4">
             <div class="role-tabs">
-                <button type="button" 
-                        class="role-tab @(!isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(false)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-person me-2"></i>
-                    @L["UserLogin"]
-                </button>
-                <button type="button" 
-                        class="role-tab @(isAdminMode ? "active" : "")"
-                        @onclick="() => SwitchMode(true)"
-                        disabled="@(isAdminMode ? AdminViewModel.IsLoading : UserViewModel.IsLoading)">
-                    <i class="bi bi-shield-check me-2"></i>
-                    @L["AdminLogin"]
-                </button>
+                <button type="button" class="role-tab @(!_isAdmin ? "active" : "")" @onclick="() => _isAdmin = false">کاربر</button>
+                <button type="button" class="role-tab @(_isAdmin ? "active" : "")" @onclick="() => _isAdmin = true">مدیر</button>
             </div>
         </div>
 
-        @if (!isAdminMode)
+        @if (_isAdmin)
         {
-            <!-- User Login Form -->
-            <EditForm Model="@UserViewModel" OnValidSubmit="@HandleUserLogin" class="auth-form">
-                <DataAnnotationsValidator />
-
-                <!-- National Code Input -->
-                <div class="mb-4">
-                    <label for="nationalCode" class="form-label">@L["NationalCode"]</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-card-text"></i>
-                        </span>
-                        <InputText id="nationalCode"
-                                   class="form-control"
-                                   @bind-Value="UserViewModel.NationalCode"
-                                   placeholder="@L["EnterNationalCode"]"
-                                   maxlength="10"
-                                   disabled="@UserViewModel.IsLoading"
-                                   autocomplete="off" />
-                    </div>
-                    <ValidationMessage For="@(() => UserViewModel.NationalCode)" />
-                    <small class="auth-helper">
-                        <i class="bi bi-info-circle me-1"></i>
-                        @L["EnterNationalCode"]
-                    </small>
+            <EditForm OnValidSubmit="LoginAdminAsync" class="auth-form">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value="_adminEmail" />
                 </div>
-
-                <!-- Login Button -->
-                <button type="submit" 
-                        class="btn auth-btn auth-btn-primary w-100 mb-3" 
-                        disabled="@UserViewModel.IsLoading">
-                    @if (UserViewModel.IsLoading)
-                    {
-                        <span class="spinner-border spinner-border-sm auth-spinner"></span>
-                        <span>در حال ورود...</span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-box-arrow-in-left"></i>
-                        <span>@L["SignInUser"]</span>
-                    }
-                </button>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <InputText type="password" class="form-control" @bind-Value="_adminPassword" />
+                </div>
+                <button type="submit" class="btn auth-btn auth-btn-primary w-100">ورود مدیر</button>
             </EditForm>
         }
         else
         {
-            <!-- Admin Login Form -->
-            <EditForm Model="@AdminViewModel" OnValidSubmit="@HandleAdminLogin" class="auth-form">
-                <DataAnnotationsValidator />
-
-                <!-- Email Field -->
+            <EditForm OnValidSubmit="LoginUserAsync" class="auth-form">
                 <div class="mb-3">
-                    <label for="adminEmail" class="form-label">
-                        <i class="bi bi-envelope me-2"></i>
-                        @L["Email"]
-                    </label>
-                    <InputText id="adminEmail"
-                               type="email"
-                               class="form-control"
-                               @bind-Value="AdminViewModel.Email"
-                               placeholder="admin@picoplus.app"
-                               disabled="@AdminViewModel.IsLoading"
-                               autocomplete="email" />
+                    <label class="form-label">کد ملی</label>
+                    <InputText class="form-control" @bind-Value="_nationalCode" maxlength="10" />
                 </div>
-
-                <!-- Password Field -->
-                <div class="mb-3">
-                    <label for="adminPassword" class="form-label">
-                        <i class="bi bi-lock me-2"></i>
-                        @L["Password"]
-                    </label>
-                    <InputText id="adminPassword"
-                               type="password"
-                               class="form-control"
-                               @bind-Value="AdminViewModel.Password"
-                               placeholder="••••••••"
-                               disabled="@AdminViewModel.IsLoading"
-                               autocomplete="current-password" />
-                </div>
-
-                <!-- Remember Me -->
-                <div class="form-check mb-3">
-                    <InputCheckbox class="form-check-input" 
-                                   id="rememberMe"
-                                   @bind-Value="AdminViewModel.RememberMe"
-                                   disabled="@AdminViewModel.IsLoading" />
-                    <label class="form-check-label" for="rememberMe">
-                        @L["RememberMe"]
-                    </label>
-                </div>
-
-                <!-- Login Button -->
-                <button type="submit" 
-                        class="btn auth-btn auth-btn-primary w-100 mb-3"
-                        disabled="@AdminViewModel.IsLoading">
-                    @if (AdminViewModel.IsLoading)
-                    {
-                        <span class="spinner-border spinner-border-sm auth-spinner"></span>
-                        <span>در حال ورود...</span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-box-arrow-in-right me-2"></i>
-                        <span>@L["SignInAdmin"]</span>
-                    }
-                </button>
-
-                <!-- Admin Credentials Info -->
-                <div class="alert alert-info mt-3">
-                    <small>
-                        <strong>Demo:</strong><br/>
-                        @L["Email"]: <code>admin@picoplus.app</code><br/>
-                        @L["Password"]: <code>Admin@123</code>
-                    </small>
-                </div>
+                <button type="submit" class="btn auth-btn auth-btn-primary w-100">ورود کاربر</button>
             </EditForm>
-        }
 
-        @if (!isAdminMode)
-        {
-            <!-- Divider -->
-            <div class="auth-divider">
-                <span class="px-2">—</span>
-            </div>
-
-            <!-- Register Link -->
-            <div class="text-center">
-                <p class="mb-0" style="color: var(--auth-text-muted);">
-                    @L["NotRegistered"]
-                    <a href="/auth/register" class="auth-link">
-                        @L["Register"]
-                        <i class="bi bi-arrow-left me-1"></i>
-                    </a>
-                </p>
-            </div>
-        }
-
-        <!-- Build Version -->
-        @if (!string.IsNullOrEmpty(buildVersion))
-        {
-            <div class="text-center mt-4" style="opacity: 0.6;">
-                <small style="color: var(--auth-text-muted); font-size: 0.75rem;">
-                    <i class="bi bi-gear me-1"></i>
-                    نسخه @buildVersion
-                </small>
+            <div class="text-center mt-3">
+                <a href="/auth/register" class="auth-link">ثبت نام</a>
             </div>
         }
     </div>
 </div>
 
 @code {
-private bool isAdminMode = false;
-private string? buildVersion = null;
+    private bool _isAdmin;
+    private string _adminEmail = string.Empty;
+    private string _adminPassword = string.Empty;
+    private string _nationalCode = string.Empty;
+    private string? _error;
 
-protected override async Task OnInitializedAsync()
-{
-    try
+    private async Task LoginAdminAsync()
     {
-        buildVersion = await LiaraService.GetCurrentBuildVersionAsync();
-    }
-    catch (Exception)
-    {
-        // Silently fail - build version is not critical
-        buildVersion = null;
-    }
-}
+        _error = null;
 
-    private void SwitchMode(bool toAdmin)
-    {
-        isAdminMode = toAdmin;
-        
-        // Clear errors when switching
-        UserViewModel.HasError = false;
-        UserViewModel.ErrorMessage = string.Empty;
-        AdminViewModel.HasError = false;
-        AdminViewModel.ErrorMessage = string.Empty;
+        if (_adminEmail != "admin@picoplus.app" || _adminPassword != "Admin@123")
+        {
+            _error = "اطلاعات مدیر نامعتبر است.";
+            return;
+        }
+
+        await SessionStorage.SetItemAsync("LogInState", 1);
+        await AuthService.NavigateByRoleAsync("Admin", persist: true);
     }
 
-    private async Task HandleUserLogin()
+    private async Task LoginUserAsync()
     {
-        UserViewModel.SelectedRole = "User";
-        await UserViewModel.LoginCommand.ExecuteAsync(default);
-    }
+        _error = null;
 
-    private async Task HandleAdminLogin()
-    {
-        await AdminViewModel.LoginCommand.ExecuteAsync(default);
+        if (string.IsNullOrWhiteSpace(_nationalCode) || _nationalCode.Length != 10)
+        {
+            _error = "کد ملی باید ۱۰ رقم باشد.";
+            return;
+        }
+
+        await SessionStorage.SetItemAsync("LogInState", 1);
+        await AuthService.NavigateByRoleAsync("User");
     }
 }
