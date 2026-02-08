@@ -1,0 +1,22 @@
+﻿@page "/"
+@using PicoPlus.Application.Abstractions.Services
+@inject ISessionStorageService SessionStorage
+@inject INavigationService Navigation
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var loginState = await SessionStorage.GetItemAsync<int>("LogInState");
+        
+        if (loginState == 1)
+        {
+            Navigation.NavigateTo("/user", forceLoad: true);
+        }
+        else
+        {
+            Navigation.NavigateTo("/auth/login", forceLoad: true);
+        }
+    }
+}
