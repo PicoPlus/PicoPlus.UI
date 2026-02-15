@@ -32,6 +32,45 @@
 
 ---
 
+
+## Clean Architecture Folder Layout
+
+The project is migrating to a layered Clean Architecture layout.
+
+### Target Structure
+
+```text
+Presentation/
+Application/
+Domain/
+Infrastructure/
+```
+
+### Folder Conventions
+
+- **Presentation**: pages, components, layouts, UI state.
+- **Application**: use-cases and interfaces (contracts).
+- **Domain**: entities/value objects/business primitives.
+- **Infrastructure**: implementations for APIs, persistence, session/storage, providers.
+
+### Dependency Rules
+
+- Presentation depends on Application.
+- Application depends on Domain.
+- Infrastructure depends on Application + Domain.
+- Domain depends on nothing from outer layers.
+
+### Migration Notes
+
+Current folders (`Components`, `Views`, `Services`, `Models`, `State`) are being migrated in slices to avoid breaking production flows.
+
+See:
+- `Docs/Clean-Architecture-Structure-Plan.md`
+- `Docs/Clean-Architecture-Solution-Structure.md`
+- `Docs/Clean-Architecture-Migration-Blueprint.md`
+
+---
+
 ## Installation
 
 ### Prerequisites
