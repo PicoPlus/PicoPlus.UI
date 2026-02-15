@@ -24,3 +24,9 @@
 2. Move user panel orchestration into `Application/UserPanel`.
 3. Introduce infrastructure repository interfaces for CRM and SMS.
 4. Add bUnit page tests and Playwright smoke tests once CI has .NET SDK.
+
+
+## UI component migration rules
+- Prefer Bootstrap utility/layout classes over custom one-off classes.
+- Keep shared components stateless (parent controls visibility/state through parameters).
+- Keep service calls and business logic in Application/Infrastructure layers and pass prepared data to UI components.

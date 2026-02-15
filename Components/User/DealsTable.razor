@@ -1,101 +1,67 @@
 @using PicoPlus.State.UserPanel
 @using PicoPlus.Services.UserPanel
-@using PicoPlus.Extensions
 
 @inject IPersianDateService DateService
 
-@* Deals table component with virtualization support *@
-
-<div class="tab-fade-in">
-    <div class="dark-card">
-        <div class="dark-card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">
-                    <i class="bi bi-list-ul me-2 text-info"></i>
-                    ???? ???????
-                </h5>
-                <span class="badge-dark" aria-label="????? ???????: @Deals.Count">@Deals.Count ??????</span>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">
+            <i class="bi bi-list-ul me-2 text-primary"></i>
+            لیست معاملات
+        </h5>
+        <span class="badge text-bg-light border">@Deals.Count مورد</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Deals == null || Deals.Count == 0)
+        {
+            <div class="p-3">
+                <EmptyState IconClass="bi-inbox" Message="معامله‌ای برای نمایش وجود ندارد" AriaLabel="لیست معاملات خالی" />
             </div>
-        </div>
-        <div class="dark-card-body p-0">
-            @if (Deals == null || Deals.Count == 0)
-            {
-                <EmptyState 
-                    IconClass="bi-inbox"
-                    Message="??? ????????? ??? ???? ???"
-                    AriaLabel="??? ????????? ????? ????" />
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table-dark-custom" role="table" aria-label="???? ???????">
-                        <thead>
-                            <tr>
-                                <th scope="col">?????</th>
-                                <th scope="col">????? ??????</th>
-                                <th scope="col">???? (?????)</th>
-                                <th scope="col">?????</th>
-                                <th scope="col">????? ?????</th>
-                                <th scope="col" class="text-center">??????</th>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" role="table" aria-label="لیست معاملات">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">شناسه</th>
+                            <th scope="col">نام معامله</th>
+                            <th scope="col">مبلغ</th>
+                            <th scope="col">وضعیت</th>
+                            <th scope="col">تاریخ ثبت</th>
+                            <th scope="col" class="text-center">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var deal in Deals)
+                        {
+                            var currentDeal = deal;
+                            <tr tabindex="0"
+                                role="row"
+                                @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
+                                @onkeydown="@(async (e) => { if (e.Key == \"Enter\" || e.Key == \" \") await OnDealSelected.InvokeAsync(currentDeal); })">
+                                <td><code>@deal.Id</code></td>
+                                <td>@deal.DealName</td>
+                                <td>@DateService.FormatNumber(deal.Amount)</td>
+                                <td><StatusBadge Stage="@deal.Stage" /></td>
+                                <td>@DateService.FormatDate(deal.CreatedAt)</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
+                                            @onclick:stopPropagation="true">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var deal in Deals)
-                            {
-                                var currentDeal = deal;
-                                <tr class="deal-row-dark" 
-                                    tabindex="0" 
-                                    role="row" 
-                                    aria-label="?????? @deal.DealName"
-                                    @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
-                                    @onkeydown="@(async (e) => { if (e.Key == "Enter" || e.Key == " ") await OnDealSelected.InvokeAsync(currentDeal); })">
-                                    <td>
-                                        <span class="deal-id-badge">@deal.Id</span>
-                                    </td>
-                                    <td>
-                                        <div class="persian-text deal-title">@deal.DealName</div>
-                                    </td>
-                                    <td>
-                                        <span class="deal-amount">@DateService.FormatNumber(deal.Amount)</span>
-                                    </td>
-                                    <td>
-                                        <StatusBadge Stage="@deal.Stage" />
-                                    </td>
-                                    <td>
-                                        <span class="deal-date">
-                                            <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
-                                            @DateService.FormatDate(deal.CreatedAt)
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" 
-                                                class="btn-action" 
-                                                aria-label="?????? ??????"
-                                                @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
-                                                @onclick:stopPropagation="true">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
 
 @code {
-    /// <summary>
-    /// List of deals to display
-    /// </summary>
-    [Parameter, EditorRequired]
-    public IReadOnlyList<DealSummary> Deals { get; set; } = Array.Empty<DealSummary>();
-
-    /// <summary>
-    /// Callback when a deal is selected
-    /// </summary>
-    [Parameter]
-    public EventCallback<DealSummary> OnDealSelected { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<DealSummary> Deals { get; set; } = Array.Empty<DealSummary>();
+    [Parameter] public EventCallback<DealSummary> OnDealSelected { get; set; }
 }

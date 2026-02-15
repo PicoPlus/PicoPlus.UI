@@ -1,9 +1,9 @@
-@* Bootstrap Modal Component *@
+@* Bootstrap Modal Component (controlled by parent) *@
 @if (IsVisible)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal fade show d-block" tabindex="-1" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered @SizeClass">
-            <div class="modal-content">
+            <div class="modal-content shadow">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         @if (!string.IsNullOrEmpty(TitleIcon))
@@ -14,7 +14,7 @@
                     </h5>
                     @if (ShowCloseButton)
                     {
-                        <button type="button" class="btn-close" @onclick="Close"></button>
+                        <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
                     }
                 </div>
                 <div class="modal-body">
@@ -29,7 +29,7 @@
                         }
                         else
                         {
-                            <button type="button" class="btn btn-secondary" @onclick="Close">???</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Close">Cancel</button>
                             @if (ShowConfirmButton)
                             {
                                 <button type="button" class="btn btn-primary" @onclick="Confirm">@ConfirmText</button>
@@ -40,17 +40,18 @@
             </div>
         </div>
     </div>
+    <div class="modal-backdrop fade show"></div>
 }
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string TitleIcon { get; set; } = string.Empty;
-    [Parameter] public string Size { get; set; } = "md"; // sm, md, lg, xl
+    [Parameter] public string Size { get; set; } = "md";
     [Parameter] public bool ShowCloseButton { get; set; } = true;
     [Parameter] public bool ShowDefaultFooter { get; set; } = true;
-    [Parameter] public bool ShowConfirmButton { get; set; } = false;
-    [Parameter] public string ConfirmText { get; set; } = "????";
+    [Parameter] public bool ShowConfirmButton { get; set; }
+    [Parameter] public string ConfirmText { get; set; } = "Confirm";
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public RenderFragment? FooterContent { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
@@ -61,17 +62,9 @@
         "sm" => "modal-sm",
         "lg" => "modal-lg",
         "xl" => "modal-xl",
-        _ => ""
+        _ => string.Empty
     };
 
-    private async Task Close()
-    {
-        IsVisible = false;
-        await OnClose.InvokeAsync();
-    }
-
-    private async Task Confirm()
-    {
-        await OnConfirm.InvokeAsync();
-    }
+    private Task Close() => OnClose.InvokeAsync();
+    private Task Confirm() => OnConfirm.InvokeAsync();
 }

@@ -1,28 +1,12 @@
-@* Info box component for displaying key-value pairs *@
-
-<div class="info-box-dark">
-    <label>@Label</label>
-    <div class="info-value @ValueClass">
-        @Value
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-body py-3">
+        <p class="small text-secondary mb-1">@Label</p>
+        <div class="fw-semibold @ValueClass">@Value</div>
     </div>
 </div>
 
 @code {
-    /// <summary>
-    /// Label text for the info box
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string Label { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Value to display
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string Value { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Additional CSS class for value styling
-    /// </summary>
-    [Parameter]
-    public string ValueClass { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter] public string ValueClass { get; set; } = string.Empty;
 }

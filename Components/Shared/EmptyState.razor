@@ -1,44 +1,16 @@
-@* Empty state component for displaying no data scenarios *@
-
-<div class="empty-state-dark" role="status" aria-label="@AriaLabel">
-    <i class="bi @IconClass display-1" aria-hidden="true"></i>
-    <p class="mt-3 mb-0">@Message</p>
+<div class="text-center p-4 border rounded-3 bg-body-tertiary" role="status" aria-label="@AriaLabel">
+    <i class="bi @IconClass fs-1 text-secondary" aria-hidden="true"></i>
+    <p class="mt-3 mb-0 text-secondary">@Message</p>
     @if (!string.IsNullOrEmpty(ActionText))
     {
-        <button type="button" class="btn btn-primary mt-3" @onclick="OnActionClick">
-            @ActionText
-        </button>
+        <button type="button" class="btn btn-primary mt-3" @onclick="OnActionClick">@ActionText</button>
     }
 </div>
 
 @code {
-    /// <summary>
-    /// Bootstrap icon class (e.g., "bi-inbox")
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string IconClass { get; set; } = "bi-inbox";
-
-    /// <summary>
-    /// Message to display
-    /// </summary>
-    [Parameter, EditorRequired]
-    public string Message { get; set; } = "???????? ???????";
-
-    /// <summary>
-    /// Optional action button text
-    /// </summary>
-    [Parameter]
-    public string? ActionText { get; set; }
-
-    /// <summary>
-    /// Action callback when button is clicked
-    /// </summary>
-    [Parameter]
-    public EventCallback OnActionClick { get; set; }
-
-    /// <summary>
-    /// ARIA label for accessibility
-    /// </summary>
-    [Parameter]
-    public string AriaLabel { get; set; } = "????? ????";
+    [Parameter, EditorRequired] public string IconClass { get; set; } = "bi-inbox";
+    [Parameter, EditorRequired] public string Message { get; set; } = "No data available";
+    [Parameter] public string? ActionText { get; set; }
+    [Parameter] public EventCallback OnActionClick { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = "Empty state";
 }
