@@ -40,6 +40,8 @@
 5. Replace in-memory adapters with production-ready infrastructure implementations.
 
 ## Completed in this commit
+- Switched Bootstrap include to `@latest` CDN reference and removed legacy local Bootstrap v5.1 static assets.
+- Removed redundant global stylesheet include (`/css/app.css`) from app shell to reduce overlap with Bootstrap theming layers.
 - Added architecture structure guidance (`Docs/Clean-Architecture-Solution-Structure.md`).
 - Refactored home-landing decision into `ResolveLandingRouteUseCase` + infrastructure auth session adapter.
 - Modernized shell setup with Bootstrap theming file (`wwwroot/css/bootstrap-theme.css`).
