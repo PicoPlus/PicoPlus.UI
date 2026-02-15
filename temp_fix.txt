@@ -1,6 +1,0 @@
-    private async Task HandleDealCreated(string dealId)
-    {
-        ViewModel.ShowCreateDealDialog = false;
-        await ViewModel.InitializeAsync();
-        await InvokeAsync(StateHasChanged);
-    }
