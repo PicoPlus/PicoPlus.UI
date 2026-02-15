@@ -4,7 +4,7 @@
 @using DealModel = PicoPlus.Models.CRM.Objects.Deal
 @using PicoPlus.Services.CRM
 @using PicoPlus.State.Admin
-@using PicoPlus.Services.Admin
+@using PicoPlus.Application.Abstractions
 @inject DealService DealService
 @inject Pipelines PipelineService
 @inject AdminStateService AdminState
@@ -215,7 +215,7 @@
 
 @code {
     private bool isLoading = true;
-    private Models.Admin.HubSpotOwner? selectedOwner;
+    private Domain.Admin.HubSpotOwner? selectedOwner;
     private List<DealModel.GetBatch.Response.Result> allDeals = new();
     private List<DealModel.GetBatch.Response.Result> filteredDeals = new();
     private List<Models.CRM.Pipelines.List.Result> pipelines = new();

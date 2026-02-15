@@ -1,13 +1,14 @@
-using PicoPlus.Models.Admin;
+using PicoPlus.Domain.Admin;
 using PicoPlus.Services.CRM.Objects;
+using PicoPlus.Application.Abstractions;
 using PicoPlus.Services.CRM;
 
-namespace PicoPlus.Services.Admin;
+namespace PicoPlus.Infrastructure.Admin;
 
 /// <summary>
 /// Service for Kanban board operations
 /// </summary>
-public class KanbanService
+public class KanbanService : IKanbanService
 {
     private readonly Deal _dealService;
     private readonly Pipelines _pipelineService;

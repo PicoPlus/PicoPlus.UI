@@ -5,7 +5,7 @@ using ContactModel = PicoPlus.Models.CRM.Objects.Contact;
 using DealService = PicoPlus.Services.CRM.Objects.Deal;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 
-namespace PicoPlus.Services.Admin;
+namespace PicoPlus.Infrastructure.Admin;
 
 /// <summary>
 /// Extension methods and helper utilities for admin services

@@ -1,14 +1,15 @@
-using PicoPlus.Models.Admin;
+using PicoPlus.Domain.Admin;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 using DealService = PicoPlus.Services.CRM.Objects.Deal;
+using PicoPlus.Application.Abstractions;
 using PicoPlus.Services.CRM;
 
-namespace PicoPlus.Services.Admin;
+namespace PicoPlus.Infrastructure.Admin;
 
 /// <summary>
 /// Service for dashboard statistics and analytics
 /// </summary>
-public class DashboardService
+public class DashboardService : IDashboardService
 {
     private readonly ContactService _contactService;
     private readonly DealService _dealService;

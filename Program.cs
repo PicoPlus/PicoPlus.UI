@@ -8,7 +8,8 @@ using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
 using PicoPlus.Application.DependencyInjection;
 using PicoPlus.Presentation.DependencyInjection;
-using PicoPlus.Services.Admin;
+using PicoPlus.Application.Abstractions;
+using PicoPlus.Infrastructure.Admin;
 using PicoPlus.Services.Auth;
 using PicoPlus.State.Admin;
 using DotNetEnv;
@@ -98,9 +99,9 @@ builder.Services.AddSingleton<AuthenticationStateService>();
 // Admin Services
 builder.Services.AddScoped<AdminAuthorizationHandler>();
 builder.Services.AddScoped<AdminStateService>();
-builder.Services.AddScoped<AdminOwnerService>();
-builder.Services.AddScoped<DashboardService>();
-builder.Services.AddScoped<KanbanService>();
+builder.Services.AddScoped<IAdminOwnerService, AdminOwnerService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IKanbanService, KanbanService>();
 
 // Authentication Service
 builder.Services.AddScoped<AuthService>();

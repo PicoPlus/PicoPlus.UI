@@ -1,9 +1,9 @@
 @page "/admin/owner-select"
 @layout Components.Layout.AdminLayout
-@using PicoPlus.Services.Admin
+@using PicoPlus.Application.Abstractions
 @using PicoPlus.State.Admin
-@using PicoPlus.Models.Admin
-@inject AdminOwnerService OwnerService
+@using PicoPlus.Domain.Admin
+@inject IAdminOwnerService OwnerService
 @inject AdminStateService AdminState
 @inject NavigationManager Navigation
 @inject ILogger<OwnerSelect> Logger

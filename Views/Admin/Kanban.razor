@@ -1,9 +1,9 @@
 @page "/admin/kanban"
 @layout Components.Layout.AdminLayout
-@using PicoPlus.Services.Admin
+@using PicoPlus.Application.Abstractions
 @using PicoPlus.State.Admin
-@using PicoPlus.Models.Admin
-@inject KanbanService KanbanService
+@using PicoPlus.Domain.Admin
+@inject IKanbanService KanbanService
 @inject AdminStateService AdminState
 @inject ILogger<Kanban> Logger
 

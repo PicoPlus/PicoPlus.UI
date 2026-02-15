@@ -3,7 +3,6 @@
 @using ContactService = PicoPlus.Services.CRM.Objects.Contact
 @using ContactModel = PicoPlus.Models.CRM.Objects.Contact
 @using PicoPlus.State.Admin
-@using PicoPlus.Services.Admin
 @inject ContactService ContactService
 @inject AdminStateService AdminState
 @inject ILogger<ContactManagement> Logger
@@ -155,7 +154,7 @@
 
 @code {
     private bool isLoading = true;
-    private Models.Admin.HubSpotOwner? selectedOwner;
+    private Domain.Admin.HubSpotOwner? selectedOwner;
     private List<ContactModel.Search.Response.Result> allContacts = new();
     private List<ContactModel.Search.Response.Result> filteredContacts = new();
     private string searchTerm = string.Empty;

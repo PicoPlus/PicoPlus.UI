@@ -1,4 +1,4 @@
-namespace PicoPlus.Models.Admin;
+namespace PicoPlus.Domain.Admin;
 
 /// <summary>
 /// HubSpot Owner model for admin panel

@@ -1,9 +1,9 @@
 @page "/admin/dashboard"
 @layout Components.Layout.AdminLayout
-@using PicoPlus.Services.Admin
+@using PicoPlus.Application.Abstractions
 @using PicoPlus.State.Admin
-@using PicoPlus.Models.Admin
-@inject DashboardService DashboardService
+@using PicoPlus.Domain.Admin
+@inject IDashboardService DashboardService
 @inject AdminStateService AdminState
 @inject NavigationManager Navigation
 

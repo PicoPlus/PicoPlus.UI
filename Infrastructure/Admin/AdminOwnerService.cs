@@ -1,12 +1,13 @@
-using PicoPlus.Models.Admin;
+using PicoPlus.Domain.Admin;
+using PicoPlus.Application.Abstractions;
 using PicoPlus.Services.CRM;
 
-namespace PicoPlus.Services.Admin;
+namespace PicoPlus.Infrastructure.Admin;
 
 /// <summary>
 /// Service for managing HubSpot owners in admin panel
 /// </summary>
-public class AdminOwnerService
+public class AdminOwnerService : IAdminOwnerService
 {
     private readonly Owners _ownersService;
     private readonly ILogger<AdminOwnerService> _logger;

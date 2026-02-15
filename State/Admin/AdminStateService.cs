@@ -1,4 +1,4 @@
-using PicoPlus.Models.Admin;
+using PicoPlus.Domain.Admin;
 using PicoPlus.Infrastructure.Services;
 
 namespace PicoPlus.State.Admin;
