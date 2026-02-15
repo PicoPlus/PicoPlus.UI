@@ -1,155 +1,162 @@
 # PicoPlus.UI
 
-**PicoPlus.UI** is a robust, Blazor-based web application serving as the user interface layer for the PicoPlus ecosystem. Built in C#, HTML, and CSS, it leverages modern design principles, best-in-class UX, and optimized performance for deployment on platforms like Liara.
+PicoPlus.UI is a **Blazor Server** web application for the PicoPlus platform.
+It provides user-facing and admin-facing workflows, integrates with external services (HubSpot, SMS providers, Zibal, Liara), and includes localized RTL-first UI support for Persian users.
 
 ---
 
-## Table of Contents
+## Tech Stack
 
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Credits](#credits)
-- [License](#license)
+- **.NET 9 / ASP.NET Core Blazor Server**
+- **C# 12**
+- **Bootstrap 5 + custom CSS**
+- **Blazored SessionStorage + LocalStorage**
+- **ImageSharp** for image processing
 
 ---
 
-## Features
+## Architecture Direction
 
-- **Blazor Server Architecture**: Interactive, real-time web UI with ASP.NET Core.
-- **User & Admin Panels**: Clean separation of responsibilities, state management for both admin and user.
-- **Authentication**: Role-based authentication and OTP support.
-- **Notifications**: Integrated toast and dialog notification services.
-- **Optimized for Iranian Networks**: Includes custom DNS handlers and local caching for reliability.
-- **Modern UI**: RTL-compatible layouts, Bootstrap 5.3, and custom theming.
-- **Persistent Data Storage**: Uses `/app/data` directory for storing user data and configuration.
-- **Environment Driven**: Supports `.env` and environment variable-based configuration.
-- **Extensible Services**: Easily extendable with new ViewModels and Services for business logic.
+The project is being aligned toward a cleaner layered architecture.
+Current code organization already separates major responsibilities into folders such as:
+
+- `Components/` → reusable UI components, layouts, shared widgets, dialogs
+- `Views/` and `Pages/` → route-level screens
+- `Services/` → application/business/integration services (Auth, Admin, CRM, SMS, UserPanel, Utils)
+- `Infrastructure/` → cross-cutting concerns (HTTP handlers, wrappers, state/auth infra)
+- `State/` → app state models/services
+- `ViewModels/` → UI view-models
+- `Models/` → DTO/domain transfer objects
+
+> Note: the repository contains transitional structures due to active migration/refactoring.
 
 ---
 
-## Installation
+## Prerequisites
 
-### Prerequisites
+- **.NET SDK 9.0**
+- Optional: **Docker**
+- Optional: **Liara CLI** for deployment
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-- [Docker](https://www.docker.com/get-started) (for deployment/testing)
-- (Optional) [Liara CLI](https://cli.liara.ir/)
-- Node.js for modern frontend asset workflows (if applicable)
+---
 
-### Clone the Repository
+## Getting Started
+
+### 1) Clone
 
 ```bash
 git clone https://github.com/PicoPlus/PicoPlus.UI.git
 cd PicoPlus.UI
 ```
 
+### 2) Configure environment
+
+Create a `.env` file in the repository root (or provide equivalent environment variables):
+
+```env
+HUBSPOT_TOKEN=your_hubspot_token
+ZIBAL_TOKEN=your_zibal_token
+```
+
+You can also use `appsettings.json` and user-secrets where applicable.
+
+### 3) Run locally
+
+```bash
+dotnet restore
+dotnet build
+dotnet run
+```
+
+Default app URL in local/dev is typically `http://localhost:5000` (depending on launch profile).
+
 ---
 
-## Usage
+## Configuration Notes
 
-### Local Development
+Configuration sources are loaded in this order pattern:
 
-1. Create a `.env` file in the project root:
-   ```
-   HUBSPOT_TOKEN=your_hubspot_token
-   ZIBAL_TOKEN=your_zibal_token
-   ```
-2. Build and Run:
-   ```bash
-   dotnet build -c Release
-   dotnet run
-   ```
-3. Open your browser at [http://localhost:5000](http://localhost:5000)
+1. `appsettings.json`
+2. `appsettings.{Environment}.json`
+3. Environment variables
+4. User secrets
+5. Optional `.env` file (when present)
 
-### Docker Compose
+Key operational variables:
+
+- `HUBSPOT_TOKEN`
+- `ZIBAL_TOKEN`
+- `ASPNETCORE_ENVIRONMENT`
+
+In production, Kestrel is configured to listen on port `5000`.
+
+---
+
+## Docker
+
+### Build
+
+```bash
+docker build -t picoplus-ui:local .
+```
+
+### Run
+
+```bash
+docker run --rm -p 5000:5000 \
+  -e HUBSPOT_TOKEN=your_hubspot_token \
+  -e ZIBAL_TOKEN=your_zibal_token \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  picoplus-ui:local
+```
+
+Or use:
 
 ```bash
 docker-compose up --build
 ```
 
-### Docker Manual Build
-
-```bash
-docker build -t picoplus:test .
-docker run -p 5000:5000 \
-  -e HUBSPOT_TOKEN=your_token \
-  -e ZIBAL_TOKEN=your_token \
-  picoplus:test
-```
-
 ---
 
-## Deployment (Liara Example)
+## Deployment (Liara)
 
-1. Install [Liara CLI](https://cli.liara.ir/)
-2. Login:
-   ```bash
-   liara login
-   ```
-3. Configure environment variables in Liara dashboard:
-   ```
-   HUBSPOT_TOKEN
-   ZIBAL_TOKEN
-   ASPNETCORE_ENVIRONMENT=Production
-   ASPNETCORE_URLS=http://+:5000
-   ```
-4. Deploy:
-   ```bash
-   liara deploy
-   ```
-5. Monitor logs:
-   ```bash
-   liara logs --app ipicoplus
-   ```
+A full deployment walkthrough is available at:
 
-Full deployment guide is in [LIARA_DEPLOYMENT_GUIDE.md](LIARA_DEPLOYMENT_GUIDE.md).
+- [`LIARA_DEPLOYMENT_GUIDE.md`](./LIARA_DEPLOYMENT_GUIDE.md)
 
----
+Typical production env setup includes:
 
-## Configuration
-
-- All configuration can be set via `.env`, `appsettings.json`, or environment variables.
-- Sensitive credentials (API tokens, etc.) should never be committed; set them via the platform dashboard or `.env`.
+- `HUBSPOT_TOKEN`
+- `ZIBAL_TOKEN`
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ASPNETCORE_URLS=http://+:5000`
 
 ---
 
 ## Troubleshooting
 
-- **Port Binding Errors**: Liara automatically maps external ports 80/443 to internal 5000.
-- **Environment Variables**: Ensure they are set in the Liara dashboard, not just your local `.env`.
-- **Build Issues**: Run:
-   ```bash
-   dotnet clean
-   dotnet build -c Release
-   ```
-- **Network Issues**: Custom DNS handler is provided for Iranian networks.
-- **SignalR Issues**: Blazor Server is configured for optimal connections.
+- If app startup fails, verify required environment variables are present.
+- If service/API calls fail in production, verify token values and outbound network access.
+- If static assets appear stale, clear browser cache and redeploy.
+- If build fails locally, run:
+
+```bash
+dotnet clean
+dotnet restore
+dotnet build
+```
 
 ---
 
 ## Contributing
 
-Contributions welcome! Please fork this repo and submit a pull request.
-- All code should be idiomatic C# and follow project conventions.
-- Discuss large changes with maintainers in advance.
-- Add relevant tests and documentation.
-
----
-
-## Credits
-
-Developed and maintained by [PicoPlus](https://github.com/PicoPlus).
+- Keep changes scoped and consistent with current migration direction.
+- Prefer small, reviewable PRs.
+- Update docs when behavior or structure changes.
 
 ---
 
 ## License
 
-**No specific license detected. Please add a LICENSE.md file.**
-This project is currently proprietary unless otherwise noted.
-
----
+No explicit open-source license file is currently included in this repository.
+Assume all rights reserved unless maintainers publish a license.
