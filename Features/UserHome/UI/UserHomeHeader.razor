@@ -1,0 +1,41 @@
+@using PicoPlus.Features.UserHome.Application.DTOs
+
+<div class="top-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center py-2">
+            <div class="brand-logo">
+                <i class="bi bi-grid-fill me-2"></i>
+                <span class="fw-bold">پنل کاربری</span>
+            </div>
+            <div class="dropdown">
+                <button class="user-dropdown-btn" type="button" data-bs-toggle="dropdown">
+                    <div class="user-avatar-header">
+                        @if (!string.IsNullOrWhiteSpace(Data?.Profile.AvatarUrl))
+                        {
+                            <img src="@Data!.Profile.AvatarUrl" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            @Data?.Profile.Initials
+                        }
+                    </div>
+                    <span class="user-name-header">@Data?.Profile.FullName</span>
+                    <span class="user-phone-header">@Data?.Profile.Phone</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg modern-dropdown">
+                    <li><button type="button" class="dropdown-item" @onclick="OnProfileClick">پروفایل</button></li>
+                    <li><button type="button" class="dropdown-item" @onclick="OnDealsClick">معاملات</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" @onclick="OnSignOut">خروج</button></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public UserHomeDto? Data { get; set; }
+    [Parameter] public EventCallback OnProfileClick { get; set; }
+    [Parameter] public EventCallback OnDealsClick { get; set; }
+    [Parameter] public EventCallback OnSignOut { get; set; }
+}

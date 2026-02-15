@@ -176,9 +176,26 @@ builder.Services.AddSingleton<OtpService>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.LoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.AdminLoginViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.RegisterViewModel>();
-builder.Services.AddScoped<PicoPlus.ViewModels.User.UserHomeViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateViewModel>();
 builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateDialogViewModel>();
+
+builder.Services.AddScoped<PicoPlus.Features.UserHome.State.UserHomeState>();
+builder.Services.AddScoped<PicoPlus.Features.UserHome.Application.IUserHomeService, PicoPlus.Features.UserHome.Application.UserHomeService>();
+builder.Services.AddHttpClient<PicoPlus.Features.UserHome.Infrastructure.IHubSpotClient, PicoPlus.Features.UserHome.Infrastructure.HubSpotClient>((sp, client) =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    client.BaseAddress = new Uri("https://api.hubapi.com");
+    client.Timeout = TimeSpan.FromSeconds(30);
+
+    var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN") ?? configuration["HubSpot:Token"];
+    if (!string.IsNullOrWhiteSpace(token))
+    {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+    }
+
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 // User Panel
 builder.Services.AddSingleton<PicoPlus.Services.UserPanel.IPersianDateService, PicoPlus.Services.UserPanel.PersianDateService>();

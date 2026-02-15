@@ -1,0 +1,30 @@
+@using PicoPlus.Features.UserHome.Application.DTOs
+@using PicoPlus.Components.Dialogs
+
+@if (ShowChangeMobileDialog)
+{
+    <ChangeMobileDialog CurrentMobile="@(Data?.Profile.Phone ?? string.Empty)" OnMobileChanged="OnMobileChanged" OnCancel="OnCloseMobile" />
+}
+
+@if (ShowCompleteBirthDateDialog)
+{
+    <CompleteBirthDateDialog NationalCode="@(Data?.Profile.NationalCode ?? string.Empty)" OnBirthDateProvided="OnBirthDateProvided" OnSkip="OnCloseBirthDate" />
+}
+
+@if (ShowCreateDealDialog)
+{
+    <CreateDealDialog IsVisible="ShowCreateDealDialog" ContactId="@(Data?.Profile.ContactId ?? string.Empty)" ContactName="@(Data?.Profile.FullName ?? string.Empty)" OnDealCreated="OnDealCreated" OnCancel="OnCloseCreateDeal" />
+}
+
+@code {
+    [Parameter] public UserHomeDto? Data { get; set; }
+    [Parameter] public bool ShowChangeMobileDialog { get; set; }
+    [Parameter] public bool ShowCompleteBirthDateDialog { get; set; }
+    [Parameter] public bool ShowCreateDealDialog { get; set; }
+    [Parameter] public EventCallback<string> OnMobileChanged { get; set; }
+    [Parameter] public EventCallback<string> OnBirthDateProvided { get; set; }
+    [Parameter] public EventCallback<string> OnDealCreated { get; set; }
+    [Parameter] public EventCallback OnCloseMobile { get; set; }
+    [Parameter] public EventCallback OnCloseBirthDate { get; set; }
+    [Parameter] public EventCallback OnCloseCreateDeal { get; set; }
+}

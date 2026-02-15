@@ -1,0 +1,105 @@
+@using PicoPlus.Features.UserHome.Application
+@using PicoPlus.Features.UserHome.State
+@using PicoPlus.Features.UserHome.UI.Dialogs
+@implements IDisposable
+@inject IUserHomeService UserHomeService
+@inject UserHomeState State
+
+<link href="/css/user-panel.css" rel="stylesheet" />
+
+<UserHomeHeader Data="State.Data" OnProfileClick="() => State.SetActiveTab(\"profile\")" OnDealsClick="() => State.SetActiveTab(\"deals\")" OnSignOut="SignOutAsync" />
+
+<div class="page-content-dark" dir="rtl">
+    <div class="container-fluid py-4">
+        <UserHomeStats Data="State.Data" />
+
+        <div class="modern-tabs-container mb-3">
+            <button class="modern-tab @(State.ActiveTab == "profile" ? "active" : "")" @onclick="() => State.SetActiveTab(\"profile\")">پروفایل</button>
+            <button class="modern-tab @(State.ActiveTab == "deals" ? "active" : "")" @onclick="() => State.SetActiveTab(\"deals\")">معاملات</button>
+        </div>
+
+        @if (State.ActiveTab == "profile")
+        {
+            <UserProfileTab Data="State.Data" OnEditMobile="() => State.SetChangeMobileDialog(true)" />
+        }
+        else
+        {
+            <UserDealsTab Data="State.Data" SelectedDeal="State.SelectedDeal" LineItems="State.SelectedDealLineItems" OnSelectDeal="ShowDealDetailsAsync" OnCloseDeal="CloseDeal" OnCreateDeal="() => State.SetCreateDealDialog(true)" />
+        }
+    </div>
+</div>
+
+<UserHomeDialogs Data="State.Data" ShowChangeMobileDialog="State.ShowChangeMobileDialog" ShowCompleteBirthDateDialog="State.ShowCompleteBirthDateDialog" ShowCreateDealDialog="State.ShowCreateDealDialog" OnMobileChanged="HandleMobileChanged" OnBirthDateProvided="HandleBirthDateProvided" OnDealCreated="HandleDealCreated" OnCloseMobile="() => State.SetChangeMobileDialog(false)" OnCloseBirthDate="() => State.SetCompleteBirthDateDialog(false)" OnCloseCreateDeal="() => State.SetCreateDealDialog(false)" />
+
+@if (State.IsLoading)
+{
+    <div class="loading-overlay"><div class="spinner"></div></div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnStateChanged;
+        State.SetLoading(true);
+        var data = await UserHomeService.InitializeAsync();
+        if (data is not null)
+        {
+            State.SetData(data);
+            if (string.IsNullOrWhiteSpace(data.Profile.BirthDate) || data.Profile.BirthDate == "-")
+            {
+                State.SetCompleteBirthDateDialog(true);
+            }
+        }
+        State.SetLoading(false);
+    }
+
+    private async Task SignOutAsync() => await UserHomeService.SignOutAsync();
+
+    private async Task HandleMobileChanged(string mobile)
+    {
+        await UserHomeService.ChangeMobileAsync(mobile);
+        State.SetChangeMobileDialog(false);
+        await ReloadAsync();
+    }
+
+    private async Task HandleBirthDateProvided(string birthDate)
+    {
+        await UserHomeService.CompleteBirthDateAsync(birthDate);
+        State.SetCompleteBirthDateDialog(false);
+        await ReloadAsync();
+    }
+
+    private async Task HandleDealCreated(string _)
+    {
+        State.SetCreateDealDialog(false);
+        await ReloadAsync();
+    }
+
+    private async Task ShowDealDetailsAsync(PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result deal)
+    {
+        State.SelectDeal(deal);
+        State.SetLoading(true);
+        var items = await UserHomeService.LoadDealLineItemsAsync(deal.id);
+        State.SetLineItems(items);
+        State.SetLoading(false);
+    }
+
+    private Task CloseDeal()
+    {
+        State.SelectDeal(null);
+        State.SetLineItems([]);
+        return Task.CompletedTask;
+    }
+
+    private async Task ReloadAsync()
+    {
+        State.SetLoading(true);
+        var data = await UserHomeService.RefreshAsync();
+        if (data is not null) State.SetData(data);
+        State.SetLoading(false);
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+}

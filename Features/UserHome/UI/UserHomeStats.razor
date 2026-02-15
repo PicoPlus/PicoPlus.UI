@@ -1,0 +1,13 @@
+@using PicoPlus.Features.UserHome.Application.DTOs
+@using PicoPlus.Features.UserHome.Application
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6"><div class="stat-card-dark stat-gradient-blue"><h6>درآمد کل</h6><h2>@UserHomeService.FormatNumber(Data?.Metrics.TotalRevenue ?? 0)</h2></div></div>
+    <div class="col-lg-3 col-md-6"><div class="stat-card-dark stat-gradient-pink"><h6>باز</h6><h2>@(Data?.Metrics.OpenDeals ?? 0)</h2></div></div>
+    <div class="col-lg-3 col-md-6"><div class="stat-card-dark stat-gradient-green"><h6>بسته</h6><h2>@(Data?.Metrics.ClosedDeals ?? 0)</h2></div></div>
+    <div class="col-lg-3 col-md-6"><div class="stat-card-dark stat-gradient-purple"><h6>کیف پول</h6><h2>@UserHomeService.FormatNumber(Data?.Metrics.WalletBalance ?? 0)</h2></div></div>
+</div>
+
+@code {
+    [Parameter] public UserHomeDto? Data { get; set; }
+}
