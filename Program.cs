@@ -2,9 +2,12 @@ using Blazored.SessionStorage;
 using Blazored.LocalStorage;
 using PicoPlus.Components;
 using PicoPlus.Infrastructure.Authorization;
+using PicoPlus.Infrastructure.DependencyInjection;
 using PicoPlus.Infrastructure.Http;
 using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
+using PicoPlus.Application.DependencyInjection;
+using PicoPlus.Presentation.DependencyInjection;
 using PicoPlus.Services.Admin;
 using PicoPlus.Services.Auth;
 using PicoPlus.State.Admin;
@@ -74,6 +77,12 @@ builder.Services.AddResponseCompression(options =>
 // Razor Components
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Clean Architecture layer modules
+builder.Services
+    .AddPresentationLayer()
+    .AddApplicationLayer()
+    .AddInfrastructureLayer();
 
 // Storage: Session + Local (for remember-me / persistence)
 builder.Services.AddBlazoredSessionStorage();
