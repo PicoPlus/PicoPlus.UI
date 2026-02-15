@@ -1,14 +1,24 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using PicoPlus.Components.Shared
 
 <link href="/css/toast.css" rel="stylesheet" />
 
-<div class="container-fluid py-2 d-flex justify-content-end">
-    <CultureSwitcher />
-</div>
+<header class="border-bottom bg-white sticky-top">
+    <div class="container-fluid py-2 d-flex align-items-center justify-content-between">
+        <a class="navbar-brand fw-semibold" href="/">PicoPlus</a>
 
-<div class="page">
+        <nav class="nav gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="/architecture">
+                <i class="bi bi-diagram-3 me-1"></i>
+                Architecture
+            </a>
+            <CultureSwitcher />
+        </nav>
+    </div>
+</header>
+
+<main class="page container-fluid py-3">
     @Body
-</div>
+</main>
 
 <ToastContainer />

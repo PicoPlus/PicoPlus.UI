@@ -1,22 +1,18 @@
-﻿@page "/"
+@page "/"
+@using PicoPlus.Application.Auth
 @using PicoPlus.Infrastructure.Services
-@inject ISessionStorageService SessionStorage
+@inject ResolveLandingRouteUseCase ResolveLandingRoute
 @inject INavigationService Navigation
 
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
-        var loginState = await SessionStorage.GetItemAsync<int>("LogInState");
-        
-        if (loginState == 1)
-        {
-            Navigation.NavigateTo("/user", forceLoad: true);
-        }
-        else
-        {
-            Navigation.NavigateTo("/auth/login", forceLoad: true);
-        }
+        var destination = await ResolveLandingRoute.ExecuteAsync();
+        Navigation.NavigateTo(destination, forceLoad: true);
     }
 }

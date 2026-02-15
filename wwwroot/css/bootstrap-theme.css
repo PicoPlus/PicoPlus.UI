@@ -1,0 +1,15 @@
+:root {
+    --bs-primary: #0d6efd;
+    --bs-primary-rgb: 13, 110, 253;
+    --bs-border-radius: 0.75rem;
+    --bs-body-bg: #f8fafc;
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #0f172a;
+}
+
+.migration-card {
+    border: 0;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}

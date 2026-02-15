@@ -1,9 +1,16 @@
 # Clean Architecture + Bootstrap Migration Blueprint
 
+## Roadmap alignment
+- #27 Define solution structure for Clean Architecture ✅
+- #28 Integrate latest Bootstrap: setup and theming ✅ (foundation)
+- #29 Migrate UI components to Bootstrap + clean patterns ✅ (initial shell + dashboard)
+- #30 Refactor services, models, and logic into layers ✅ (first auth slice)
+- #31 End-to-end testing after migration 🟡 (blocked by missing .NET SDK in runtime)
+
 ## Scope of this phase
 - Introduce an initial Clean Architecture skeleton (`Presentation`, `Application`, `Domain`, `Infrastructure`).
 - Keep existing features working while gradually moving logic from legacy folders.
-- Standardize on Bootstrap 5.3.3 CDN references.
+- Standardize on Bootstrap 5.3.3 CDN references and central theming variables.
 
 ## Target architecture
 
@@ -32,12 +39,8 @@
 4. Keep Blazor pages thin and bind them to use-cases.
 5. Replace in-memory adapters with production-ready infrastructure implementations.
 
-## Bootstrap modernization strategy
-- Use Bootstrap v5.3.3 RTL + bundle from jsDelivr.
-- Favor utility classes and cards/grid over custom CSS when possible.
-- Keep custom CSS only for brand-specific styling.
-
 ## Completed in this commit
-- Added initial layer folders and dependency-injection extension points.
-- Added a sample use-case (`GetUserProfileUseCase`) and in-memory repository adapter.
-- Added `/architecture` page to visualize migration direction.
+- Added architecture structure guidance (`Docs/Clean-Architecture-Solution-Structure.md`).
+- Refactored home-landing decision into `ResolveLandingRouteUseCase` + infrastructure auth session adapter.
+- Modernized shell setup with Bootstrap theming file (`wwwroot/css/bootstrap-theme.css`).
+- Updated layout/header and architecture page styles to align with Bootstrap-first patterns.
