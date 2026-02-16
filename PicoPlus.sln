@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35017.193
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PicoPlus", "PicoPlus.csproj", "{59C0F91F-51F6-429C-A2ED-466315FA2A56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PicoPlus.Tests", "PicoPlus.Tests\PicoPlus.Tests.csproj", "{B4A171C0-4B57-4AB6-BEE6-5ECB0A0FB6B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PicoPlus.Tests", "PicoPlus.Tests\PicoPlus.Tests.csproj", "{B4A171C0-4B57-4AB6-BEE6-5ECB0A0FB6B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

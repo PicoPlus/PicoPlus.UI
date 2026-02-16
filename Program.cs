@@ -184,7 +184,10 @@ builder.Services.AddScoped<PicoPlus.ViewModels.Deal.DealCreateDialogViewModel>()
 builder.Services.AddSingleton<PicoPlus.Services.UserPanel.IPersianDateService, PicoPlus.Services.UserPanel.PersianDateService>();
 builder.Services.AddScoped<PicoPlus.Services.UserPanel.IUserPanelService, PicoPlus.Services.UserPanel.UserPanelService>();
 
-builder.Services.AddMemoryCache();
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 10_000;
+});
 builder.Services.AddScoped<PicoPlus.Views.Deal.Create>();
 
 builder.Services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();

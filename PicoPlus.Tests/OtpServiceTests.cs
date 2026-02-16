@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using PicoPlus.Services.Auth;
 
@@ -9,7 +10,7 @@ public class OtpServiceTests
     public void GenerateOtp_ReturnsSixDigitCode()
     {
         var logger = new TestLogger<OtpService>();
-        var service = new OtpService(logger);
+        var service = new OtpService(logger, CreateCache());
 
         var otp = service.GenerateOtp();
 
@@ -23,13 +24,37 @@ public class OtpServiceTests
         const string code = "123456";
 
         var logger = new TestLogger<OtpService>();
-        var service = new OtpService(logger);
+        var service = new OtpService(logger, CreateCache());
 
         service.StoreOtp(phone, code);
         service.ValidateOtp(phone, code);
 
         Assert.DoesNotContain(logger.Messages, message => message.Contains(code, StringComparison.Ordinal));
     }
+
+
+    [Fact]
+    public void ValidateOtp_RejectsEmptyInputWithoutException()
+    {
+        const string phone = "09123456789";
+
+        var logger = new TestLogger<OtpService>();
+        var service = new OtpService(logger, CreateCache());
+
+        service.StoreOtp(phone, "123456");
+        var result = service.ValidateOtp(phone, " ");
+
+        Assert.False(result.IsValid);
+    }
+
+    private static IMemoryCache CreateCache()
+    {
+        return new MemoryCache(new MemoryCacheOptions
+        {
+            SizeLimit = 10_000
+        });
+    }
+
 }
 
 internal sealed class TestLogger<T> : ILogger<T>

@@ -11,17 +11,15 @@ namespace PicoPlus.Services.Auth;
 public class OtpService
 {
     private readonly ILogger<OtpService> _logger;
-    private readonly IMemoryCache _otpStore = new MemoryCache(new MemoryCacheOptions
-    {
-        SizeLimit = 10_000
-    });
+    private readonly IMemoryCache _otpStore;
     private readonly ConcurrentDictionary<string, object> _otpLocks = new();
     private readonly TimeSpan _otpExpiration = TimeSpan.FromMinutes(5);
     private const int MaxAttempts = 3;
 
-    public OtpService(ILogger<OtpService> logger)
+    public OtpService(ILogger<OtpService> logger, IMemoryCache otpStore)
     {
         _logger = logger;
+        _otpStore = otpStore;
     }
 
     /// <summary>
@@ -48,11 +46,8 @@ public class OtpService
             AttemptCount = 0
         };
 
-        _otpStore.Set(normalizedPhone, otpData, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = _otpExpiration,
-            Size = 1
-        });
+        var entryOptions = CreateEntryOptions(normalizedPhone, otpData.ExpiresAt);
+        _otpStore.Set(normalizedPhone, otpData, entryOptions);
 
         _logger.LogInformation("OTP stored for phone: {Phone}, expires at: {ExpiresAt}",
             normalizedPhone, otpData.ExpiresAt);
@@ -64,6 +59,16 @@ public class OtpService
     public OtpValidationResult ValidateOtp(string phoneNumber, string enteredCode)
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
+
+        if (string.IsNullOrWhiteSpace(enteredCode))
+        {
+            _logger.LogWarning("OTP validation failed: Empty OTP input for phone: {Phone}", normalizedPhone);
+            return new OtpValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = "?? ????? ?????? ???."
+            };
+        }
 
         _logger.LogInformation("Validating OTP for phone: {Phone}", normalizedPhone);
         var otpLock = _otpLocks.GetOrAdd(normalizedPhone, _ => new object());
@@ -84,7 +89,6 @@ public class OtpService
             {
                 _logger.LogWarning("OTP validation failed: Expired OTP for phone: {Phone}", normalizedPhone);
                 _otpStore.Remove(normalizedPhone);
-                _otpLocks.TryRemove(normalizedPhone, out _);
                 return new OtpValidationResult
                 {
                     IsValid = false,
@@ -98,7 +102,6 @@ public class OtpService
             {
                 _logger.LogWarning("OTP validation failed: Max attempts exceeded for phone: {Phone}", normalizedPhone);
                 _otpStore.Remove(normalizedPhone);
-                _otpLocks.TryRemove(normalizedPhone, out _);
                 return new OtpValidationResult
                 {
                     IsValid = false,
@@ -113,7 +116,6 @@ public class OtpService
             {
                 _logger.LogInformation("OTP validation successful for phone: {Phone}", normalizedPhone);
                 _otpStore.Remove(normalizedPhone);
-                _otpLocks.TryRemove(normalizedPhone, out _);
                 return new OtpValidationResult
                 {
                     IsValid = true,
@@ -121,11 +123,7 @@ public class OtpService
                 };
             }
 
-            _otpStore.Set(normalizedPhone, otpData, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpiration = otpData.ExpiresAt,
-                Size = 1
-            });
+            _otpStore.Set(normalizedPhone, otpData, CreateEntryOptions(normalizedPhone, otpData.ExpiresAt));
 
             _logger.LogWarning("OTP validation failed: Invalid code for phone: {Phone}, attempts: {Attempts}",
                 normalizedPhone, otpData.AttemptCount);
@@ -183,6 +181,31 @@ public class OtpService
     public void CleanupExpiredOtps()
     {
         _logger.LogDebug("CleanupExpiredOtps invoked. IMemoryCache handles OTP expiration automatically.");
+    }
+
+    private MemoryCacheEntryOptions CreateEntryOptions(string normalizedPhone, DateTime expiresAt)
+    {
+        return new MemoryCacheEntryOptions
+        {
+            AbsoluteExpiration = expiresAt,
+            Size = 1,
+            PostEvictionCallbacks =
+            {
+                new PostEvictionCallbackRegistration
+                {
+                    EvictionCallback = (_, _, _, state) =>
+                    {
+                        if (state is not string phone)
+                        {
+                            return;
+                        }
+
+                        _otpLocks.TryRemove(phone, out _);
+                    },
+                    State = normalizedPhone
+                }
+            }
+        };
     }
 
     /// <summary>
