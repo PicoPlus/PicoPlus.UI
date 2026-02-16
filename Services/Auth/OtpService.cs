@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace PicoPlus.Services.Auth;
@@ -8,8 +11,13 @@ namespace PicoPlus.Services.Auth;
 public class OtpService
 {
     private readonly ILogger<OtpService> _logger;
-    private readonly Dictionary<string, OtpData> _otpStore = new();
+    private readonly IMemoryCache _otpStore = new MemoryCache(new MemoryCacheOptions
+    {
+        SizeLimit = 10_000
+    });
+    private readonly ConcurrentDictionary<string, object> _otpLocks = new();
     private readonly TimeSpan _otpExpiration = TimeSpan.FromMinutes(5);
+    private const int MaxAttempts = 3;
 
     public OtpService(ILogger<OtpService> logger)
     {
@@ -21,9 +29,8 @@ public class OtpService
     /// </summary>
     public string GenerateOtp()
     {
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
-        _logger.LogDebug("Generated OTP code: {Code}", code);
+        var code = RandomNumberGenerator.GetInt32(100000, 1_000_000).ToString();
+        _logger.LogDebug("Generated OTP code for request");
         return code;
     }
 
@@ -33,8 +40,7 @@ public class OtpService
     public void StoreOtp(string phoneNumber, string otpCode)
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
-
-        _otpStore[normalizedPhone] = new OtpData
+        var otpData = new OtpData
         {
             Code = otpCode,
             CreatedAt = DateTime.UtcNow,
@@ -42,8 +48,14 @@ public class OtpService
             AttemptCount = 0
         };
 
-        _logger.LogInformation("OTP stored for phone: {Phone}, Code: {Code}, expires at: {ExpiresAt}",
-            normalizedPhone, otpCode, _otpStore[normalizedPhone].ExpiresAt);
+        _otpStore.Set(normalizedPhone, otpData, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _otpExpiration,
+            Size = 1
+        });
+
+        _logger.LogInformation("OTP stored for phone: {Phone}, expires at: {ExpiresAt}",
+            normalizedPhone, otpData.ExpiresAt);
     }
 
     /// <summary>
@@ -53,77 +65,77 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        _logger.LogInformation("Validating OTP - Phone: {Phone}, Entered Code: {EnteredCode}", normalizedPhone, enteredCode);
+        _logger.LogInformation("Validating OTP for phone: {Phone}", normalizedPhone);
+        var otpLock = _otpLocks.GetOrAdd(normalizedPhone, _ => new object());
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        lock (otpLock)
         {
-            _logger.LogWarning("OTP validation failed: No OTP found for phone: {Phone}", normalizedPhone);
+            if (!_otpStore.TryGetValue<OtpData>(normalizedPhone, out var otpData) || otpData is null)
+            {
+                _logger.LogWarning("OTP validation failed: No OTP found for phone: {Phone}", normalizedPhone);
+                return new OtpValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "?? ????? ???? ???. ????? ?????? ????? ????."
+                };
+            }
+
+            if (DateTime.UtcNow > otpData.ExpiresAt)
+            {
+                _logger.LogWarning("OTP validation failed: Expired OTP for phone: {Phone}", normalizedPhone);
+                _otpStore.Remove(normalizedPhone);
+                _otpLocks.TryRemove(normalizedPhone, out _);
+                return new OtpValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "?? ????? ????? ??? ???. ????? ?????? ????? ????."
+                };
+            }
+
+            otpData.AttemptCount++;
+
+            if (otpData.AttemptCount > MaxAttempts)
+            {
+                _logger.LogWarning("OTP validation failed: Max attempts exceeded for phone: {Phone}", normalizedPhone);
+                _otpStore.Remove(normalizedPhone);
+                _otpLocks.TryRemove(normalizedPhone, out _);
+                return new OtpValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "????? ???????? ??? ??? ?? ?? ???. ????? ?????? ????? ????."
+                };
+            }
+
+            var normalizedStoredCode = otpData.Code.Trim();
+            var normalizedEnteredCode = enteredCode.Trim();
+
+            if (normalizedStoredCode == normalizedEnteredCode)
+            {
+                _logger.LogInformation("OTP validation successful for phone: {Phone}", normalizedPhone);
+                _otpStore.Remove(normalizedPhone);
+                _otpLocks.TryRemove(normalizedPhone, out _);
+                return new OtpValidationResult
+                {
+                    IsValid = true,
+                    ErrorMessage = string.Empty
+                };
+            }
+
+            _otpStore.Set(normalizedPhone, otpData, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpiration = otpData.ExpiresAt,
+                Size = 1
+            });
+
+            _logger.LogWarning("OTP validation failed: Invalid code for phone: {Phone}, attempts: {Attempts}",
+                normalizedPhone, otpData.AttemptCount);
+
             return new OtpValidationResult
             {
                 IsValid = false,
-                ErrorMessage = "?? ????? ???? ???. ????? ?????? ????? ????."
+                ErrorMessage = $"?? ????? ?????? ???. ({MaxAttempts - otpData.AttemptCount} ??? ???? ?????????)"
             };
         }
-
-        var otpData = _otpStore[normalizedPhone];
-
-        _logger.LogInformation("Stored OTP - Code: {StoredCode}, CreatedAt: {CreatedAt}, ExpiresAt: {ExpiresAt}, Attempts: {Attempts}",
-            otpData.Code, otpData.CreatedAt, otpData.ExpiresAt, otpData.AttemptCount);
-
-        // Check expiration
-        if (DateTime.UtcNow > otpData.ExpiresAt)
-        {
-            _logger.LogWarning("OTP validation failed: Expired OTP for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
-            return new OtpValidationResult
-            {
-                IsValid = false,
-                ErrorMessage = "?? ????? ????? ??? ???. ????? ?????? ????? ????."
-            };
-        }
-
-        // Increment attempt count
-        otpData.AttemptCount++;
-
-        // Check max attempts
-        if (otpData.AttemptCount > 3)
-        {
-            _logger.LogWarning("OTP validation failed: Max attempts exceeded for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
-            return new OtpValidationResult
-            {
-                IsValid = false,
-                ErrorMessage = "????? ???????? ??? ??? ?? ?? ???. ????? ?????? ????? ????."
-            };
-        }
-
-        // Normalize and trim both codes for comparison
-        var normalizedStoredCode = otpData.Code.Trim();
-        var normalizedEnteredCode = enteredCode.Trim();
-
-        _logger.LogInformation("Comparing codes - Stored: '{StoredCode}' (Length: {StoredLength}), Entered: '{EnteredCode}' (Length: {EnteredLength})",
-            normalizedStoredCode, normalizedStoredCode.Length, normalizedEnteredCode, normalizedEnteredCode.Length);
-
-        // Validate code
-        if (normalizedStoredCode == normalizedEnteredCode)
-        {
-            _logger.LogInformation("OTP validation successful for phone: {Phone}", normalizedPhone);
-            _otpStore.Remove(normalizedPhone);
-            return new OtpValidationResult
-            {
-                IsValid = true,
-                ErrorMessage = string.Empty
-            };
-        }
-
-        _logger.LogWarning("OTP validation failed: Invalid code for phone: {Phone}, attempts: {Attempts}",
-            normalizedPhone, otpData.AttemptCount);
-
-        return new OtpValidationResult
-        {
-            IsValid = false,
-            ErrorMessage = $"?? ????? ?????? ???. ({3 - otpData.AttemptCount} ??? ???? ?????????)"
-        };
     }
 
     /// <summary>
@@ -133,10 +145,9 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        if (!_otpStore.TryGetValue<OtpData>(normalizedPhone, out var otpData) || otpData is null)
             return false;
 
-        var otpData = _otpStore[normalizedPhone];
         return DateTime.UtcNow <= otpData.ExpiresAt;
     }
 
@@ -147,10 +158,9 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-        if (!_otpStore.ContainsKey(normalizedPhone))
+        if (!_otpStore.TryGetValue<OtpData>(normalizedPhone, out var otpData) || otpData is null)
             return null;
 
-        var otpData = _otpStore[normalizedPhone];
         var remaining = otpData.ExpiresAt - DateTime.UtcNow;
 
         return remaining.TotalSeconds > 0 ? remaining : null;
@@ -163,6 +173,7 @@ public class OtpService
     {
         var normalizedPhone = NormalizePhoneNumber(phoneNumber);
         _otpStore.Remove(normalizedPhone);
+        _otpLocks.TryRemove(normalizedPhone, out _);
         _logger.LogDebug("OTP cleared for phone: {Phone}", normalizedPhone);
     }
 
@@ -171,21 +182,7 @@ public class OtpService
     /// </summary>
     public void CleanupExpiredOtps()
     {
-        var now = DateTime.UtcNow;
-        var expiredKeys = _otpStore
-            .Where(kvp => now > kvp.Value.ExpiresAt)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        foreach (var key in expiredKeys)
-        {
-            _otpStore.Remove(key);
-        }
-
-        if (expiredKeys.Any())
-        {
-            _logger.LogInformation("Cleaned up {Count} expired OTPs", expiredKeys.Count);
-        }
+        _logger.LogDebug("CleanupExpiredOtps invoked. IMemoryCache handles OTP expiration automatically.");
     }
 
     /// <summary>
