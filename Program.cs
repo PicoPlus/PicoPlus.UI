@@ -11,6 +11,9 @@ using PicoPlus.State.Admin;
 using DotNetEnv;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
+using System.Net;
+using Polly;
+using Polly.Extensions.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,6 +99,52 @@ builder.Services.AddScoped<KanbanService>();
 // Authentication Service
 builder.Services.AddScoped<AuthService>();
 
+
+static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(IServiceProvider services, string clientName)
+{
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("HttpResilience");
+
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(response => response.StatusCode == HttpStatusCode.TooManyRequests)
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
+                TimeSpan.FromMilliseconds(Random.Shared.Next(0, 1000)),
+            onRetry: (outcome, delay, retryCount, _) =>
+            {
+                logger.LogWarning(
+                    "HTTP retry {RetryCount} for {ClientName} after {DelayMs}ms due to {Reason}",
+                    retryCount,
+                    clientName,
+                    delay.TotalMilliseconds,
+                    outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString());
+            });
+}
+
+static IAsyncPolicy<HttpResponseMessage> CreateCircuitBreakerPolicy(IServiceProvider services, string clientName)
+{
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("HttpResilience");
+
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(response => response.StatusCode == HttpStatusCode.TooManyRequests)
+        .CircuitBreakerAsync(
+            handledEventsAllowedBeforeBreaking: 5,
+            durationOfBreak: TimeSpan.FromSeconds(30),
+            onBreak: (outcome, breakDuration) =>
+            {
+                logger.LogError(
+                    "Circuit opened for {ClientName} for {DurationMs}ms due to {Reason}",
+                    clientName,
+                    breakDuration.TotalMilliseconds,
+                    outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString());
+            },
+            onReset: () => logger.LogInformation("Circuit reset for {ClientName}", clientName),
+            onHalfOpen: () => logger.LogInformation("Circuit half-open for {ClientName}", clientName));
+}
+
 // HttpClient with Shecan
 builder.Services.AddHttpClient("HubSpot", (sp, client) =>
 {
@@ -114,6 +163,8 @@ builder.Services.AddHttpClient("HubSpot", (sp, client) =>
 
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "HubSpot"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "HubSpot"))
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 // Zibal API
@@ -122,6 +173,8 @@ builder.Services.AddHttpClient<PicoPlus.Services.Identity.Zibal>((sp, client) =>
     client.BaseAddress = new Uri("https://api.zibal.ir");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "Zibal"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "Zibal"))
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 // Liara API
@@ -129,7 +182,9 @@ builder.Services.AddHttpClient<PicoPlus.Services.Utils.LiaraApiService>((sp, cli
 {
     client.BaseAddress = new Uri("https://api.iran.liara.ir");
     client.Timeout = TimeSpan.FromSeconds(15);
-});
+})
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "Liara"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "Liara"));
 
 // CRM
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Contact>();
@@ -144,6 +199,8 @@ builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.Product>((sp, clie
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "HubSpot-Product"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "HubSpot-Product"))
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.LineItem>((sp, client) =>
@@ -151,6 +208,8 @@ builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.LineItem>((sp, cli
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "HubSpot-LineItem"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "HubSpot-LineItem"))
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 builder.Services.AddScoped<PicoPlus.Services.CRM.Pipelines>();
@@ -163,6 +222,8 @@ builder.Services.AddHttpClient<PicoPlus.Services.SMS.SmsIr>((sp, client) =>
     client.BaseAddress = new Uri("https://api.sms.ir");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
+.AddPolicyHandler((sp, _) => CreateRetryPolicy(sp, "SmsIr"))
+.AddPolicyHandler((sp, _) => CreateCircuitBreakerPolicy(sp, "SmsIr"))
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 builder.Services.AddScoped<PicoPlus.Services.SMS.SMS.Send>();

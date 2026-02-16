@@ -19,8 +19,23 @@ public static class AdminServiceExtensions
         this DealService dealService,
         int limit = 100)
     {
-        var response = await dealService.GetAll(limit: limit);
-        return response?.results ?? new List<DealModel.GetBatch.Response.Result>();
+        if (limit <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be greater than zero.");
+        }
+
+        try
+        {
+            var response = await dealService.GetAll(limit: limit);
+            return response?.results ?? new List<DealModel.GetBatch.Response.Result>();
+        }
+        catch (Exception ex)
+        {
+            throw new AdminServiceOperationException(
+                operation: "Deal.GetAll",
+                context: $"limit={limit}",
+                innerException: ex);
+        }
     }
 
     /// <summary>
@@ -31,8 +46,28 @@ public static class AdminServiceExtensions
         string dealId,
         string newStageId)
     {
-        await dealService.Update(dealId, new { dealstage = newStageId });
-        return true;
+        if (string.IsNullOrWhiteSpace(dealId))
+        {
+            throw new ArgumentException("Deal id is required.", nameof(dealId));
+        }
+
+        if (string.IsNullOrWhiteSpace(newStageId))
+        {
+            throw new ArgumentException("New stage id is required.", nameof(newStageId));
+        }
+
+        try
+        {
+            await dealService.Update(dealId, new { dealstage = newStageId });
+            return true;
+        }
+        catch (Exception ex)
+        {
+            throw new AdminServiceOperationException(
+                operation: "Deal.UpdateStage",
+                context: $"dealId={dealId}, newStageId={newStageId}",
+                innerException: ex);
+        }
     }
 
     /// <summary>
@@ -63,6 +98,19 @@ public static class AdminServiceExtensions
                 "company", "lifecyclestage", "hubspot_owner_id"
             },
             limit: limit);
+    }
+}
+
+public sealed class AdminServiceOperationException : Exception
+{
+    public string Operation { get; }
+    public string Context { get; }
+
+    public AdminServiceOperationException(string operation, string context, Exception innerException)
+        : base($"Admin service operation failed: {operation} ({context})", innerException)
+    {
+        Operation = operation;
+        Context = context;
     }
 }
 
