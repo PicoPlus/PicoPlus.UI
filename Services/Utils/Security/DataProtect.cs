@@ -1,49 +1,95 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PicoPlus.Services.Utils.Security
 {
     public class DataProtect
     {
-        private const string encryptionKey = "t4y812o2qDe4Rs440REID8ppZTA0hYK39ybm1gQNAqk=";
-        private static string user_id;
-        private static readonly string userDataFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PicoPlus", "user_data", $"{user_id}.json");
+        private static readonly string EncryptionKey =
+            Environment.GetEnvironmentVariable("PICOPLUS_ENCRYPTION_KEY")
+            ?? throw new InvalidOperationException("PICOPLUS_ENCRYPTION_KEY is not configured.");
+
+        private static readonly string UserDataDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PicoPlus", "user_data");
 
         public static byte[] SaveUserData(object data)
         {
-            // Serialize user data to JSON
             string jsonData = JsonConvert.SerializeObject(data);
-
-            // Encrypt the JSON data
-            byte[] encryptedData = EncryptStringToBytes_Aes(jsonData, encryptionKey);
-
-            // Save encrypted data to a file
-            return encryptedData;
+            return EncryptStringToBytes_Aes(jsonData, EncryptionKey);
         }
 
-        public static void LoadUserData(object data, string userid)
+        public static async Task<T?> LoadUserDataAsync<T>(string userId, CancellationToken cancellationToken = default)
         {
-            user_id = userid;
-            if (File.Exists(userDataFilePath))
+            var userDataFilePath = BuildUserDataFilePath(userId);
+
+            if (!File.Exists(userDataFilePath))
             {
-                // Read encrypted data from file
-                byte[] encryptedData = File.ReadAllBytes(userDataFilePath);
-
-                // Decrypt the data
-                string jsonData = DecryptStringFromBytes_Aes(encryptedData, encryptionKey);
-
-                // Deserialize JSON to user data object
-
+                return default;
             }
-            else
+
+            await using var stream = new FileStream(
+                userDataFilePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 4096,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+            var encryptedData = new byte[stream.Length];
+            var read = 0;
+
+            while (read < encryptedData.Length)
             {
+                var bytesRead = await stream.ReadAsync(encryptedData.AsMemory(read, encryptedData.Length - read), cancellationToken);
+                if (bytesRead == 0)
+                {
+                    break;
+                }
 
+                read += bytesRead;
             }
+
+            if (read != encryptedData.Length)
+            {
+                throw new IOException("Could not read the complete encrypted user data file.");
+            }
+
+            string jsonData = DecryptStringFromBytes_Aes(encryptedData, EncryptionKey);
+            return JsonConvert.DeserializeObject<T>(jsonData);
+        }
+
+        public static async Task SaveUserDataToFileAsync(object data, string userId, CancellationToken cancellationToken = default)
+        {
+            var userDataFilePath = BuildUserDataFilePath(userId);
+            Directory.CreateDirectory(Path.GetDirectoryName(userDataFilePath)!);
+
+            var encryptedData = SaveUserData(data);
+
+            await using var stream = new FileStream(
+                userDataFilePath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 4096,
+                FileOptions.Asynchronous);
+
+            await stream.WriteAsync(encryptedData.AsMemory(), cancellationToken);
+        }
+
+        private static string BuildUserDataFilePath(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new ArgumentException("User ID is required.", nameof(userId));
+            }
+
+            foreach (var invalid in Path.GetInvalidFileNameChars())
+            {
+                userId = userId.Replace(invalid, '_');
+            }
+
+            return Path.Combine(UserDataDirectory, $"{userId}.json");
         }
 
         private static byte[] EncryptStringToBytes_Aes(string plainText, string key)
@@ -62,11 +108,9 @@ namespace PicoPlus.Services.Utils.Security
                     msEncrypt.Write(aesAlg.IV, 0, aesAlg.IV.Length);
 
                     using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    using (StreamWriter swEncrypt = new StreamWriter(csEncrypt, Encoding.UTF8))
                     {
-                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
-                        {
-                            swEncrypt.Write(plainText);
-                        }
+                        swEncrypt.Write(plainText);
                     }
 
                     encrypted = msEncrypt.ToArray();
@@ -78,8 +122,6 @@ namespace PicoPlus.Services.Utils.Security
 
         private static string DecryptStringFromBytes_Aes(byte[] cipherText, string key)
         {
-            string plaintext = null;
-
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = Convert.FromBase64String(key);
@@ -90,18 +132,12 @@ namespace PicoPlus.Services.Utils.Security
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
                 using (MemoryStream msDecrypt = new MemoryStream(cipherText, iv.Length, cipherText.Length - iv.Length))
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (StreamReader srDecrypt = new StreamReader(csDecrypt, Encoding.UTF8))
                 {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            plaintext = srDecrypt.ReadToEnd();
-                        }
-                    }
+                    return srDecrypt.ReadToEnd();
                 }
             }
-
-            return plaintext;
         }
     }
 }
