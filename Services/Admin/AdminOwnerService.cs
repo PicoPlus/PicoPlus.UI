@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using PicoPlus.Models.Admin;
 using PicoPlus.Services.CRM;
 
@@ -8,15 +9,21 @@ namespace PicoPlus.Services.Admin;
 /// </summary>
 public class AdminOwnerService
 {
+    private const string OwnersCacheKey = "admin:hubspot:owners:all";
+    private static readonly TimeSpan OwnersCacheTtl = TimeSpan.FromMinutes(10);
+
     private readonly Owners _ownersService;
     private readonly ILogger<AdminOwnerService> _logger;
+    private readonly IMemoryCache _cache;
 
     public AdminOwnerService(
         Owners ownersService,
-        ILogger<AdminOwnerService> logger)
+        ILogger<AdminOwnerService> logger,
+        IMemoryCache cache)
     {
         _ownersService = ownersService;
         _logger = logger;
+        _cache = cache;
     }
 
     /// <summary>
@@ -26,30 +33,21 @@ public class AdminOwnerService
     {
         try
         {
-            var response = await _ownersService.GetAll();
-            
-            if (response?.results == null)
+            if (_cache.TryGetValue<List<HubSpotOwner>>(OwnersCacheKey, out var cachedOwners) && cachedOwners is not null)
             {
-                _logger.LogWarning("No owners found in HubSpot");
-                return new List<HubSpotOwner>();
+                _logger.LogDebug("Owners cache hit. Count: {Count}", cachedOwners.Count);
+                return cachedOwners;
             }
 
-            var owners = response.results
-                .Where(o => !o.archived)
-                .Select(o => new HubSpotOwner
-                {
-                    Id = o.id,
-                    Email = o.email,
-                    FirstName = o.firstName,
-                    LastName = o.lastName,
-                    Archived = o.archived,
-                    CreatedAt = o.createdAt,
-                    UpdatedAt = o.updatedAt
-                })
-                .OrderBy(o => o.FullName)
-                .ToList();
+            _logger.LogDebug("Owners cache miss. Fetching owners from HubSpot.");
+            var owners = await FetchOwnersFromUpstreamAsync();
 
-            _logger.LogInformation("Retrieved {Count} active owners from HubSpot", owners.Count);
+            _cache.Set(OwnersCacheKey, owners, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = OwnersCacheTtl,
+                Size = 1
+            });
+
             return owners;
         }
         catch (Exception ex)
@@ -60,6 +58,16 @@ public class AdminOwnerService
     }
 
     /// <summary>
+    /// Explicitly invalidate owners cache.
+    /// Call this after owner create/update operations.
+    /// </summary>
+    public void InvalidateOwnerCache()
+    {
+        _cache.Remove(OwnersCacheKey);
+        _logger.LogInformation("Owners cache invalidated.");
+    }
+
+    /// <summary>
     /// Search owners by email or name
     /// </summary>
     public async Task<List<HubSpotOwner>> SearchOwnersAsync(string searchTerm)
@@ -67,20 +75,20 @@ public class AdminOwnerService
         try
         {
             var allOwners = await GetAllOwnersAsync();
-            
+
             if (string.IsNullOrWhiteSpace(searchTerm))
             {
                 return allOwners;
             }
 
-            var term = searchTerm.Trim().ToLower();
-            
+            var term = searchTerm.Trim();
+
             return allOwners
-                .Where(o => 
-                    o.Email.ToLower().Contains(term) ||
-                    o.FirstName.ToLower().Contains(term) ||
-                    o.LastName.ToLower().Contains(term) ||
-                    o.FullName.ToLower().Contains(term))
+                .Where(o =>
+                    ContainsInsensitive(o.Email, term) ||
+                    ContainsInsensitive(o.FirstName, term) ||
+                    ContainsInsensitive(o.LastName, term) ||
+                    ContainsInsensitive(o.FullName, term))
                 .ToList();
         }
         catch (Exception ex)
@@ -115,7 +123,7 @@ public class AdminOwnerService
         try
         {
             var allOwners = await GetAllOwnersAsync();
-            return allOwners.FirstOrDefault(o => 
+            return allOwners.FirstOrDefault(o =>
                 o.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception ex)
@@ -133,9 +141,9 @@ public class AdminOwnerService
         try
         {
             var allOwners = await GetAllOwnersAsync();
-            
-            return allOwners.Any(o => 
-                o.Id == ownerIdOrEmail || 
+
+            return allOwners.Any(o =>
+                o.Id == ownerIdOrEmail ||
                 o.Email.Equals(ownerIdOrEmail, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception ex)
@@ -143,5 +151,40 @@ public class AdminOwnerService
             _logger.LogError(ex, "Error validating owner: {Owner}", ownerIdOrEmail);
             return false;
         }
+    }
+
+    private async Task<List<HubSpotOwner>> FetchOwnersFromUpstreamAsync()
+    {
+        var response = await _ownersService.GetAll();
+
+        if (response?.results == null)
+        {
+            _logger.LogWarning("No owners found in HubSpot");
+            return new List<HubSpotOwner>();
+        }
+
+        var owners = response.results
+            .Where(o => !o.archived)
+            .Select(o => new HubSpotOwner
+            {
+                Id = o.id,
+                Email = o.email,
+                FirstName = o.firstName,
+                LastName = o.lastName,
+                Archived = o.archived,
+                CreatedAt = o.createdAt,
+                UpdatedAt = o.updatedAt
+            })
+            .OrderBy(o => o.FullName)
+            .ToList();
+
+        _logger.LogInformation("Retrieved {Count} active owners from HubSpot", owners.Count);
+        return owners;
+    }
+
+    private static bool ContainsInsensitive(string? source, string term)
+    {
+        return !string.IsNullOrEmpty(source) &&
+               source.Contains(term, StringComparison.OrdinalIgnoreCase);
     }
 }
