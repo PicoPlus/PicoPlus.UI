@@ -22,44 +22,7 @@ public static class AdminServiceExtensions
         try
         {
             var response = await dealService.GetAll(limit: limit);
-            
-            // Parse dynamic response
-            var results = new List<DealModel.GetBatch.Response.Result>();
-            
-            if (response != null && response.results != null)
-            {
-                foreach (var item in response.results)
-                {
-                    DateTime created = DateTime.UtcNow;
-                    DateTime.TryParse(item.createdAt?.ToString(), out created);
-                    
-                    DateTime updated = DateTime.UtcNow;
-                    DateTime.TryParse(item.updatedAt?.ToString(), out updated);
-                    
-                    bool arch = false;
-                    bool.TryParse(item.archived?.ToString(), out arch);
-                    
-                    var result = new DealModel.GetBatch.Response.Result
-                    {
-                        id = item.id?.ToString() ?? "",
-                        createdAt = created,
-                        updatedAt = updated,
-                        archived = arch,
-                        properties = new DealModel.GetBatch.Response.Properties
-                        {
-                            amount = item.properties?.amount?.ToString() ?? "0",
-                            dealname = item.properties?.dealname?.ToString() ?? "",
-                            dealstage = item.properties?.dealstage?.ToString() ?? "",
-                            createdate = item.properties?.createdate?.ToString() ?? "",
-                            hs_lastmodifieddate = item.properties?.hs_lastmodifieddate?.ToString() ?? "",
-                            hs_object_id = item.properties?.hs_object_id?.ToString() ?? ""
-                        }
-                    };
-                    results.Add(result);
-                }
-            }
-            
-            return results;
+            return response?.results ?? new List<DealModel.GetBatch.Response.Result>();
         }
         catch
         {

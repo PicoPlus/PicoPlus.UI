@@ -162,7 +162,7 @@ namespace PicoPlus.Services.CRM.Objects
         /// Search deals with filter criteria
         /// POST /crm/v3/objects/deals/search
         /// </summary>
-        public async Task<dynamic> Search(object searchRequest)
+        public async Task<Models.CRM.Objects.Deal.Search.Response> Search(object searchRequest)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/search";
@@ -178,14 +178,14 @@ namespace PicoPlus.Services.CRM.Objects
             response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.Search.Response>(responseJson);
         }
 
         /// <summary>
         /// Get all deals (paginated)
         /// GET /crm/v3/objects/deals
         /// </summary>
-        public async Task<dynamic> GetAll(int limit = 100, string? after = null, string[]? properties = null)
+        public async Task<Models.CRM.Objects.Deal.GetAll.Response> GetAll(int limit = 100, string? after = null, string[]? properties = null)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var queryParams = new List<string> { $"limit={limit}", "archived=false" };
@@ -212,14 +212,14 @@ namespace PicoPlus.Services.CRM.Objects
             response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.GetAll.Response>(responseJson);
         }
 
         /// <summary>
         /// Batch create deals
         /// POST /crm/v3/objects/deals/batch/create
         /// </summary>
-        public async Task<dynamic> BatchCreate(List<Models.CRM.Objects.Deal.Create.Request> deals)
+        public async Task<Models.CRM.Objects.Deal.BatchMutation.Response> BatchCreate(List<Models.CRM.Objects.Deal.Create.Request> deals)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/batch/create";
@@ -236,14 +236,14 @@ namespace PicoPlus.Services.CRM.Objects
             response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.BatchMutation.Response>(responseJson);
         }
 
         /// <summary>
         /// Batch update deals
         /// POST /crm/v3/objects/deals/batch/update
         /// </summary>
-        public async Task<dynamic> BatchUpdate(List<object> updates)
+        public async Task<Models.CRM.Objects.Deal.BatchMutation.Response> BatchUpdate(List<object> updates)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/batch/update";
@@ -260,7 +260,7 @@ namespace PicoPlus.Services.CRM.Objects
             response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.BatchMutation.Response>(responseJson);
         }
     }
 }

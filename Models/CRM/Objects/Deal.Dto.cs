@@ -103,6 +103,50 @@ public partial class Deal
         }
     }
 
+
+
+    public class GetAll
+    {
+        public class Response
+        {
+            public List<GetBatch.Response.Result> results { get; set; } = new();
+            public Paging? paging { get; set; }
+
+            public class Paging
+            {
+                public Next? next { get; set; }
+            }
+
+            public class Next
+            {
+                public string? after { get; set; }
+                public string? link { get; set; }
+            }
+        }
+    }
+
+    public class Search
+    {
+        public class Response
+        {
+            public int total { get; set; }
+            public List<GetBatch.Response.Result> results { get; set; } = new();
+            public GetAll.Response.Paging? paging { get; set; }
+        }
+    }
+
+    public class BatchMutation
+    {
+        public class Response
+        {
+            public string? status { get; set; }
+            public List<Create.Response> results { get; set; } = new();
+            public int? numErrors { get; set; }
+            public List<GetBatch.Response.Error>? errors { get; set; }
+            public DateTime? startedAt { get; set; }
+            public DateTime? completedAt { get; set; }
+        }
+    }
     public class Get
     {
         public class Response
