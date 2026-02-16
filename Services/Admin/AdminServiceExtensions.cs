@@ -19,15 +19,8 @@ public static class AdminServiceExtensions
         this DealService dealService,
         int limit = 100)
     {
-        try
-        {
-            var response = await dealService.GetAll(limit: limit);
-            return response?.results ?? new List<DealModel.GetBatch.Response.Result>();
-        }
-        catch
-        {
-            return new List<DealModel.GetBatch.Response.Result>();
-        }
+        var response = await dealService.GetAll(limit: limit);
+        return response?.results ?? new List<DealModel.GetBatch.Response.Result>();
     }
 
     /// <summary>
@@ -38,15 +31,8 @@ public static class AdminServiceExtensions
         string dealId,
         string newStageId)
     {
-        try
-        {
-            await dealService.Update(dealId, new { dealstage = newStageId });
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        await dealService.Update(dealId, new { dealstage = newStageId });
+        return true;
     }
 
     /// <summary>
@@ -73,68 +59,42 @@ public static class AdminServiceExtensions
             {
                 "firstname", "lastname", "email", "phone", "natcode",
                 "dateofbirth", "father_name", "gender", "shahkar_status",
-                "wallet", "total_revenue", "num_associated_deals", "contact_plan"
+                "wallet", "total_revenue", "num_associated_deals", "contact_plan",
+                "company", "lifecyclestage", "hubspot_owner_id"
             },
             limit: limit);
     }
 }
 
 /// <summary>
-/// Helper class for property access with fallbacks
+/// Helper class for property access
 /// </summary>
 public static class PropertyHelpers
 {
-    public static string GetCompanyName(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since company_name doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetCompanyName(this DealModel.GetBatch.Response.Properties properties)
+        => properties.company_name;
 
-    public static string GetContactName(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since contact_name doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetContactName(this DealModel.GetBatch.Response.Properties properties)
+        => properties.contact_name;
 
-    public static string GetCloseDate(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since closedate doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetCloseDate(this DealModel.GetBatch.Response.Properties properties)
+        => properties.closedate;
 
-    public static string GetDescription(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since description doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetDescription(this DealModel.GetBatch.Response.Properties properties)
+        => properties.description;
 
-    public static string GetOwnerId(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since hubspot_owner_id doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetOwnerId(this DealModel.GetBatch.Response.Properties properties)
+        => properties.hubspot_owner_id;
 
-    public static string GetPipeline(this DealModel.GetBatch.Response.Properties properties)
-    {
-        // Since pipeline doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetPipeline(this DealModel.GetBatch.Response.Properties properties)
+        => properties.pipeline;
 
-    public static string GetCompany(this ContactModel.Search.Response.Result.Properties properties)
-    {
-        // Since company doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetCompany(this ContactModel.Search.Response.Result.Properties properties)
+        => properties.company;
 
-    public static string GetLifecycleStage(this ContactModel.Search.Response.Result.Properties properties)
-    {
-        // Since lifecyclestage doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetLifecycleStage(this ContactModel.Search.Response.Result.Properties properties)
+        => properties.lifecyclestage;
 
-    public static string GetHubspotOwnerId(this ContactModel.Search.Response.Result.Properties properties)
-    {
-        // Since hubspot_owner_id doesn't exist in the model, return empty
-        return string.Empty;
-    }
+    public static string? GetHubspotOwnerId(this ContactModel.Search.Response.Result.Properties properties)
+        => properties.hubspot_owner_id;
 }

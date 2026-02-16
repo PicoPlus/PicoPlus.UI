@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using PicoPlus.Infrastructure.State;
-using PicoPlus.Infrastructure.Services;
 
 namespace PicoPlus.Infrastructure.Authorization;
 
@@ -9,19 +8,23 @@ namespace PicoPlus.Infrastructure.Authorization;
 /// </summary>
 public class AdminAuthorizationHandler
 {
+    private static readonly HashSet<string> AllowedAdminEmails = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "admin@picoplus.app",
+        "secgen.unity@gmail.com",
+        "manager@picoplus.app"
+    };
+
     private readonly AuthenticationStateService _authState;
-    private readonly ISessionStorageService _sessionStorage;
     private readonly NavigationManager _navigation;
     private readonly ILogger<AdminAuthorizationHandler> _logger;
 
     public AdminAuthorizationHandler(
         AuthenticationStateService authState,
-        ISessionStorageService sessionStorage,
         NavigationManager navigation,
         ILogger<AdminAuthorizationHandler> logger)
     {
         _authState = authState;
-        _sessionStorage = sessionStorage;
         _navigation = navigation;
         _logger = logger;
     }
@@ -29,34 +32,27 @@ public class AdminAuthorizationHandler
     /// <summary>
     /// Check if current user has admin access
     /// </summary>
-    public async Task<bool> IsAdminAsync(CancellationToken cancellationToken = default)
+    public Task<bool> IsAdminAsync(CancellationToken cancellationToken = default)
     {
-        try
+        if (!_authState.IsAuthenticated)
         {
-            var isAuthenticated = await _authState.IsAuthenticatedAsync();
-            if (!isAuthenticated)
-            {
-                _logger.LogWarning("User is not authenticated");
-                return false;
-            }
-
-            // Check for admin role in session storage
-            var adminRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
-            
-            if (adminRole == "Admin" || adminRole == "SuperAdmin")
-            {
-                _logger.LogInformation("User has admin access: {Role}", adminRole);
-                return true;
-            }
-
-            _logger.LogWarning("User does not have admin role: {Role}", adminRole ?? "None");
-            return false;
+            _logger.LogWarning("User is not authenticated");
+            return Task.FromResult(false);
         }
-        catch (Exception ex)
+
+        if (!_authState.IsAdminAuthenticated)
         {
-            _logger.LogError(ex, "Error checking admin authorization");
-            return false;
+            _logger.LogWarning("Authenticated user does not have admin state");
+            return Task.FromResult(false);
         }
+
+        if (!AllowedAdminEmails.Contains(_authState.AdminEmail))
+        {
+            _logger.LogWarning("Admin authorization denied. Unknown admin email: {Email}", _authState.AdminEmail);
+            return Task.FromResult(false);
+        }
+
+        return Task.FromResult(true);
     }
 
     /// <summary>
@@ -65,7 +61,7 @@ public class AdminAuthorizationHandler
     public async Task<bool> EnsureAdminAccessAsync(CancellationToken cancellationToken = default)
     {
         var isAdmin = await IsAdminAsync(cancellationToken);
-        
+
         if (!isAdmin)
         {
             _logger.LogWarning("Unauthorized admin access attempt. Redirecting to admin login.");
@@ -81,27 +77,18 @@ public class AdminAuthorizationHandler
     /// </summary>
     public async Task<AdminUserInfo?> GetAdminUserInfoAsync(CancellationToken cancellationToken = default)
     {
-        try
+        var isAdmin = await IsAdminAsync(cancellationToken);
+        if (!isAdmin)
         {
-            var isAdmin = await IsAdminAsync(cancellationToken);
-            if (!isAdmin) return null;
-
-            var userName = await _sessionStorage.GetItemAsync<string>("user_name", cancellationToken);
-            var userEmail = await _sessionStorage.GetItemAsync<string>("user_email", cancellationToken);
-            var userRole = await _sessionStorage.GetItemAsync<string>("user_role", cancellationToken);
-
-            return new AdminUserInfo
-            {
-                Name = userName ?? "Admin",
-                Email = userEmail ?? "",
-                Role = userRole ?? "Admin"
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting admin user info");
             return null;
         }
+
+        return new AdminUserInfo
+        {
+            Name = string.IsNullOrWhiteSpace(_authState.AdminDisplayName) ? "Admin" : _authState.AdminDisplayName,
+            Email = _authState.AdminEmail,
+            Role = "Admin"
+        };
     }
 }
 

@@ -53,20 +53,17 @@ public partial class AdminLoginViewModel : ObservableObject
             if (await ValidateAdminCredentialsAsync())
             {
                 await _sessionStorage.SetItemAsync("LogInState", 1, cancellationToken);
-                await _sessionStorage.SetItemAsync("user_role", "Admin", cancellationToken);
                 await _sessionStorage.SetItemAsync("user_email", Email, cancellationToken);
                 await _sessionStorage.SetItemAsync("user_name", GetAdminName(Email), cancellationToken);
 
                 if (RememberMe)
                 {
                     await _localStorage.SetItemAsync("LogInState", 1, cancellationToken);
-                    await _localStorage.SetItemAsync("user_role", "Admin", cancellationToken);
                     await _localStorage.SetItemAsync("user_email", Email, cancellationToken);
                     await _localStorage.SetItemAsync("user_name", GetAdminName(Email), cancellationToken);
                 }
 
-                _authState.IsAuthenticated = true;
-                _authState.LoginState = 1;
+                _authState.SetAdminAuthenticatedUser(Email, GetAdminName(Email));
 
                 _logger.LogInformation("Admin logged in successfully: {Email}", Email);
 

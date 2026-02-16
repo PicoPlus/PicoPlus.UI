@@ -137,6 +137,7 @@ builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Deal>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Company>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Ticket>();
 builder.Services.AddScoped<PicoPlus.Services.CRM.ContactUpdateService>();
+builder.Services.AddScoped<PicoPlus.Services.CRM.HubSpotApiClient>();
 
 builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.Product>((sp, client) =>
 {
@@ -171,6 +172,7 @@ builder.Services.AddScoped<PicoPlus.Services.SMS.SmsServiceFactory>();
 builder.Services.AddScoped<PicoPlus.Services.SMS.ISmsService, PicoPlus.Services.SMS.SmsService>();
 
 builder.Services.AddSingleton<OtpService>();
+builder.Services.AddScoped<PicoPlus.Services.Auth.IRegistrationValidationService, PicoPlus.Services.Auth.RegistrationValidationService>();
 
 // ViewModels
 builder.Services.AddScoped<PicoPlus.ViewModels.Auth.LoginViewModel>();

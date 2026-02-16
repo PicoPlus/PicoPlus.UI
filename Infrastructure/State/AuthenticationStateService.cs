@@ -17,6 +17,15 @@ public partial class AuthenticationStateService : ObservableObject
     [ObservableProperty]
     private int loginState;
 
+    [ObservableProperty]
+    private bool isAdminAuthenticated;
+
+    [ObservableProperty]
+    private string adminEmail = string.Empty;
+
+    [ObservableProperty]
+    private string adminDisplayName = string.Empty;
+
     public event EventHandler? AuthenticationStateChanged;
 
     public void SetAuthenticatedUser(Contact.Search.Response.Result user)
@@ -32,6 +41,19 @@ public partial class AuthenticationStateService : ObservableObject
         CurrentUser = null;
         IsAuthenticated = false;
         LoginState = 0;
+        IsAdminAuthenticated = false;
+        AdminEmail = string.Empty;
+        AdminDisplayName = string.Empty;
+        OnAuthenticationStateChanged();
+    }
+
+    public void SetAdminAuthenticatedUser(string email, string displayName)
+    {
+        IsAuthenticated = true;
+        LoginState = 1;
+        IsAdminAuthenticated = true;
+        AdminEmail = email;
+        AdminDisplayName = displayName;
         OnAuthenticationStateChanged();
     }
 
@@ -48,6 +70,9 @@ public partial class AuthenticationStateService : ObservableObject
         CurrentUser = user;
         IsAuthenticated = loginState == 1 && user != null;
         LoginState = loginState;
+        IsAdminAuthenticated = false;
+        AdminEmail = string.Empty;
+        AdminDisplayName = string.Empty;
         OnAuthenticationStateChanged();
     }
 

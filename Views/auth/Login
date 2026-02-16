@@ -44,7 +44,7 @@
                                     name="roleSelection"
                                     id="roleUser"
                                     Value="@("User")"
-                                    @bind-Value="ViewModel.SelectedRole"
+                                    @bind-Value=""User""
                                     disabled="@ViewModel.IsLoading" />
                         <label class="form-check-label" for="roleUser">
                             <i class="bi bi-person me-1"></i>
@@ -56,7 +56,7 @@
                                     name="roleSelection"
                                     id="roleAdmin"
                                     Value="@("Admin")"
-                                    @bind-Value="ViewModel.SelectedRole"
+                                    @bind-Value=""User""
                                     disabled="@ViewModel.IsLoading" />
                         <label class="form-check-label" for="roleAdmin">
                             <i class="bi bi-shield-check me-1"></i>
@@ -67,7 +67,7 @@
             </div>
 
             <!-- Dynamic Input Fields -->
-            @if (ViewModel.SelectedRole == "User")
+            @if ("User" == "User")
             {
                 <div class="mb-4">
                     <label for="nationalCode" class="form-label">کد ملی</label>
@@ -90,7 +90,7 @@
                     </small>
                 </div>
             }
-            else if (ViewModel.SelectedRole == "Admin")
+            else if ("User" == "Admin")
             {
                 <div class="mb-4">
                     <label for="adminId" class="form-label">شناسه کاربری مدیر (UserId/AdminId)</label>

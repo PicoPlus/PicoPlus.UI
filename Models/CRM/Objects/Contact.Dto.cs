@@ -32,6 +32,9 @@ public partial class Contact
                 public string num_associated_deals { get; set; }
                 public string contact_plan { get; set; }
                 public string gender { get; set; }
+                public string company { get; set; }
+                public string lifecyclestage { get; set; }
+                public string hubspot_owner_id { get; set; }
                 /// <summary>Avatar/National Card Image URL</summary>
                 public string last_products_bought_product_1_image_url { get; set; }
             }
@@ -100,6 +103,18 @@ public partial class Contact
 
         }
 
+    }
+
+    public class BatchMutation
+    {
+        public class Response
+        {
+            public string? status { get; set; }
+            public List<Create.Response> results { get; set; } = new();
+            public int? numErrors { get; set; }
+            public DateTime? startedAt { get; set; }
+            public DateTime? completedAt { get; set; }
+        }
     }
 
     public class Create

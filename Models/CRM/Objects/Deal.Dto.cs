@@ -232,12 +232,18 @@ public partial class Deal
         {
             public class Properties
             {
-                public string amount { get; set; }
-                public string createdate { get; set; }
-                public string hs_lastmodifieddate { get; set; }
-                public string hs_object_id { get; set; }
-                public string dealname { get; set; }
-                public string dealstage { get; set; }
+                public string? amount { get; set; }
+                public string? createdate { get; set; }
+                public string? hs_lastmodifieddate { get; set; }
+                public string? hs_object_id { get; set; }
+                public string? dealname { get; set; }
+                public string? dealstage { get; set; }
+                public string? closedate { get; set; }
+                public string? description { get; set; }
+                public string? hubspot_owner_id { get; set; }
+                public string? pipeline { get; set; }
+                public string? company_name { get; set; }
+                public string? contact_name { get; set; }
             }
 
             public class Result

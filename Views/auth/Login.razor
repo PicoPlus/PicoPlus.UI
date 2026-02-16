@@ -240,7 +240,6 @@ protected override async Task OnInitializedAsync()
 
     private async Task HandleUserLogin()
     {
-        UserViewModel.SelectedRole = "User";
         await UserViewModel.LoginCommand.ExecuteAsync(default);
     }
 

@@ -27,8 +27,6 @@ public partial class LoginViewModel : BaseViewModel
     [ObservableProperty]
     private string nationalCode = string.Empty;
 
-    [ObservableProperty]
-    private string selectedRole = "User";
 
     public LoginViewModel(
         ContactService contactService,
@@ -101,22 +99,12 @@ public partial class LoginViewModel : BaseViewModel
                 _authState.SetAuthenticatedUser(contact);
                 await _sessionStorage.SetItemAsync("LogInState", 1, cancellationToken);
                 await _sessionStorage.SetItemAsync("ContactModel", contact, cancellationToken);
-                await _sessionStorage.SetItemAsync("user_role", SelectedRole, cancellationToken);
 
                 // Also persist for browser restarts
                 await _localStorage.SetItemAsync("LogInState", 1, cancellationToken);
                 await _localStorage.SetItemAsync("ContactModel", contact, cancellationToken);
-                await _localStorage.SetItemAsync("user_role", SelectedRole, cancellationToken);
 
-                // Navigate based on role
-                if (SelectedRole == "Admin")
-                {
-                    _navigationService.NavigateTo("/admin/dashboard");
-                }
-                else
-                {
-                    _navigationService.NavigateTo("/user");
-                }
+                _navigationService.NavigateTo("/user");
             }
             else
             {

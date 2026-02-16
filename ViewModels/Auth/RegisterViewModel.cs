@@ -4,12 +4,10 @@ using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
 using PicoPlus.Models.CRM.Objects;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 using ZibalService = PicoPlus.Services.Identity.Zibal;
 using SmsIrService = PicoPlus.Services.SMS.SmsIrService;
 using OtpService = PicoPlus.Services.Auth.OtpService;
-using ShahkarInquiry = PicoPlus.Services.Identity.Zibal;
 using ImageProcessingService = PicoPlus.Services.Imaging.ImageProcessingService;
 
 namespace PicoPlus.ViewModels.Auth;
@@ -29,6 +27,7 @@ public partial class RegisterViewModel : BaseViewModel
     private readonly IDialogService _dialogService;
     private readonly ISessionStorageService _sessionStorage;
     private readonly AuthenticationStateService _authState;
+    private readonly IRegistrationValidationService _registrationValidationService;
     private readonly ILogger<RegisterViewModel> _logger;
 
     // Step 1: National Code (from login or manual entry)
@@ -98,6 +97,7 @@ public partial class RegisterViewModel : BaseViewModel
         IDialogService dialogService,
         ISessionStorageService sessionStorage,
         AuthenticationStateService authState,
+        IRegistrationValidationService registrationValidationService,
         ILogger<RegisterViewModel> logger)
     {
         _contactService = contactService;
@@ -109,6 +109,7 @@ public partial class RegisterViewModel : BaseViewModel
         _dialogService = dialogService;
         _sessionStorage = sessionStorage;
         _authState = authState;
+        _registrationValidationService = registrationValidationService;
         _logger = logger;
         Title = "ثبت نام در سامانه";
     }
@@ -243,7 +244,7 @@ public partial class RegisterViewModel : BaseViewModel
                 return;
             }
 
-            _logger.LogInformation("Verifying OTP for phone: {Phone}, Entered Code: {Code}", Phone, OtpCode);
+            _logger.LogInformation("Verifying OTP for phone: {Phone}", Phone);
 
             var result = _otpService.ValidateOtp(Phone, OtpCode);
 
@@ -467,110 +468,39 @@ public partial class RegisterViewModel : BaseViewModel
 
     private bool ValidateNationalCodeAndBirthDate()
     {
-        if (string.IsNullOrWhiteSpace(NationalCode) || NationalCode.Length != 10)
+        if (_registrationValidationService.ValidateNationalCodeAndBirthDate(NationalCode, BirthDate, out var errorMessage))
         {
-            ErrorMessage = "?? ??? ???? ?? ??? ????";
-            HasError = true;
-            return false;
+            return true;
         }
 
-        if (string.IsNullOrWhiteSpace(BirthDate))
-        {
-            ErrorMessage = "????? ????? ???? ?? ???? ????";
-            HasError = true;
-            return false;
-        }
-
-        // Validate Persian date format (YYYY/MM/DD)
-        if (!IsValidPersianDate(BirthDate))
-        {
-            ErrorMessage = "???? ????? ???? ???? ????. ???? ????: 1370/01/15";
-            HasError = true;
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool IsValidPersianDate(string persianDate)
-    {
-        if (string.IsNullOrWhiteSpace(persianDate))
-            return false;
-
-        var parts = persianDate.Split('/');
-        if (parts.Length != 3)
-            return false;
-
-        if (!int.TryParse(parts[0], out int year) ||
-            !int.TryParse(parts[1], out int month) ||
-            !int.TryParse(parts[2], out int day))
-            return false;
-
-        // Persian calendar validation
-        if (year < 1300 || year > 1450)
-            return false;
-
-        if (month < 1 || month > 12)
-            return false;
-
-        if (day < 1 || day > 31)
-            return false;
-
-        return true;
+        ErrorMessage = errorMessage;
+        HasError = true;
+        return false;
     }
 
     private bool ValidatePhoneNumber()
     {
-        if (string.IsNullOrWhiteSpace(Phone))
+        if (_registrationValidationService.ValidatePhoneNumber(Phone, out var errorMessage))
         {
-            ErrorMessage = "????? ????? ?????? ?? ???? ????";
-            HasError = true;
-            return false;
+            Phone = Phone.Trim();
+            return true;
         }
 
-        Phone = Phone.Trim();
-
-        if (!Phone.StartsWith("09") || Phone.Length != 11)
-        {
-            ErrorMessage = "????? ?????? ???? ?? ?? ???? ??? ? ?? ??? ????";
-            HasError = true;
-            return false;
-        }
-
-        if (!Phone.All(char.IsDigit))
-        {
-            ErrorMessage = "????? ?????? ??? ???? ???? ????? ????";
-            HasError = true;
-            return false;
-        }
-
-        return true;
+        ErrorMessage = errorMessage;
+        HasError = true;
+        return false;
     }
 
     private bool ValidateFinalData()
     {
-        if (!IsVerified)
+        if (_registrationValidationService.ValidateFinalData(IsVerified, OtpSent, OtpCode, Phone, out var errorMessage))
         {
-            ErrorMessage = "????? ????? ???? ??? ?? ????? ????";
-            HasError = true;
-            return false;
+            return true;
         }
 
-        if (!OtpSent || string.IsNullOrWhiteSpace(OtpCode))
-        {
-            ErrorMessage = "????? ?? ????? ?? ???? ????";
-            HasError = true;
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(Phone))
-        {
-            ErrorMessage = "????? ?????? ????? ???";
-            HasError = true;
-            return false;
-        }
-
-        return true;
+        ErrorMessage = errorMessage;
+        HasError = true;
+        return false;
     }
 
     private async Task VerifyPhoneWithShahkarAsync(CancellationToken cancellationToken)
