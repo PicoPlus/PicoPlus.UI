@@ -102,23 +102,36 @@ public class DashboardService
             if (pipelinesResponse?.results == null) return;
 
             var stageStats = new List<PipelineStageStats>();
-            
+            var stageAggregates = deals
+                .Where(d => d.properties?.dealstage != null)
+                .GroupBy(d => d.properties!.dealstage)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        DealCount = g.Count(),
+                        TotalValue = g
+                            .Where(d => d.properties?.amount != null)
+                            .Sum(d => decimal.TryParse(d.properties!.amount, out var amount) ? amount : 0)
+                    });
+
             foreach (var pipeline in pipelinesResponse.results)
             {
                 if (pipeline.stages == null) continue;
 
                 foreach (var stage in pipeline.stages)
                 {
-                    var stageDeals = deals.Where(d => d.properties?.dealstage == stage.id).ToList();
-                    
+                    var stageId = stage.id ?? string.Empty;
+                    var aggregate = stageAggregates.TryGetValue(stageId, out var data)
+                        ? data
+                        : null;
+
                     stageStats.Add(new PipelineStageStats
                     {
-                        StageId = stage.id,
+                        StageId = stageId,
                         StageName = stage.label,
-                        DealCount = stageDeals.Count,
-                        TotalValue = stageDeals
-                            .Where(d => d.properties?.amount != null)
-                            .Sum(d => decimal.TryParse(d.properties.amount, out var amount) ? amount : 0),
+                        DealCount = aggregate?.DealCount ?? 0,
+                        TotalValue = aggregate?.TotalValue ?? 0,
                         Position = stage.displayOrder
                     });
                 }
