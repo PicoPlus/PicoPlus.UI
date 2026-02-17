@@ -12,6 +12,7 @@
 - [Deployment](#deployment)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
+- [Architecture Notes](#architecture-notes)
 - [Contributing](#contributing)
 - [Credits](#credits)
 - [License](#license)
@@ -129,6 +130,12 @@ Full deployment guide is in [LIARA_DEPLOYMENT_GUIDE.md](LIARA_DEPLOYMENT_GUIDE.m
    ```
 - **Network Issues**: Custom DNS handler is provided for Iranian networks.
 - **SignalR Issues**: Blazor Server is configured for optimal connections.
+
+---
+
+## Architecture Notes
+
+- Neo4j migration framework and AI prompt template: [docs/neo4j-clean-architecture-migration-playbook.md](docs/neo4j-clean-architecture-migration-playbook.md).
 
 ---
 
