@@ -271,22 +271,36 @@ public static class Neo4jRegistration
 }
 ```
 
-### 5.3 Plugin entry implementation
+### 5.3 Plugin module + runtime instance (recommended split)
 
 ```csharp
+public interface IPluginModule
+{
+    string Name { get; }
+    void Register(IServiceCollection services, IConfiguration config);
+    IPlugin Build(IServiceProvider rootProvider);
+}
+
+public sealed class UserPluginModule : IPluginModule
+{
+    public string Name => "UserModule";
+
+    public void Register(IServiceCollection services, IConfiguration config)
+    {
+        services.AddScoped<IUserRepository, Neo4jUserRepository>();
+        services.AddScoped<CreateUserUseCase>();
+        services.AddScoped<GetUserByIdUseCase>();
+    }
+
+    public IPlugin Build(IServiceProvider rootProvider)
+        => ActivatorUtilities.CreateInstance<UserPlugin>(rootProvider);
+}
+
 public sealed class UserPlugin : IPlugin
 {
     public string Name => "UserModule";
 
-    public Task InitializeAsync(IPluginContext context, CancellationToken ct)
-    {
-        var services = context.Services.GetRequiredService<IServiceCollection>();
-        services.AddScoped<IUserRepository, Neo4jUserRepository>();
-        services.AddScoped<CreateUserUseCase>();
-        services.AddScoped<GetUserByIdUseCase>();
-        return Task.CompletedTask;
-    }
-
+    public Task InitializeAsync(IPluginContext context, CancellationToken ct) => Task.CompletedTask;
     public Task StartAsync(CancellationToken ct) => Task.CompletedTask;
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
 
@@ -295,16 +309,62 @@ public sealed class UserPlugin : IPlugin
 }
 ```
 
-> Implementation note: in production, prefer a dedicated plugin service registration abstraction over exposing raw `IServiceCollection` through context.
-
 ---
 
 ## 6) Migration Strategy (Execution Plan)
 
-### Phase 1 — Kernel + Contract Hardening
+### Phase 1 — Architectural Foundation (Microkernel)
+
 - Freeze plugin contracts and publish versioned package (e.g., `Kernel.Abstractions v1`).
-- Add contract tests ensuring plugin lifecycle and endpoint mapping invariants.
+- Add contract tests for plugin lifecycle and endpoint mapping invariants.
 - Add observability baseline: request IDs, query timings, plugin health endpoints.
+
+#### 1) Define plugin contracts
+- Required lifecycle methods:
+  - `InitializeAsync(IPluginContext, CancellationToken)`
+  - `StartAsync(CancellationToken)`
+  - `StopAsync(CancellationToken)`
+- Required route registration:
+  - `MapEndpoints(IEndpointRouteBuilder)`
+- Required module registration boundary:
+  - `IPluginModule.Register(IServiceCollection, IConfiguration)`
+
+#### 2) Implement core kernel
+- Configuration loading:
+  - Use layered providers (`appsettings.json`, env vars, secret store).
+  - Validate required config at startup (fail fast).
+- Neo4j driver initialization (singleton pool):
+
+```csharp
+services.AddSingleton<IDriver>(_ => GraphDatabase.Driver(
+    cfg["Neo4j:Uri"],
+    AuthTokens.Basic(cfg["Neo4j:User"], cfg["Neo4j:Password"]),
+    o => o.WithMaxConnectionPoolSize(100)
+          .WithConnectionAcquisitionTimeout(TimeSpan.FromSeconds(15))
+));
+```
+
+- Dynamic plugin discovery/loading:
+  - Read manifests from a trusted plugin folder.
+  - Load only allow-listed/signature-verified assemblies in production.
+  - Resolve `IPluginModule`, call `Register(...)`, then build plugin instance.
+- Global logging/error handling:
+  - Structured logs with plugin name, route, correlation ID.
+  - Kernel-level exception middleware that normalizes response envelope.
+
+#### 3) Establish event bus
+- Internal Pub/Sub contract only (`IEventBus`) for cross-plugin communication.
+- No direct plugin references; only event payload contracts.
+- Delivery expectations should be explicit:
+  - at-most-once (in-memory bus) for local orchestration,
+  - outbox-backed reliable delivery when business-critical.
+
+#### Phase 1 acceptance criteria
+- Kernel boots with config validation and Neo4j connectivity check.
+- At least one plugin discovered from manifest and mapped to HTTP routes.
+- Plugin lifecycle hooks invoked in order (`Initialize` -> `Start` -> `Stop`).
+- One cross-plugin event published and consumed through `IEventBus`.
+- Unhandled exceptions captured by global middleware and logged with correlation IDs.
 
 ### Phase 2 — Graph Modeling and Query Contracts
 - Define canonical graph aggregates (`User`, `Order`, `Product`, `InventoryItem`, etc.).
