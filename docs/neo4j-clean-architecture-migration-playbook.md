@@ -366,18 +366,93 @@ services.AddSingleton<IDriver>(_ => GraphDatabase.Driver(
 - One cross-plugin event published and consumed through `IEventBus`.
 - Unhandled exceptions captured by global middleware and logged with correlation IDs.
 
-### Phase 2 — Graph Modeling and Query Contracts
-- Define canonical graph aggregates (`User`, `Order`, `Product`, `InventoryItem`, etc.).
-- Encode relationship semantics and cardinality rules.
-- Add constraints/indexes early:
+### Phase 2 — Graph Data Modeling (Schema Redesign)
+
+#### 1) Entity analysis (nodes + relationship types)
+Build a model from **business traversals**, not table boundaries.
+
+- Candidate nodes (example):
+  - `(:User {id, mobile, createdAt})`
+  - `(:Order {id, status, createdAt, total})`
+  - `(:Product {id, sku, title, price})`
+  - `(:Category {id, slug, name})`
+  - `(:InventoryItem {id, warehouseId, onHand})`
+- Candidate relationships:
+  - `(:User)-[:PLACED_ORDER {channel, at}]->(:Order)`
+  - `(:Order)-[:CONTAINS {qty, unitPrice}]->(:Product)`
+  - `(:Product)-[:IN_CATEGORY]->(:Category)`
+  - `(:InventoryItem)-[:STOCKS]->(:Product)`
+
+Use a lightweight **Entity/Traversal Matrix** per module:
+- columns: API endpoint, start node, traversal depth, filter properties, sort/paging, expected cardinality.
+- objective: prove model supports top 80% queries with 1–3 hops.
+
+#### 2) Relationship reification (from FK/join tables to semantics)
+Do not carry SQL join tables into graph as first-class nodes unless they have independent lifecycle.
+
+- SQL style:
+  - `Order(UserId)` + `OrderItems(OrderId, ProductId, Qty, UnitPrice)`
+- Graph style:
+
+```cypher
+MATCH (u:User {id:$userId})
+CREATE (o:Order {id:$orderId, status:'Created', createdAt:datetime()})
+CREATE (u)-[:PLACED_ORDER {at:datetime(), channel:$channel}]->(o);
+
+UNWIND $items AS item
+MATCH (o:Order {id:$orderId}), (p:Product {id:item.productId})
+MERGE (o)-[r:CONTAINS]->(p)
+SET r.qty = item.qty,
+    r.unitPrice = item.unitPrice,
+    r.lineTotal = item.qty * item.unitPrice;
+```
+
+Reification rules:
+- Put mutable transactional facts on relationships when they describe the edge (qty, role, since, score).
+- Keep node properties for intrinsic entity state.
+- Introduce an intermediate node only when that concept has identity/history outside the edge semantics.
+
+#### 3) Access-pattern optimization (top read/write traversals)
+Design indexes/constraints and query shape from real API usage.
+
+- Rank critical paths (example):
+  1. `GET /api/users/{id}` → user profile (+ recent orders)
+  2. `GET /api/orders/{id}` → order with products
+  3. `POST /api/orders` → create order + lines (write-heavy)
+  4. `GET /api/products/{id}/related` → product/category traversal
+- For each path record:
+  - starting label/property,
+  - expected hop count,
+  - expected result size,
+  - SLA target and pagination behavior.
+
+Create constraints/indexes early:
 
 ```cypher
 CREATE CONSTRAINT user_id_unique IF NOT EXISTS
 FOR (u:User) REQUIRE u.id IS UNIQUE;
 
+CREATE CONSTRAINT order_id_unique IF NOT EXISTS
+FOR (o:Order) REQUIRE o.id IS UNIQUE;
+
 CREATE INDEX product_sku_idx IF NOT EXISTS
 FOR (p:Product) ON (p.sku);
+
+CREATE INDEX category_slug_idx IF NOT EXISTS
+FOR (c:Category) ON (c.slug);
 ```
+
+Query-tuning workflow:
+- Use `EXPLAIN`/`PROFILE` on every top-10 query.
+- Eliminate accidental Cartesian products.
+- Keep high-cardinality filtering at the start of the pattern.
+- Cap traversal depth unless explicitly required by use case.
+
+#### Phase 2 acceptance criteria
+- Every migrated endpoint maps to a documented traversal path.
+- All primary identity properties have uniqueness constraints.
+- Top read/write queries meet agreed latency targets under representative data volume.
+- No direct SQL-table mirroring remains in migrated modules.
 
 ### Phase 3 — Vertical Slice Pilot (UserModule)
 - Port one bounded context end-to-end.
