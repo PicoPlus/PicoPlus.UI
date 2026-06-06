@@ -548,7 +548,7 @@ public partial class UserHomeViewModel : BaseViewModel
             int day = persianCalendar.GetDayOfMonth(date);
             return $"{year:D4}/{month:D2}/{day:D2}";
         }
-        catch
+        catch (ArgumentOutOfRangeException)
         {
             return date.ToString("yyyy/MM/dd");
         }

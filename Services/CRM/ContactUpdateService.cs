@@ -100,8 +100,8 @@ public class ContactUpdateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating missing fields for contact: {ContactId}", contact.id);
-            // Return original contact if update fails
+            _logger.LogError(ex, "Error updating missing fields for contact: {ContactId}. Returning original contact data.", contact.id);
+            // Best-effort enrichment: login should succeed even if Zibal/Shahkar is unreachable.
             return contact;
         }
     }
@@ -192,7 +192,8 @@ public class ContactUpdateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating from National Identity Inquiry");
+            _logger.LogError(ex, "Error updating from National Identity Inquiry for contact: {ContactId}", contact.id);
+            // Best-effort: identity enrichment failure should not block login.
         }
     }
 
@@ -252,7 +253,8 @@ public class ContactUpdateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating Shahkar status");
+            _logger.LogError(ex, "Error updating Shahkar status for contact: {ContactId}", contact.id);
+            // Best-effort: Shahkar verification failure should not block login.
         }
     }
 }

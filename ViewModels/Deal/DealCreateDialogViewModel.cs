@@ -175,6 +175,7 @@ public class DealCreateDialogViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            HasError = true;
             ErrorMessage = $"??? ?? ???????? ???????: {ex.Message}";
         }
         finally
@@ -198,6 +199,7 @@ public class DealCreateDialogViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            HasError = true;
             ErrorMessage = $"??? ?? ???????? ???? ????: {ex.Message}";
         }
     }
@@ -217,6 +219,7 @@ public class DealCreateDialogViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            HasError = true;
             ErrorMessage = $"??? ?? ???????? ???????: {ex.Message}";
         }
     }
@@ -369,6 +372,7 @@ public class DealCreateDialogViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            HasError = true;
             ErrorMessage = $"??? ?? ????? ??????: {ex.Message}";
             await _dialogService.ShowErrorAsync("???", ErrorMessage);
             return null;

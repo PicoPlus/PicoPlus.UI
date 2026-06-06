@@ -86,7 +86,7 @@ public class DashboardService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating dashboard statistics");
-            return new DashboardStatistics();
+            throw;
         }
     }
 
@@ -128,7 +128,9 @@ public class DashboardService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading pipeline stages");
+            _logger.LogError(ex, "Error loading pipeline stages — stage data will be missing from statistics");
+            // Pipeline stages are supplementary; log and continue rather than
+            // failing the entire dashboard load.
         }
     }
 
@@ -170,7 +172,7 @@ public class DashboardService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting recent activities");
-            return new List<RecentActivity>();
+            throw;
         }
     }
 

@@ -55,7 +55,7 @@ public class AdminAuthorizationHandler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking admin authorization");
-            return false;
+            throw;
         }
     }
 
@@ -100,7 +100,7 @@ public class AdminAuthorizationHandler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting admin user info");
-            return null;
+            throw;
         }
     }
 }

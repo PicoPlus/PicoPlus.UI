@@ -86,7 +86,7 @@ public class KanbanService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading Kanban board");
-            return new List<KanbanColumn>();
+            throw;
         }
     }
 
@@ -103,7 +103,7 @@ public class KanbanService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error moving card {DealId} to stage {StageId}", dealId, newStageId);
-            return false;
+            throw;
         }
     }
 
@@ -191,7 +191,7 @@ public class KanbanService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting pipelines");
-            return new List<(string, string)>();
+            throw;
         }
     }
 }

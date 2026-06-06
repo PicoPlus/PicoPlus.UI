@@ -55,7 +55,7 @@ public class AdminOwnerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving HubSpot owners");
-            return new List<HubSpotOwner>();
+            throw;
         }
     }
 
@@ -86,7 +86,7 @@ public class AdminOwnerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching owners with term: {Term}", searchTerm);
-            return new List<HubSpotOwner>();
+            throw;
         }
     }
 
@@ -103,7 +103,7 @@ public class AdminOwnerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving owner by ID: {OwnerId}", ownerId);
-            return null;
+            throw;
         }
     }
 
@@ -121,7 +121,7 @@ public class AdminOwnerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving owner by email: {Email}", email);
-            return null;
+            throw;
         }
     }
 
@@ -141,7 +141,7 @@ public class AdminOwnerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating owner: {Owner}", ownerIdOrEmail);
-            return false;
+            throw;
         }
     }
 }

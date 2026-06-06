@@ -129,7 +129,7 @@ public class UserPanelService : IUserPanelService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading user panel state for contact: {ContactId}", contactId);
-            return null;
+            throw;
         }
     }
 
@@ -143,7 +143,7 @@ public class UserPanelService : IUserPanelService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting current user ID from session");
-            return null;
+            throw;
         }
     }
 

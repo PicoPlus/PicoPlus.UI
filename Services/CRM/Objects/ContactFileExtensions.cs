@@ -84,7 +84,7 @@ public static class ContactFileExtensions
         catch (Exception ex)
         {
             logger.LogError(ex, "Error uploading avatar for contact: {ContactId}", contactId);
-            return null;
+            throw;
         }
     }
 }

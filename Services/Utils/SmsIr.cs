@@ -403,7 +403,7 @@ namespace PicoPlus.Services.SMS
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking SMS.ir credit");
-                return false;
+                throw;
             }
         }
 
@@ -420,7 +420,7 @@ namespace PicoPlus.Services.SMS
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting default SMS.ir line");
-                return null;
+                throw;
             }
         }
 
@@ -437,7 +437,7 @@ namespace PicoPlus.Services.SMS
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking message delivery status: {MessageId}", messageId);
-                return false;
+                throw;
             }
         }
 

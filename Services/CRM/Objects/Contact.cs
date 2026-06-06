@@ -441,7 +441,7 @@ namespace PicoPlus.Services.CRM.Objects
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error uploading avatar for contact: {ContactId}", contactId);
-                return null;
+                throw;
             }
         }
     }

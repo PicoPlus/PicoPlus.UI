@@ -68,7 +68,7 @@ public class LiaraApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching Liara build version");
-            return null;
+            throw;
         }
     }
 
@@ -102,7 +102,7 @@ public class LiaraApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching Liara releases");
-            return null;
+            throw;
         }
     }
 }

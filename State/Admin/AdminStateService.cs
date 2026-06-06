@@ -53,6 +53,9 @@ public class AdminStateService
     /// </summary>
     public async Task SelectOwnerAsync(HubSpotOwner owner, CancellationToken cancellationToken = default)
     {
+        var previousOwner = Context.SelectedOwner;
+        var previousRecentOwners = Context.RecentOwners.ToList();
+
         try
         {
             Context.SelectedOwner = owner;
@@ -75,7 +78,11 @@ public class AdminStateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error selecting owner");
+            // Rollback in-memory state so it stays consistent with storage
+            Context.SelectedOwner = previousOwner;
+            Context.RecentOwners = previousRecentOwners;
+            _logger.LogError(ex, "Error selecting owner — state rolled back");
+            throw;
         }
     }
 
@@ -84,6 +91,8 @@ public class AdminStateService
     /// </summary>
     public async Task ClearSelectedOwnerAsync(CancellationToken cancellationToken = default)
     {
+        var previousOwner = Context.SelectedOwner;
+
         try
         {
             Context.SelectedOwner = null;
@@ -94,7 +103,9 @@ public class AdminStateService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing selected owner");
+            Context.SelectedOwner = previousOwner;
+            _logger.LogError(ex, "Error clearing selected owner — state rolled back");
+            throw;
         }
     }
 
