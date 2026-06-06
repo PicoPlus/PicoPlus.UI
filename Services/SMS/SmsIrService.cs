@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.Services.SMS
 {
@@ -32,28 +33,8 @@ namespace PicoPlus.Services.SMS
                 _logger.LogInformation("SMS.ir response - Status: {Status}, Message: {Message}, Data: {Data}",
                     response.status, response.message, response.data?.messageId);
 
-                // Check for successful status (200 or 201 for HTTP success)
-                if (response.status == 200 || response.status == 201 || response.data?.messageId != null)
-                {
-                    _logger.LogInformation("OTP sent successfully via SMS.ir. MessageId: {MessageId}",
-                        response.data?.messageId);
-                }
-                else
-                {
-                    _logger.LogWarning("SMS.ir returned unexpected status: {Status}, Message: {Message}",
-                        response.status, response.message);
-
-                    // Don't throw exception if message says success or if we have a messageId
-                    // SMS.ir sometimes returns success in the message even with different status codes
-                    if (!string.IsNullOrEmpty(response.message) &&
-                        (response.message.Contains("????") || response.message.Contains("success", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        _logger.LogInformation("SMS sent successfully despite non-200 status (Message indicates success)");
-                        return;
-                    }
-
-                    throw new Exception($"SMS.ir ???: {response.message}");
-                }
+                SmsResponseValidator.ValidateResponse(
+                    response.status, response.message, response.data?.messageId?.ToString(), "OTP", _logger);
             }
             catch (Exception ex)
             {
@@ -73,27 +54,8 @@ namespace PicoPlus.Services.SMS
                 _logger.LogInformation("SMS.ir response - Status: {Status}, Message: {Message}",
                     response.status, response.message);
 
-                // Check for successful status (200 or 201 for HTTP success)
-                if (response.status == 200 || response.status == 201 || response.data?.messageId != null)
-                {
-                    _logger.LogInformation("Welcome message sent successfully via SMS.ir. MessageId: {MessageId}",
-                        response.data?.messageId);
-                }
-                else
-                {
-                    _logger.LogWarning("SMS.ir returned unexpected status: {Status}, Message: {Message}",
-                        response.status, response.message);
-
-                    // Don't throw exception if message says success
-                    if (!string.IsNullOrEmpty(response.message) &&
-                        (response.message.Contains("????") || response.message.Contains("success", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        _logger.LogInformation("SMS sent successfully despite non-200 status (Message indicates success)");
-                        return;
-                    }
-
-                    throw new Exception($"SMS.ir ???: {response.message}");
-                }
+                SmsResponseValidator.ValidateResponse(
+                    response.status, response.message, response.data?.messageId?.ToString(), "Welcome", _logger);
             }
             catch (Exception ex)
             {
@@ -125,27 +87,8 @@ namespace PicoPlus.Services.SMS
                 _logger.LogInformation("SMS.ir response - Status: {Status}, Message: {Message}",
                     response.status, response.message);
 
-                // Check for successful status (200 or 201 for HTTP success)
-                if (response.status == 200 || response.status == 201 || response.data?.messageId != null)
-                {
-                    _logger.LogInformation("Deal closed notification sent successfully via SMS.ir. MessageId: {MessageId}",
-                        response.data?.messageId);
-                }
-                else
-                {
-                    _logger.LogWarning("SMS.ir returned unexpected status: {Status}, Message: {Message}",
-                        response.status, response.message);
-
-                    // Don't throw exception if message says success
-                    if (!string.IsNullOrEmpty(response.message) &&
-                        (response.message.Contains("????") || response.message.Contains("success", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        _logger.LogInformation("SMS sent successfully despite non-200 status (Message indicates success)");
-                        return;
-                    }
-
-                    throw new Exception($"SMS.ir ???: {response.message}");
-                }
+                SmsResponseValidator.ValidateResponse(
+                    response.status, response.message, response.data?.messageId?.ToString(), "DealClosed", _logger);
             }
             catch (Exception ex)
             {

@@ -6,6 +6,7 @@ using PicoPlus.Models.CRM.Objects;
 using Microsoft.Extensions.Logging;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 using PicoPlus.Services.CRM;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.ViewModels.Auth;
 
@@ -138,65 +139,15 @@ public partial class LoginViewModel : BaseViewModel
 
     private bool ValidateNationalCode()
     {
-        if (string.IsNullOrWhiteSpace(NationalCode))
+        NationalCode = NationalCode?.Trim() ?? string.Empty;
+        var error = NationalCodeValidator.Validate(NationalCode);
+        if (error != null)
         {
-            ErrorMessage = "کد ملی نمی‌تواند خالی باشد";
+            ErrorMessage = error;
             HasError = true;
             return false;
         }
-
-        // Remove any whitespace
-        NationalCode = NationalCode.Trim();
-
-        // Check length
-        if (NationalCode.Length != 10)
-        {
-            ErrorMessage = "کد ملی باید ده رقم باشد";
-            HasError = true;
-            return false;
-        }
-
-        // Check if all characters are digits
-        if (!NationalCode.All(char.IsDigit))
-        {
-            ErrorMessage = "کد ملی می‌تواند فقط شامل اعداد باشد";
-            HasError = true;
-            return false;
-        }
-
-        // Validate Iranian national code checksum
-        if (!IsValidIranianNationalCode(NationalCode))
-        {
-            ErrorMessage = "کد ملی معتبر نیست";
-            HasError = true;
-            return false;
-        }
-
         return true;
-    }
-
-    /// <summary>
-    /// Validates Iranian national code using checksum algorithm
-    /// </summary>
-    private static bool IsValidIranianNationalCode(string nationalCode)
-    {
-        if (nationalCode.Length != 10)
-            return false;
-
-        // Check for invalid patterns (all same digits)
-        if (nationalCode.All(c => c == nationalCode[0]))
-            return false;
-
-        var sum = 0;
-        for (var i = 0; i < 9; i++)
-        {
-            sum += int.Parse(nationalCode[i].ToString()) * (10 - i);
-        }
-
-        var remainder = sum % 11;
-        var checkDigit = remainder < 2 ? remainder : 11 - remainder;
-
-        return checkDigit == int.Parse(nationalCode[9].ToString());
     }
 
     protected override void OnError(Exception exception)

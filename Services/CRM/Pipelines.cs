@@ -1,63 +1,38 @@
 ﻿using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.Services.CRM
 {
     public class Pipelines
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _hubspotToken;
 
-        public Pipelines(HttpClient httpClient, IConfiguration configuration)
+        public Pipelines(IHttpClientFactory httpClientFactory, HubSpotTokenProvider tokenProvider)
         {
-            _httpClient = httpClient;
-
-            // Read from environment variable first, then configuration
-            _hubspotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                            ?? configuration["HubSpot:Token"]
-                            ?? throw new InvalidOperationException("HubSpot token is not configured. Set HUBSPOT_TOKEN environment variable or HubSpot:Token in appsettings.");
+            _httpClientFactory = httpClientFactory;
+            _hubspotToken = tokenProvider.Token;
         }
 
         public async Task<Models.CRM.Pipelines.List> GetPipelines(string objectType)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.hubapi.com/crm/v3/pipelines/{objectType}");
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubspotToken);
-
-            using var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Pipelines.List>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var httpClient = _httpClientFactory.CreateClient("HubSpot");
+            var url = $"/crm/v3/pipelines/{objectType}";
+            return await HubSpotRequestHelper.GetAsync<Models.CRM.Pipelines.List>(httpClient, url, _hubspotToken);
         }
 
         public async Task<Models.CRM.Pipelines.GetPipelineByStageID> GetStagesByPipID(string objectName, string stageID)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.hubapi.com/crm/v3/pipelines/{objectName}/default/stages/{stageID}");
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubspotToken);
-
-            using var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Pipelines.GetPipelineByStageID>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var httpClient = _httpClientFactory.CreateClient("HubSpot");
+            var url = $"/crm/v3/pipelines/{objectName}/default/stages/{stageID}";
+            return await HubSpotRequestHelper.GetAsync<Models.CRM.Pipelines.GetPipelineByStageID>(httpClient, url, _hubspotToken);
         }
 
         public async Task<Models.CRM.Pipelines.GetStages> GetDealStages()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.hubapi.com/crm/v3/pipelines/deals/default/stages");
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubspotToken);
-
-            using var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Pipelines.GetStages>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var httpClient = _httpClientFactory.CreateClient("HubSpot");
+            var url = "/crm/v3/pipelines/deals/default/stages";
+            return await HubSpotRequestHelper.GetAsync<Models.CRM.Pipelines.GetStages>(httpClient, url, _hubspotToken);
         }
     }
 }

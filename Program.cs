@@ -7,6 +7,7 @@ using PicoPlus.Infrastructure.Services;
 using PicoPlus.Infrastructure.State;
 using PicoPlus.Services.Admin;
 using PicoPlus.Services.Auth;
+using PicoPlus.Services.Shared;
 using PicoPlus.State.Admin;
 using DotNetEnv;
 using Microsoft.AspNetCore.Localization;
@@ -95,6 +96,9 @@ builder.Services.AddScoped<KanbanService>();
 
 // Authentication Service
 builder.Services.AddScoped<AuthService>();
+
+// Shared HubSpot token provider (singleton - token doesn't change at runtime)
+builder.Services.AddSingleton<HubSpotTokenProvider>();
 
 // HttpClient with Shecan
 builder.Services.AddHttpClient("HubSpot", (sp, client) =>

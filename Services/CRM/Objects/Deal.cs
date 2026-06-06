@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.Services.CRM.Objects
 {
@@ -17,14 +18,10 @@ namespace PicoPlus.Services.CRM.Objects
         private readonly string _hubSpotToken;
         private const string BaseUrl = "/crm/v3/objects/deals";
 
-        public Deal(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public Deal(IHttpClientFactory httpClientFactory, HubSpotTokenProvider tokenProvider)
         {
             _httpClientFactory = httpClientFactory;
-
-            // Read from environment variable first, then configuration
-            _hubSpotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                            ?? configuration["HubSpot:Token"]
-                            ?? throw new InvalidOperationException("HubSpot token is not configured. Set HUBSPOT_TOKEN environment variable or HubSpot:Token in appsettings.");
+            _hubSpotToken = tokenProvider.Token;
         }
 
         /// <summary>
@@ -35,19 +32,8 @@ namespace PicoPlus.Services.CRM.Objects
             Models.CRM.Objects.Deal.Create.Request dealInfo)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
-            var requestJson = JsonSerializer.Serialize(dealInfo);
-            using var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl)
-            {
-                Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
-            };
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.Create.Response>(responseJson);
+            return await HubSpotRequestHelper.PostAsync<Models.CRM.Objects.Deal.Create.Response>(
+                httpClient, BaseUrl, dealInfo, _hubSpotToken);
         }
 
         /// <summary>
@@ -60,38 +46,15 @@ namespace PicoPlus.Services.CRM.Objects
             string[]? associations = null)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
-            var queryParams = new List<string> { "archived=false" };
+            var query = HubSpotQueryBuilder.BuildQueryString(
+                properties,
+                associations,
+                defaultAssociations: new[] { "contacts", "line_items", "notes" },
+                extraParams: new Dictionary<string, string> { { "archived", "false" } });
+            var url = $"{BaseUrl}/{id}?{query}";
 
-            if (properties != null && properties.Length > 0)
-            {
-                foreach (var prop in properties)
-                {
-                    queryParams.Add($"properties={prop}");
-                }
-            }
-
-            if (associations != null && associations.Length > 0)
-            {
-                foreach (var assoc in associations)
-                {
-                    queryParams.Add($"associations={assoc}");
-                }
-            }
-            else
-            {
-                queryParams.Add("associations=contacts,line_items,notes");
-            }
-
-            var url = $"{BaseUrl}/{id}?{string.Join("&", queryParams)}";
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.Get.Response>(responseJson);
+            return await HubSpotRequestHelper.GetAsync<Models.CRM.Objects.Deal.Get.Response>(
+                httpClient, url, _hubSpotToken);
         }
 
         /// <summary>
@@ -103,20 +66,8 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/batch/read?archived=false";
-
-            var requestJson = JsonSerializer.Serialize(reqData);
-            using var request = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
-            };
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.GetBatch.Response>(responseJson);
+            return await HubSpotRequestHelper.PostAsync<Models.CRM.Objects.Deal.GetBatch.Response>(
+                httpClient, url, reqData, _hubSpotToken);
         }
 
         /// <summary>
@@ -127,19 +78,8 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/{dealId}";
-
-            var json = JsonSerializer.Serialize(new { properties = updatedProperties });
-            var request = new HttpRequestMessage(HttpMethod.Patch, url)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<Models.CRM.Objects.Deal.Create.Response>(responseJson);
+            return await HubSpotRequestHelper.PatchAsync<Models.CRM.Objects.Deal.Create.Response>(
+                httpClient, url, new { properties = updatedProperties }, _hubSpotToken);
         }
 
         /// <summary>
@@ -150,12 +90,7 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/{dealId}";
-
-            var request = new HttpRequestMessage(HttpMethod.Delete, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await HubSpotRequestHelper.DeleteAsync(httpClient, url, _hubSpotToken);
         }
 
         /// <summary>
@@ -166,19 +101,7 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/search";
-
-            var json = JsonSerializer.Serialize(searchRequest);
-            var request = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return await HubSpotRequestHelper.PostAsync<dynamic>(httpClient, url, searchRequest, _hubSpotToken);
         }
 
         /// <summary>
@@ -188,31 +111,9 @@ namespace PicoPlus.Services.CRM.Objects
         public async Task<dynamic> GetAll(int limit = 100, string? after = null, string[]? properties = null)
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
-            var queryParams = new List<string> { $"limit={limit}", "archived=false" };
-
-            if (!string.IsNullOrEmpty(after))
-            {
-                queryParams.Add($"after={after}");
-            }
-
-            if (properties != null && properties.Length > 0)
-            {
-                foreach (var prop in properties)
-                {
-                    queryParams.Add($"properties={prop}");
-                }
-            }
-
-            var url = $"{BaseUrl}?{string.Join("&", queryParams)}";
-
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            var query = HubSpotQueryBuilder.BuildPaginationQuery(limit, after, properties);
+            var url = $"{BaseUrl}?{query}&archived=false";
+            return await HubSpotRequestHelper.GetAsync<dynamic>(httpClient, url, _hubSpotToken);
         }
 
         /// <summary>
@@ -223,20 +124,7 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/batch/create";
-
-            var payload = new { inputs = deals };
-            var json = JsonSerializer.Serialize(payload);
-            var request = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return await HubSpotRequestHelper.PostAsync<dynamic>(httpClient, url, new { inputs = deals }, _hubSpotToken);
         }
 
         /// <summary>
@@ -247,20 +135,7 @@ namespace PicoPlus.Services.CRM.Objects
         {
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/batch/update";
-
-            var payload = new { inputs = updates };
-            var json = JsonSerializer.Serialize(payload);
-            var request = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubSpotToken);
-
-            using var response = await httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<dynamic>(responseJson);
+            return await HubSpotRequestHelper.PostAsync<dynamic>(httpClient, url, new { inputs = updates }, _hubSpotToken);
         }
     }
 }

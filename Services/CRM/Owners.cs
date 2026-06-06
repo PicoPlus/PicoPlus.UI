@@ -1,5 +1,6 @@
 ﻿using RestSharp;
 using Microsoft.Extensions.Configuration;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.Services.CRM;
 
@@ -8,14 +9,10 @@ public partial class Owners
     private readonly IConfiguration _configuration;
     private readonly string _hubspotToken;
 
-    public Owners(IConfiguration configuration)
+    public Owners(IConfiguration configuration, HubSpotTokenProvider tokenProvider)
     {
         _configuration = configuration;
-
-        // Read from environment variable first, then configuration
-        _hubspotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                        ?? configuration["HubSpot:Token"]
-                        ?? throw new InvalidOperationException("HubSpot token is not configured. Set HUBSPOT_TOKEN environment variable or HubSpot:Token in appsettings.");
+        _hubspotToken = tokenProvider.Token;
     }
 
     public async Task<Models.CRM.Owners.GetAll> GetAll()

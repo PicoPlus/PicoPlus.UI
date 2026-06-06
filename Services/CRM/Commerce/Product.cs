@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.Services.CRM.Commerce
 {
@@ -12,14 +13,10 @@ namespace PicoPlus.Services.CRM.Commerce
         private readonly HttpClient _httpClient;
         private readonly string _hubspotToken;
 
-        public Product(HttpClient httpClient, IConfiguration configuration)
+        public Product(HttpClient httpClient, HubSpotTokenProvider tokenProvider)
         {
             _httpClient = httpClient;
-
-            // Read from environment variable first, then configuration
-            _hubspotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                            ?? configuration["HubSpot:Token"]
-                            ?? throw new InvalidOperationException("HubSpot token is not configured. Set HUBSPOT_TOKEN environment variable or HubSpot:Token in appsettings.");
+            _hubspotToken = tokenProvider.Token;
         }
 
         public async Task<List<Models.CRM.Commerce.Products.Get.Response.Result>> ListAsync()
@@ -37,19 +34,8 @@ namespace PicoPlus.Services.CRM.Commerce
                     url += $"&after={after}";
                 }
 
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _hubspotToken);
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                using var response = await _httpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-
-                var content = await response.Content.ReadAsStringAsync();
-
-                var page = JsonSerializer.Deserialize<Models.CRM.Commerce.Products.Get.Response>(
-                    content,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
+                var page = await HubSpotRequestHelper.GetAsync<Models.CRM.Commerce.Products.Get.Response>(
+                    _httpClient, url, _hubspotToken);
 
                 if (page?.results != null)
                 {

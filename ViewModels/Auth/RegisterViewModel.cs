@@ -11,6 +11,7 @@ using SmsIrService = PicoPlus.Services.SMS.SmsIrService;
 using OtpService = PicoPlus.Services.Auth.OtpService;
 using ShahkarInquiry = PicoPlus.Services.Identity.Zibal;
 using ImageProcessingService = PicoPlus.Services.Imaging.ImageProcessingService;
+using PicoPlus.Services.Shared;
 
 namespace PicoPlus.ViewModels.Auth;
 
@@ -335,29 +336,7 @@ public partial class RegisterViewModel : BaseViewModel
 
 
                 // Convert to search result format for state management
-                var userModel = new Contact.Search.Response.Result
-                {
-                    id = contact.id,
-                    properties = new Contact.Search.Response.Result.Properties
-                    {
-                        email = contact.properties.email,
-                        firstname = contact.properties.firstname,
-                        lastname = contact.properties.lastname,
-                        phone = contact.properties.phone,
-                        natcode = contact.properties.natcode,
-                        dateofbirth = contact.properties.dateofbirth,
-                        father_name = contact.properties.father_name,
-                        total_revenue = contact.properties.total_revenue,
-                        shahkar_status = contact.properties.shahkar_status,
-                        wallet = contact.properties.wallet,
-                        gender = contact.properties.gender,
-                        num_associated_deals = contact.properties.num_associated_deals,
-                        contact_plan = contact.properties.contact_plan
-                    },
-                    createdAt = contact.createdAt.ToString("o"),
-                    updatedAt = contact.updatedAt.ToString("o"),
-                    archived = contact.archived
-                };
+                var userModel = ContactModelMapper.ToSearchResult(contact);
 
                 // Set authentication state
                 _authState.SetAuthenticatedUser(userModel);

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using PicoPlus.Models.CRM.Objects;
 using PicoPlus.Services.Identity;
+using PicoPlus.Services.Shared;
 using ContactService = PicoPlus.Services.CRM.Objects.Contact;
 
 namespace PicoPlus.Services.CRM;
@@ -71,29 +72,7 @@ public class ContactUpdateService
                 var updatedContact = await _contactService.Read(contact.id);
 
                 // Map back to Search.Response.Result format
-                return new Contact.Search.Response.Result
-                {
-                    id = updatedContact.id,
-                    properties = new Contact.Search.Response.Result.Properties
-                    {
-                        email = updatedContact.properties.email,
-                        firstname = updatedContact.properties.firstname,
-                        lastname = updatedContact.properties.lastname,
-                        phone = updatedContact.properties.phone,
-                        natcode = updatedContact.properties.natcode,
-                        dateofbirth = updatedContact.properties.dateofbirth,
-                        father_name = updatedContact.properties.father_name,
-                        gender = updatedContact.properties.gender,
-                        total_revenue = updatedContact.properties.total_revenue,
-                        shahkar_status = updatedContact.properties.shahkar_status,
-                        wallet = updatedContact.properties.wallet,
-                        num_associated_deals = updatedContact.properties.num_associated_deals,
-                        contact_plan = updatedContact.properties.contact_plan
-                    },
-                    createdAt = updatedContact.createdAt.ToString("o"),
-                    updatedAt = updatedContact.updatedAt.ToString("o"),
-                    archived = updatedContact.archived
-                };
+                return ContactModelMapper.ToSearchResult(updatedContact);
             }
 
             return contact;
