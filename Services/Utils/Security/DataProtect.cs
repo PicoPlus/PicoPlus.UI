@@ -10,7 +10,8 @@ namespace PicoPlus.Services.Utils.Security
 {
     public class DataProtect
     {
-        private const string encryptionKey = "t4y812o2qDe4Rs440REID8ppZTA0hYK39ybm1gQNAqk=";
+        private static readonly string encryptionKey = Environment.GetEnvironmentVariable("MASTER_ENCRYPTION_KEY")
+            ?? throw new InvalidOperationException("MASTER_ENCRYPTION_KEY environment variable is not configured.");
         private static string user_id;
         private static readonly string userDataFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PicoPlus", "user_data", $"{user_id}.json");
 

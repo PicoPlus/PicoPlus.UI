@@ -24,8 +24,14 @@ public class LiaraApiService
     {
         try
         {
-            var token = _configuration["Liara:ApiToken"] 
-                ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI2ODZkNGMwMTA4ZmZlMWFjOTBmZGJmMzIiLCJ0eXBlIjoiYXV0aCIsImlhdCI6MTc2NDY0ODQyMSwiZXhwIjoxNzY3MjQwNDIxfQ.79sQq8T51TuAR5oq1WMAQNjBXSIyaG-Pd9_zdSl-hvY";
+            var token = Environment.GetEnvironmentVariable("LIARA_API_TOKEN")
+                ?? _configuration["Liara:ApiToken"];
+
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("Liara API token is not configured. Set LIARA_API_TOKEN environment variable.");
+                return null;
+            }
             
             var projectId = _configuration["Liara:ProjectId"] ?? "ipicoplus";
             var url = $"https://api.iran.liara.ir/v1/projects/{projectId}/releases?page=1&count=10";
@@ -76,8 +82,14 @@ public class LiaraApiService
     {
         try
         {
-            var token = _configuration["Liara:ApiToken"] 
-                ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI2ODZkNGMwMTA4ZmZlMWFjOTBmZGJmMzIiLCJ0eXBlIjoiYXV0aCIsImlhdCI6MTc2NDY0ODQyMSwiZXhwIjoxNzY3MjQwNDIxfQ.79sQq8T51TuAR5oq1WMAQNjBXSIyaG-Pd9_zdSl-hvY";
+            var token = Environment.GetEnvironmentVariable("LIARA_API_TOKEN")
+                ?? _configuration["Liara:ApiToken"];
+
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("Liara API token is not configured. Set LIARA_API_TOKEN environment variable.");
+                return null;
+            }
             
             var projectId = _configuration["Liara:ProjectId"] ?? "ipicoplus";
             var url = $"https://api.iran.liara.ir/v1/projects/{projectId}/releases?page=1&count=10";

@@ -243,7 +243,7 @@ public partial class RegisterViewModel : BaseViewModel
                 return;
             }
 
-            _logger.LogInformation("Verifying OTP for phone: {Phone}, Entered Code: {Code}", Phone, OtpCode);
+            _logger.LogInformation("Verifying OTP for phone: {Phone}", Phone);
 
             var result = _otpService.ValidateOtp(Phone, OtpCode);
 

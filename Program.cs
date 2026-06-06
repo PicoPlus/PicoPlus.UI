@@ -253,7 +253,16 @@ app.MapGet("/set-culture/{culture}", (string culture, string? redirectUri, HttpC
             CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
             new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) });
     }
-    return Results.Redirect(redirectUri ?? "/");
+
+    // Prevent open redirect — only allow local (relative) paths
+    var safeRedirect = "/";
+    if (!string.IsNullOrWhiteSpace(redirectUri)
+        && Uri.TryCreate(redirectUri, UriKind.Relative, out _)
+        && redirectUri.StartsWith('/'))
+    {
+        safeRedirect = redirectUri;
+    }
+    return Results.Redirect(safeRedirect);
 });
 
 app.UseAntiforgery();

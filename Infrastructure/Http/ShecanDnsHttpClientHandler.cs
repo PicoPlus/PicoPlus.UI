@@ -20,7 +20,7 @@ public class ShecanDnsHttpClientHandler : HttpClientHandler
         AllowAutoRedirect = true;
         MaxAutomaticRedirections = 10;
 
-        // Set timeout
-        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        // SSL certificate validation uses the default behavior (validates certificates).
+        // Do NOT disable certificate validation in production.
     }
 }

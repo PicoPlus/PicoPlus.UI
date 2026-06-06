@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PicoPlus.Infrastructure.State;
@@ -139,19 +140,42 @@ public partial class AdminLoginViewModel : ObservableObject
 
     private async Task<bool> ValidateAdminCredentialsAsync()
     {
-        var validAdmins = new Dictionary<string, string>
-        {
-            { "admin@picoplus.app", "Admin@123" },
-            { "secgen.unity@gmail.com", "Secgen@2024" },
-            { "manager@picoplus.app", "Manager@123" }
-        };
+        // Admin credentials are loaded from environment variables / configuration.
+        // Format: "email:passwordHash" pairs separated by semicolons.
+        // Passwords are compared using a timing-safe hash check.
+        var adminsConfig = Environment.GetEnvironmentVariable("ADMIN_CREDENTIALS");
 
-        if (validAdmins.TryGetValue(Email.ToLowerInvariant(), out var validPassword))
+        if (string.IsNullOrEmpty(adminsConfig))
         {
-            return Password == validPassword;
+            _logger.LogError("ADMIN_CREDENTIALS environment variable is not configured");
+            return false;
+        }
+
+        foreach (var entry in adminsConfig.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = entry.Split(':', 2);
+            if (parts.Length != 2) continue;
+
+            var email = parts[0].Trim();
+            var passwordHash = parts[1].Trim();
+
+            if (string.Equals(email, Email, StringComparison.OrdinalIgnoreCase))
+            {
+                var enteredHash = ComputeSha256Hash(Password);
+                return CryptographicOperations.FixedTimeEquals(
+                    System.Text.Encoding.UTF8.GetBytes(enteredHash),
+                    System.Text.Encoding.UTF8.GetBytes(passwordHash));
+            }
         }
 
         return false;
+    }
+
+    private static string ComputeSha256Hash(string rawData)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(rawData));
+        return Convert.ToHexStringLower(bytes);
     }
 
     private string GetAdminName(string email)

@@ -65,7 +65,9 @@ public static class SecurityExtensions
     }
 
     /// <summary>
-    /// Sanitize string by removing potentially dangerous characters
+    /// Sanitize string by removing potentially dangerous characters.
+    /// Uses iterative stripping and regex to prevent bypass via nested/obfuscated payloads.
+    /// For rendering user content in HTML, prefer HtmlEncode over Sanitize.
     /// </summary>
     public static string Sanitize(this string? value)
     {
@@ -74,13 +76,24 @@ public static class SecurityExtensions
             return string.Empty;
         }
 
-        // Remove script tags and potentially dangerous content
-        var sanitized = value
-            .Replace("<script>", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("</script>", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("javascript:", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("onerror=", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("onclick=", "", StringComparison.OrdinalIgnoreCase);
+        var sanitized = value;
+
+        // Iteratively strip script tags (handles nested variants like <scr<script>ipt>)
+        string previous;
+        do
+        {
+            previous = sanitized;
+            sanitized = System.Text.RegularExpressions.Regex.Replace(
+                sanitized, @"<\s*/?\s*script[^>]*>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        } while (sanitized != previous);
+
+        // Strip event handler attributes (onclick, onerror, onload, onmouseover, etc.)
+        sanitized = System.Text.RegularExpressions.Regex.Replace(
+            sanitized, @"\bon\w+\s*=", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Strip javascript: / vbscript: / data: URI schemes
+        sanitized = System.Text.RegularExpressions.Regex.Replace(
+            sanitized, @"(javascript|vbscript|data)\s*:", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         return sanitized;
     }
