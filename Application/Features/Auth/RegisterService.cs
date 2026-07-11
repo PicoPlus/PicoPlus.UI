@@ -79,11 +79,33 @@ public class RegisterService : IRegisterService
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        // Always reset all step state so a new registration session starts clean,
+        // regardless of any previous incomplete flow on the same server circuit.
+        IsVerified       = false;
+        OtpSent          = false;
+        OtpCode          = string.Empty;
+        OtpRemainingTime = string.Empty;
+        CanResendOtp     = true;
+        CurrentStep      = 1;
+        HasError         = false;
+        ErrorMessage     = string.Empty;
+        FirstName        = string.Empty;
+        LastName         = string.Empty;
+        FatherName       = string.Empty;
+        Gender           = string.Empty;
+        ShahkarStatus    = null;
+        _otpTimer?.Stop();
+
         var pending = await _sessionStorage.GetItemAsync<string>("PendingNationalCode", ct);
         if (!string.IsNullOrEmpty(pending))
         {
             NationalCode = pending;
             await _sessionStorage.RemoveItemAsync("PendingNationalCode", ct);
+        }
+        else
+        {
+            NationalCode = string.Empty;
+            BirthDate    = string.Empty;
         }
     }
 

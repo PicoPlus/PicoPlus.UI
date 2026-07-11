@@ -115,13 +115,14 @@ public class AuthService
     {
         _logger.LogInformation("Logging out user");
 
-        await _sessionStorage.RemoveItemAsync(KeyLoginState, cancellationToken);
-        await _sessionStorage.RemoveItemAsync(KeyContact, cancellationToken);
-        await _sessionStorage.RemoveItemAsync(KeyRole, cancellationToken);
+        await _sessionStorage.RemoveItemAsync(KeyLoginState,        cancellationToken);
+        await _sessionStorage.RemoveItemAsync(KeyContact,           cancellationToken);
+        await _sessionStorage.RemoveItemAsync(KeyRole,              cancellationToken);
+        await _sessionStorage.RemoveItemAsync("PendingNationalCode", cancellationToken);
 
-        await _localStorage.RemoveItemAsync(KeyLoginState, cancellationToken);
-        await _localStorage.RemoveItemAsync(KeyContact, cancellationToken);
-        await _localStorage.RemoveItemAsync(KeyRole, cancellationToken);
+        await _localStorage.RemoveItemAsync(KeyLoginState,          cancellationToken);
+        await _localStorage.RemoveItemAsync(KeyContact,             cancellationToken);
+        await _localStorage.RemoveItemAsync(KeyRole,                cancellationToken);
 
         _navigationService.NavigateTo("/auth/login");
     }
