@@ -38,5 +38,6 @@ public interface IRegisterService
     Task VerifyOtpAsync(CancellationToken ct = default);
     Task RegisterAsync(CancellationToken ct = default);
     Task ResendOtpAsync(CancellationToken ct = default);
+    Task GoBackToPhoneStepAsync(CancellationToken ct = default);
     void Dispose();
 }

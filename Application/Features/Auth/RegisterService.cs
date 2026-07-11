@@ -208,6 +208,20 @@ public class RegisterService : IRegisterService
         await SendOtpAsync(ct);
     }
 
+    /// <summary>Go back from OTP step to phone entry so the user can correct the number.</summary>
+    public Task GoBackToPhoneStepAsync(CancellationToken ct = default)
+    {
+        _otpTimer?.Stop();
+        OtpSent          = false;
+        OtpCode          = string.Empty;
+        OtpRemainingTime = string.Empty;
+        CanResendOtp     = true;
+        CurrentStep      = 2;
+        HasError         = false;
+        ErrorMessage     = string.Empty;
+        return Task.CompletedTask;
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private async Task VerifyPhoneWithShahkarAsync(CancellationToken ct)

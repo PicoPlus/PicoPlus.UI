@@ -142,6 +142,10 @@
                                 disabled="@(!Svc.CanResendOtp || Svc.IsLoading)">
                             <i class="bi bi-arrow-repeat me-1"></i>ارسال مجدد کد
                         </button>
+                        <button type="button" class="btn btn-link text-secondary ms-3" @onclick="HandleGoBackToPhone"
+                                disabled="@Svc.IsLoading">
+                            <i class="bi bi-pencil me-1"></i>ویرایش شماره موبایل
+                        </button>
                     </div>
                 </div>
             }
@@ -208,11 +212,12 @@
         StateHasChanged();
     }
 
-    private async Task HandleVerify()    { await Svc.VerifyNationalIdentityAsync(); StateHasChanged(); }
-    private async Task HandleSendOtp()   { await Svc.SendOtpAsync();                StateHasChanged(); }
-    private async Task HandleVerifyOtp() { await Svc.VerifyOtpAsync();              StateHasChanged(); }
-    private async Task HandleResendOtp() { await Svc.ResendOtpAsync();              StateHasChanged(); }
-    private async Task HandleSubmit()    { await Svc.RegisterAsync(); }
+    private async Task HandleVerify()        { await Svc.VerifyNationalIdentityAsync(); StateHasChanged(); }
+    private async Task HandleSendOtp()       { await Svc.SendOtpAsync();                StateHasChanged(); }
+    private async Task HandleVerifyOtp()     { await Svc.VerifyOtpAsync();              StateHasChanged(); }
+    private async Task HandleResendOtp()     { await Svc.ResendOtpAsync();              StateHasChanged(); }
+    private async Task HandleGoBackToPhone() { await Svc.GoBackToPhoneStepAsync();      StateHasChanged(); }
+    private async Task HandleSubmit()        { await Svc.RegisterAsync(); }
 
     public async ValueTask DisposeAsync() { Svc.Dispose(); await Task.CompletedTask; }
 }
