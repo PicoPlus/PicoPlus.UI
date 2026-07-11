@@ -1,0 +1,16 @@
+@* 
+   Root _Imports for all Presentation/ Razor files.
+   We do NOT set @namespace here because each sub-folder (Components, Views, Pages)
+   uses the namespace from its own _Imports or from @namespace directives in
+   the individual files. The standard global @using directives below are still
+   applied to every Razor file under Presentation/.
+*@
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+

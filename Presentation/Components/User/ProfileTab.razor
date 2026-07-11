@@ -1,0 +1,80 @@
+@using PicoPlus.Domain.Entities
+
+@* Profile information tab *@
+
+<div class="tab-fade-in">
+    <div class="light-card">
+        <div class="light-card-header">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-person-badge-fill me-2 text-info"></i>
+                اطلاعات شخصی
+            </h5>
+        </div>
+        <div class="light-card-body">
+            @if (Contact != null)
+            {
+                <div class="row g-4">
+                    <ProfileField 
+                        Label="نام"
+                        Value="@Contact.FirstName"
+                        IconClass="bi-person"
+                        IsPersian="true" />
+
+                    <ProfileField 
+                        Label="نام خانوادگی"
+                        Value="@Contact.LastName"
+                        IconClass="bi-person"
+                        IsPersian="true" />
+
+                    <ProfileField 
+                        Label="کد ملی"
+                        Value="@(Contact.NationalCode ?? "-")"
+                        IconClass="bi-card-text" />
+
+                    <ProfileField 
+                        Label="موبایل"
+                        Value="@(Contact.Phone ?? "-")"
+                        IconClass="bi-phone" />
+
+                    @if (!string.IsNullOrEmpty(Contact.DateOfBirth))
+                    {
+                        <ProfileField 
+                            Label="تاریخ تولد"
+                            Value="@Contact.DateOfBirth"
+                            IconClass="bi-calendar-event" />
+                    }
+
+                    @if (!string.IsNullOrEmpty(Contact.FatherName))
+                    {
+                        <ProfileField 
+                            Label="نام پدر"
+                            Value="@Contact.FatherName"
+                            IconClass="bi-person"
+                            IsPersian="true" />
+                    }
+
+                    @if (!string.IsNullOrEmpty(Contact.Email))
+                    {
+                        <ProfileField 
+                            Label="ایمیل"
+                            Value="@Contact.Email"
+                            IconClass="bi-envelope" />
+                    }
+                </div>
+            }
+            else
+            {
+                <EmptyState 
+                    IconClass="bi-person-x"
+                    Message="اطلاعات کاربر در دسترس نیست"
+                    AriaLabel="اطلاعات کاربر موجود نیست" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public PicoPlus.Domain.Entities.Contact? Contact { get; set; }
+}
+

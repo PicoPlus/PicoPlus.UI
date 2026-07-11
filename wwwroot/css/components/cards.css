@@ -1,0 +1,206 @@
+/* =================================================================
+   PicoPlus Design System — Card Component
+   All colors via tokens. No hardcoded values.
+   ================================================================= */
+
+/* ── Base Card ───────────────────────────────────────────────────── */
+.card,
+.dark-card {
+    background:    var(--card-bg);
+    border:        1px solid var(--card-border);
+    border-radius: var(--card-radius, var(--radius-xl));
+    box-shadow:    var(--card-shadow, var(--shadow-sm));
+    transition:    box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+    overflow:      hidden;
+    color:         var(--text-primary);
+}
+
+.card:hover,
+.dark-card:hover {
+    box-shadow:   var(--card-shadow-hover, var(--shadow-md));
+    border-color: var(--border-strong);
+}
+
+/* ── Card Sections ───────────────────────────────────────────────── */
+.card-header,
+.dark-card-header {
+    background:    var(--bg-surface-inset);
+    border-bottom: 1px solid var(--card-border);
+    padding:       var(--space-5) var(--space-6);
+    font-weight:   var(--weight-semibold);
+    color:         var(--text-primary);
+}
+
+.card-body,
+.dark-card-body {
+    padding: var(--card-padding, var(--padding-card));
+    color:   var(--text-primary);
+}
+
+.card-footer,
+.dark-card-footer {
+    background:  var(--bg-surface-inset);
+    border-top:  1px solid var(--card-border);
+    padding:     var(--space-4) var(--space-6);
+    color:       var(--text-secondary);
+}
+
+/* ── Stat Cards ──────────────────────────────────────────────────── */
+.stat-card-dark {
+    background:    var(--card-bg);
+    border-radius: var(--radius-xl);
+    padding:       var(--space-6);
+    display:       flex;
+    justify-content: space-between;
+    align-items:   center;
+    gap:           var(--space-4);
+    transition:    transform 0.25s ease, box-shadow 0.25s ease;
+    border:        1px solid var(--card-border);
+    cursor:        pointer;
+}
+
+.stat-card-dark:hover {
+    transform:  translateY(-6px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.stat-info {
+    text-align: var(--text-align-start, right);
+    flex:       1;
+}
+
+.stat-label-dark {
+    color:         var(--text-secondary);
+    font-size:     var(--text-sm);
+    font-weight:   var(--weight-medium);
+    margin-bottom: var(--space-2);
+}
+
+.stat-value-dark {
+    font-size:   var(--text-4xl);
+    font-weight: var(--weight-bold);
+    margin:      var(--space-1) 0;
+    color:       var(--text-primary);
+    direction:   var(--dir-number, ltr);
+    text-align:  var(--text-align-start, right);
+}
+
+.stat-unit-dark {
+    color:     var(--text-muted);
+    font-size: var(--text-xs);
+}
+
+.stat-icon-dark {
+    width:           4.375rem;   /* 70px */
+    height:          4.375rem;
+    border-radius:   var(--radius-lg);
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    font-size:       var(--text-4xl);
+    color:           #fff;
+    flex-shrink:     0;
+}
+
+/* ── Dashboard Card ──────────────────────────────────────────────── */
+.dashboard-card {
+    background:    var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding:       var(--space-6);
+    box-shadow:    var(--card-shadow, var(--shadow-sm));
+    transition:    box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+    color:         var(--text-primary);
+    border:        1px solid var(--card-border);
+}
+
+.dashboard-card:hover {
+    box-shadow:   var(--card-shadow-hover, var(--shadow-md));
+    transform:    translateY(-4px);
+    border-color: var(--color-primary);
+}
+
+/* ── Stat Gradient Card ───────────────────────────────────────────── */
+.stat-card {
+    background:    var(--gradient-brand);
+    color:         #ffffff;
+    border-radius: var(--radius-lg);
+    padding:       var(--space-6);
+    box-shadow:    var(--shadow-md);
+}
+
+/* ── Auth Card ───────────────────────────────────────────────────── */
+.auth-card {
+    background:    var(--card-bg);
+    border-radius: var(--radius-2xl);
+    box-shadow:    var(--shadow-2xl);
+    padding:       var(--space-10);
+    width:         100%;
+    max-width:     var(--card-max-width);
+    border:        1px solid var(--card-border);
+    color:         var(--text-primary);
+    animation:     slideUp 0.35s ease-out;
+}
+
+.auth-card-wide { max-width: 43.75rem; }  /* 700px */
+
+/* ── Deal Title Section ─────────────────────────────────────────── */
+.deal-title-section {
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-5);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.deal-title-section h6 {
+    color:       var(--text-primary);
+    font-weight: var(--weight-bold);
+    margin-bottom: var(--space-2);
+}
+
+.deal-title-section small { color: var(--text-secondary); }
+
+/* ── Info Box ────────────────────────────────────────────────────── */
+.info-box-dark {
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-5);
+    border-radius: var(--radius-lg);
+    border:        1px solid var(--border-default);
+}
+
+.info-box-dark label {
+    color:         var(--text-secondary);
+    font-size:     var(--text-sm);
+    margin-bottom: var(--space-2);
+    display:       block;
+}
+
+.info-value {
+    color:       var(--text-primary);
+    font-weight: var(--weight-semibold);
+    font-size:   var(--text-lg);
+}
+
+/* ── Empty State ─────────────────────────────────────────────────── */
+.empty-state-dark {
+    text-align: center;
+    padding:    var(--space-12) var(--space-8);
+    color:      var(--text-secondary);
+}
+
+.empty-state-dark i {
+    font-size:     4rem;
+    color:         var(--border-strong);
+    margin-bottom: var(--space-4);
+    display:       block;
+}
+
+.empty-state-dark p {
+    color:  var(--text-muted);
+    margin: 0;
+}
+
+/* ── Gradient Icon Backgrounds ───────────────────────────────────── */
+.bg-gradient-blue   { background: var(--gradient-cyan);    }
+.bg-gradient-pink   { background: var(--gradient-rose);    }
+.bg-gradient-green  { background: var(--gradient-emerald); }
+.bg-gradient-purple { background: var(--gradient-purple);  }

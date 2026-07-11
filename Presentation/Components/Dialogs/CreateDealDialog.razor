@@ -1,0 +1,201 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using PicoPlus.Views
+@inject PicoPlus.Services.Deal.IDealCreateService Svc
+@implements IAsyncDisposable
+
+@if (IsVisible)
+{
+    <div class="modal-overlay" @onclick="HandleOverlayClick">
+        <div class="modal-light modal-lg deal-modal-compact" @onclick:stopPropagation="true">
+            <div class="modal-light-header deal-header-compact">
+                <h5 class="modal-light-title">
+                    <i class="bi bi-briefcase-fill"></i>
+                    معامله جدید
+                </h5>
+                <button type="button" class="btn-close-dark" @onclick="HandleCancel">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <EditForm Model="@this" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="modal-light-body deal-body-compact" dir="rtl">
+
+                    @if (!string.IsNullOrEmpty(Svc.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-sm mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            @Svc.ErrorMessage
+                        </div>
+                    }
+
+                    <div class="deal-form-compact">
+                        <div class="row g-2">
+                            <!-- Deal Name -->
+                            <div class="col-12">
+                                <input class="dark-input form-control-sm"
+                                       @bind="Svc.DealName" @bind:event="oninput"
+                                       placeholder="نام معامله *"
+                                       disabled="@Svc.IsLoading" />
+                            </div>
+
+                            <!-- Pipeline & Stage Row -->
+                            <div class="col-md-6">
+                                <select class="dark-input form-control-sm" @bind="Svc.SelectedPipelineId" disabled="@Svc.IsLoading">
+                                    <option value="">پایپ‌لاین *</option>
+                                    @foreach (var pipeline in Svc.Pipelines)
+                                    {
+                                        <option value="@pipeline.PipelineId">@pipeline.Label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <select class="dark-input form-control-sm"
+                                        @bind="Svc.SelectedDealStage"
+                                        disabled="@(Svc.IsLoading || string.IsNullOrEmpty(Svc.SelectedPipelineId))">
+                                    <option value="">مرحله *</option>
+                                    @foreach (var stage in Svc.DealStages)
+                                    {
+                                        <option value="@stage.StageId">@stage.Label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Amount & Owner Row -->
+                            <div class="col-md-6">
+                                <input type="number" class="dark-input form-control-sm"
+                                       value="@Svc.Amount"
+                                       @onchange="e => Svc.Amount = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null"
+                                       placeholder="مبلغ معامله"
+                                       disabled="@Svc.IsLoading" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <select class="dark-input form-control-sm" @bind="Svc.SelectedOwnerId" disabled="@Svc.IsLoading">
+                                    <option value="">مالک معامله *</option>
+                                    @foreach (var owner in Svc.Owners)
+                                    {
+                                        <option value="@owner.Id">@($"{owner.FirstName} {owner.LastName}")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Close Date & Tax Row -->
+                            <div class="col-md-6">
+                                <input type="date" class="dark-input form-control-sm"
+                                       value="@(Svc.CloseDate?.ToString("yyyy-MM-dd"))"
+                                       @onchange="e => Svc.CloseDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null"
+                                       disabled="@Svc.IsLoading" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <input type="number" class="dark-input form-control-sm"
+                                       value="@Svc.TaxAmount"
+                                       @onchange="e => Svc.TaxAmount = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null"
+                                       placeholder="مالیات"
+                                       disabled="@Svc.IsLoading" />
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12">
+                                <textarea class="dark-input form-control-sm"
+                                          @bind="Svc.Description" @bind:event="oninput"
+                                          placeholder="توضیحات (دلخواه)"
+                                          rows="2"
+                                          disabled="@Svc.IsLoading"></textarea>
+                            </div>
+
+                            <!-- Contact Info -->
+                            @if (!string.IsNullOrEmpty(ContactName))
+                            {
+                                <div class="col-12">
+                                    <div class="contact-info-badge">
+                                        <i class="bi bi-person-check"></i>
+                                        <span>@ContactName</span>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Line Items -->
+                            <div class="col-12">
+                                <label class="label-compact mb-2">
+                                    <i class="bi bi-list-ul"></i>آیتم‌های معامله
+                                </label>
+                                <SeletedLineItemPane @ref="_lineItemPane" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-light-footer deal-footer-compact">
+                    <button type="button" class="btn-secondary-dark btn-sm" @onclick="HandleCancel" disabled="@Svc.IsLoading">
+                        <i class="bi bi-x-lg"></i>لغو
+                    </button>
+                    <button type="submit" class="btn-primary-dark btn-sm" disabled="@Svc.IsLoading">
+                        @if (Svc.IsLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span>درحال...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle"></i>
+                            <span>ثبت</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string? ContactId { get; set; }
+    [Parameter] public string? ContactName { get; set; }
+    [Parameter] public EventCallback<string> OnDealCreated { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private SeletedLineItemPane? _lineItemPane;
+    private string? _lastLoadedContactId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && ContactId != _lastLoadedContactId)
+        {
+            _lastLoadedContactId = ContactId;
+            await Svc.InitializeAsync(ContactId);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (_lineItemPane is not null)
+                Svc.LineItems = _lineItemPane.GetLineItems();
+
+            var dealId = await Svc.CreateDealAsync();
+            if (!string.IsNullOrEmpty(dealId))
+                await OnDealCreated.InvokeAsync(dealId);
+        }
+        catch (Exception ex)
+        {
+            // surface error from service layer
+            _ = ex;
+        }
+    }
+
+    private async Task HandleCancel() => await OnCancel.InvokeAsync();
+
+    private async Task HandleOverlayClick()
+    {
+        if (!Svc.IsLoading)
+            await HandleCancel();
+    }
+
+    public async ValueTask DisposeAsync() => await Task.CompletedTask;
+}
+

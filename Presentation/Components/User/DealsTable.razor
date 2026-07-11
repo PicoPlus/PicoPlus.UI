@@ -1,0 +1,97 @@
+@using PicoPlus.Domain.Entities
+@using PicoPlus.Domain.Enums
+@using PicoPlus.Domain.Extensions
+@using PicoPlus.Services.UserPanel
+
+@inject IPersianDateService DateService
+
+@* Deals table component *@
+
+<div class="tab-fade-in">
+    <div class="light-card">
+        <div class="light-card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-list-ul me-2 text-info"></i>
+                    لیست معاملات
+                </h5>
+                <span class="badge-dark" aria-label="تعداد معاملات: @Deals.Count">@Deals.Count معامله</span>
+            </div>
+        </div>
+        <div class="light-card-body p-0">
+            @if (Deals == null || Deals.Count == 0)
+            {
+                <EmptyState 
+                    IconClass="bi-inbox"
+                    Message="هیچ معامله‌ای یافت نشد"
+                    AriaLabel="هیچ معامله‌ای موجود نیست" />
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table-dark-custom" role="table" aria-label="لیست معاملات">
+                        <thead>
+                            <tr>
+                                <th scope="col">شناسه</th>
+                                <th scope="col">نام معامله</th>
+                                <th scope="col">مبلغ (تومان)</th>
+                                <th scope="col">وضعیت</th>
+                                <th scope="col">تاریخ ایجاد</th>
+                                <th scope="col" class="text-center">جزئیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var deal in Deals)
+                            {
+                                var currentDeal = deal;
+                                <tr class="deal-row-dark" 
+                                    tabindex="0" 
+                                    role="row" 
+                                    aria-label="معامله @deal.DealName"
+                                    @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
+                                    @onkeydown="@(async (e) => { if (e.Key == "Enter" || e.Key == " ") await OnDealSelected.InvokeAsync(currentDeal); })">
+                                    <td>
+                                        <span class="deal-id-badge">@deal.Id</span>
+                                    </td>
+                                    <td>
+                                        <div class="persian-text deal-title">@deal.DealName</div>
+                                    </td>
+                                    <td>
+                                        <span class="deal-amount">@DateService.FormatNumber(deal.Amount)</span>
+                                    </td>
+                                    <td>
+                                        <StatusBadge Stage="@deal.Stage" />
+                                    </td>
+                                    <td>
+                                        <span class="deal-date">
+                                            <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
+                                            @DateService.FormatDate(deal.CreatedAt)
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn-action" 
+                                                aria-label="مشاهده جزئیات"
+                                                @onclick="@(() => OnDealSelected.InvokeAsync(currentDeal))"
+                                                @onclick:stopPropagation="true">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PicoPlus.Domain.Entities.Deal> Deals { get; set; } = Array.Empty<PicoPlus.Domain.Entities.Deal>();
+
+    [Parameter]
+    public EventCallback<PicoPlus.Domain.Entities.Deal> OnDealSelected { get; set; }
+}
+

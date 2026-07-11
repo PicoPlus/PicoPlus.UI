@@ -1,0 +1,258 @@
+.dashboard-page {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.welcome-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.welcome-header h1 {
+    margin: 0;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.stat-card-primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card-success .stat-icon {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.stat-card-info .stat-icon {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+.stat-card-warning .stat-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stat-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Pipeline Stages */
+.pipeline-stages {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.pipeline-stage {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.pipeline-stage h6 {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Activity List */
+.activity-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    gap: 1rem;
+    transition: background 0.2s ease;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item:hover {
+    background: #f8f9fa;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.activity-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: #adb5bd;
+}
+
+/* Quick Actions */
+.quick-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s ease;
+    gap: 1rem;
+}
+
+.quick-action-card:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+}
+
+.quick-action-card i {
+    font-size: 2.5rem;
+    color: #667eea;
+}
+
+.quick-action-card span {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Card Headers */
+.card-header {
+    background: white;
+    border-bottom: 2px solid #e9ecef;
+    padding: 1rem 1.5rem;
+}
+
+.card-header h5 {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .welcome-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* Scrollbar */
+.activity-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 3px;
+}
+
+.activity-list::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}

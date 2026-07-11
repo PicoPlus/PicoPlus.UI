@@ -1,0 +1,177 @@
+/* =================================================================
+   PicoPlus Design System — Accessibility Utilities
+   WCAG 2.2 AA compliant. Reduced motion. Focus management.
+   ================================================================= */
+
+/* ── Visually Hidden (screen-reader only) ───────────────────────── */
+.sr-only,
+.visually-hidden {
+    position:   absolute;
+    width:      1px;
+    height:     1px;
+    padding:    0;
+    margin:     -1px;
+    overflow:   hidden;
+    clip:       rect(0, 0, 0, 0);
+    white-space:nowrap;
+    border:     0;
+}
+
+.sr-only-focusable:focus,
+.visually-hidden-focusable:focus {
+    position:  static;
+    width:     auto;
+    height:    auto;
+    overflow:  visible;
+    clip:      auto;
+    white-space: normal;
+}
+
+/* ── Skip Navigation Link ───────────────────────────────────────── */
+.skip-nav {
+    position:   absolute;
+    top:        calc(-100% - var(--safe-top));
+    left:       var(--space-4);
+    z-index:    var(--z-toast);
+    padding:    var(--space-3) var(--space-6);
+    background: var(--color-primary);
+    color:      var(--color-primary-text);
+    border-radius: var(--radius-md);
+    font-weight:var(--weight-semibold);
+    text-decoration: none;
+    transition: top 0.1s;
+}
+
+.skip-nav:focus {
+    top: calc(var(--space-4) + var(--safe-top));
+}
+
+/* ── Focus Rings ─────────────────────────────────────────────────── */
+/* Visible focus for ALL interactive elements */
+:focus-visible {
+    outline:        2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius:  var(--radius-sm);
+}
+
+/* Remove focus ring from mouse/touch; keep for keyboard */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Component-specific focus states */
+.btn:focus-visible,
+.modern-tab:focus-visible,
+.btn-close-dark:focus-visible,
+.btn-secondary-dark:focus-visible,
+.btn-action:focus-visible,
+.role-tab:focus-visible,
+.fab-create-deal:focus-visible {
+    outline:        2px solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow:     var(--focus-ring);
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible,
+.dark-input:focus-visible {
+    outline:  none;   /* shadow handles visibility */
+    box-shadow: var(--input-focus-ring, var(--focus-ring));
+}
+
+/* Legacy :focus for browsers lacking :focus-visible */
+.btn-action:focus,
+.modern-tab:focus,
+.btn-close-dark:focus,
+.btn-secondary-dark:focus {
+    outline:        2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration:        0.01ms !important;
+        animation-iteration-count: 1      !important;
+        transition-duration:       0.01ms !important;
+        scroll-behavior:           auto   !important;
+    }
+}
+
+/* ── High Contrast Mode ──────────────────────────────────────────── */
+@media (forced-colors: active) {
+    .btn-primary,
+    .btn-primary-dark {
+        forced-color-adjust: none;
+        background:   ButtonText;
+        color:        ButtonFace;
+        border-color: ButtonText;
+    }
+
+    .form-control:focus,
+    .dark-input:focus {
+        outline: 2px solid Highlight;
+    }
+}
+
+/* ── ARIA Live Region ────────────────────────────────────────────── */
+[aria-live] { border: 0; clip: rect(0,0,0,0); height:1px; margin:-1px; overflow:hidden; padding:0; position:absolute; width:1px; }
+[aria-live]:not(:empty) { clip: auto; height: auto; margin: 0; overflow: visible; position: static; width: auto; }
+
+/* ── Color-Blind Safe Indicators ────────────────────────────────── */
+/* Status indicators always have both color AND icon/label */
+.status-badge::before {
+    content:     '';
+    display:     inline-block;
+    width:       0.5rem;
+    height:      0.5rem;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-1);   /* RTL: left = end */
+    background:  currentColor;
+}
+
+/* ── Text Contrast Utilities ─────────────────────────────────────── */
+.text-on-primary   { color: var(--color-primary-text) !important; }
+.text-on-dark      { color: var(--text-inverse)       !important; }
+
+/* ── Touch / Pointer Safety ──────────────────────────────────────── */
+/* Prevent unintentional selection on tappable items */
+.modern-tab,
+.fab-create-deal,
+.btn,
+.dropdown-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* ── Line-item section accessible table ─────────────────────────── */
+.line-items-section {
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-6);
+    border-radius: var(--radius-lg);
+    border:        1px solid var(--border-default);
+    margin-top:    var(--space-6);
+}
+
+.line-items-section h6 {
+    color:       var(--text-primary);
+    font-weight: var(--weight-bold);
+    margin-bottom: var(--space-4);
+    display:     flex;
+    align-items: center;
+    gap:         var(--space-2);
+}
+
+.line-items-section .table-responsive {
+    border-radius: var(--radius-md);
+    overflow:      hidden;
+}
+
+.line-item-section {
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-6);
+    border-radius: var(--radius-lg);
+    border:        1px solid var(--border-default);
+}

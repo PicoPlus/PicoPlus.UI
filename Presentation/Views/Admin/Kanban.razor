@@ -1,0 +1,571 @@
+@page "/admin/kanban"
+@layout Components.Layout.AdminLayout
+@using PicoPlus.Services.Admin
+@using PicoPlus.State.Admin
+@using PicoPlus.Models.Admin
+@using PicoPlus.Services.Deal
+@inject KanbanService KanbanService
+@inject AdminStateService AdminState
+@inject IDealCreateService Svc
+@inject ILogger<Kanban> Logger
+
+<PageTitle>معاملات - پنل مدیریت</PageTitle>
+
+<div class="deals-board-root @(drawerOpen ? "drawer-is-open" : "")">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MAIN BOARD AREA
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div class="board-main">
+
+        <!-- Page Title Row -->
+        <div class="board-title-row">
+            <h1 class="board-title">
+                معاملات
+                <svg class="title-caret" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </h1>
+            <button class="btn-create-deal" @onclick="OpenDrawer">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                </svg>
+                ایجاد معامله
+            </button>
+        </div>
+
+        <!-- Saved Views Tabs -->
+        <div class="board-tabs">
+            <div class="tabs-list">
+                <button class="tab-item @(activeTab == "week" ? "active" : "")" @onclick='() => activeTab = "week"'>هفته گذشته</button>
+                <button class="tab-item @(activeTab == "month" ? "active" : "")" @onclick='() => activeTab = "month"'>این ماه</button>
+                <button class="tab-item @(activeTab == "weekly" ? "active" : "")" @onclick='() => activeTab = "weekly"'>هفتگی</button>
+                <button class="tab-item @(activeTab == "daily" ? "active" : "")" @onclick='() => activeTab = "daily"'>روزانه</button>
+                <button class="tab-item @(activeTab == "all" ? "active" : "")" @onclick='() => activeTab = "all"'>همه معاملات</button>
+                <button class="tab-add" title="افزودن نمای ذخیره‌شده">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="board-toolbar">
+            <div class="toolbar-left">
+                <div class="search-wrap">
+                    <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="#6b7280" stroke-width="1.5"/><path d="M10 10l3 3" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input class="toolbar-search" type="text" placeholder="جستجو در معاملات..." @bind="searchTerm" @bind:event="oninput" />
+                </div>
+                <button class="toolbar-btn">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    فیلتر
+                    @if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        <span class="filter-count">1</span>
+                    }
+                </button>
+                <button class="toolbar-btn">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M2 5l4-3 4 3M6 2v10M10 14l4-3-4-3M14 11V4" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    مرتب‌سازی
+                </button>
+            </div>
+            <div class="toolbar-right">
+                @if (pipelines.Count > 1)
+                {
+                    <select class="pipeline-select" @bind="selectedPipelineId" @bind:after="LoadKanbanBoard">
+                        @foreach (var p in pipelines)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <div class="pipeline-pill">
+                        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="#374151" stroke-width="1.4"/><path d="M2 7h12" stroke="#374151" stroke-width="1.4"/></svg>
+                        Sales Pipeline
+                        <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#374151" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                }
+                <button class="btn-refresh" @onclick="LoadKanbanBoard" title="بروزرسانی">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 3A7 7 0 1 0 14 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.5 3v3.5H10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Secondary Filter Chips -->
+        <div class="filter-chips-row">
+            <button class="chip-btn">مالک معامله <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+            <button class="chip-btn">تاریخ ثبت <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+            <button class="chip-btn">آخرین فعالیت <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+            <button class="chip-btn">تاریخ بستن <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+            <button class="chip-icon-btn" title="افزودن فیلتر">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+            </button>
+            <button class="chip-icon-btn" title="ویرایش ستون‌ها">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h2M7 8h2M11 8h2M3 5h2M7 5h2M11 5h2M3 11h2M7 11h2M11 11h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <button class="chip-advanced">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                فیلترهای پیشرفته
+            </button>
+        </div>
+
+        <!-- Board Canvas -->
+        @if (isLoading)
+        {
+            <div class="board-loading">
+                <div class="spinner-border text-primary" role="status" style="width:2.5rem;height:2.5rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">در حال دریافت داده‌های پایپ‌لاین...</p>
+            </div>
+        }
+        else if (!columns.Any())
+        {
+            <div class="board-empty">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px;opacity:.3">
+                    <rect x="4" y="12" width="16" height="40" rx="3" stroke="#6b7280" stroke-width="2"/>
+                    <rect x="24" y="20" width="16" height="32" rx="3" stroke="#6b7280" stroke-width="2"/>
+                    <rect x="44" y="8" width="16" height="44" rx="3" stroke="#6b7280" stroke-width="2"/>
+                </svg>
+                <p class="mt-3 text-muted">هیچ ستونی یافت نشد. پایپ‌لاین HubSpot خود را تنظیم کنید.</p>
+            </div>
+        }
+        else
+        {
+            <div class="kanban-board">
+                @foreach (var column in FilteredColumns)
+                {
+                    var isWon = column.Color is "#198754" or "#28a745" || column.Name.Contains("نهایی") || column.Name.Contains("موفق");
+                    var isLost = column.Color == "#dc3545" || column.Name.Contains("نا موفق") || column.Name.Contains("ناموفق");
+                    <div class="kb-column">
+                        <!-- Column Header -->
+                        <div class="kb-col-header">
+                            <div class="kb-col-title-row">
+                                <span class="kb-col-chip @(isWon ? "chip-won" : isLost ? "chip-lost" : "chip-default")"
+                                      style="@(!isWon && !isLost ? $"border-left:3px solid {column.Color};" : "")">
+                                    @column.Name
+                                </span>
+                                <span class="kb-col-count">@column.TotalCards</span>
+                            </div>
+                        </div>
+
+                        <!-- Cards -->
+                        <div class="kb-cards"
+                             @ondrop="@(() => HandleDrop(column.Id))"
+                             @ondragover:preventDefault
+                             @ondragover="@(() => HandleDragOver(column.Id))">
+
+                            @if (FilteredCards(column).Any())
+                            {
+                                @foreach (var card in FilteredCards(column))
+                                {
+                                    <div class="kb-card @(isWon ? "kb-card-won" : "")"
+                                         draggable="true"
+                                         @ondragstart="@(() => HandleDragStart(card.Id))">
+                                        <div class="kb-card-head">
+                                            <span class="kb-card-title">@card.Title</span>
+                                            @if (!string.IsNullOrEmpty(card.Priority))
+                                            {
+                                                <span class="kb-priority kb-priority-@card.Priority"></span>
+                                            }
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(card.ContactName))
+                                        {
+                                            <div class="kb-card-meta">
+                                                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="#9ca3af" stroke-width="1.3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="#9ca3af" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                @card.ContactName
+                                            </div>
+                                        }
+
+                                        @if (card.CloseDate.HasValue)
+                                        {
+                                            <div class="kb-card-meta @(IsOverdue(card.CloseDate.Value) && !isWon ? "meta-overdue" : "")">
+                                                <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#9ca3af" stroke-width="1.3"/><path d="M5 1v4M11 1v4M2 7h12" stroke="#9ca3af" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                @card.CloseDate.Value.ToString("yyyy/MM/dd")
+                                            </div>
+                                        }
+
+                                        @if (card.Amount.HasValue && card.Amount > 0)
+                                        {
+                                            <div class="kb-card-amount">
+                                                @FormatCurrency(card.Amount.Value)
+                                            </div>
+                                        }
+
+                                        <div class="kb-card-footer">
+                                            <span class="kb-card-time">@GetRelativeTime(card.UpdatedAt)</span>
+                                            <button class="kb-card-view" @onclick="() => ViewCardDetails(card)" title="مشاهده">
+                                                <svg viewBox="0 0 16 16" fill="none"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="#9ca3af" stroke-width="1.3"/><circle cx="8" cy="8" r="2" stroke="#9ca3af" stroke-width="1.3"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="kb-col-empty">
+                                    <svg viewBox="0 0 32 32" fill="none" style="width:28px;height:28px;"><rect x="4" y="6" width="24" height="20" rx="3" stroke="#d1d5db" stroke-width="1.5"/><path d="M10 13h12M10 17h8" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                    <span>خالی است</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Column Footer -->
+                        <div class="kb-col-footer">
+                            <div class="kb-col-total">
+                                <span class="kb-total-label">
+                                    @if (isWon)
+                                    { @FormatCurrency(column.TotalValue) <span class="text-muted"> | مجموع برنده (100%)</span> }
+                                    else
+                                    { @FormatCurrency(column.TotalValue) <span class="text-muted"> | مجموع</span> }
+                                </span>
+                            </div>
+                            <button class="kb-col-add" @onclick="OpenDrawer" title="ایجاد معامله جدید">
+                                <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                                افزودن معامله
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         CREATE DEAL SLIDE-OVER DRAWER
+    ══════════════════════════════════════════════════════════════════════ -->
+    @if (drawerOpen)
+    {
+        <div class="deal-drawer">
+            <!-- Drawer Header -->
+            <div class="drawer-header">
+                <span class="drawer-title">ایجاد معامله</span>
+                <button class="drawer-close" @onclick="CloseDrawer" title="بستن">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="drawer-subheader">
+                <a class="edit-form-link" href="#">
+                    ویرایش این فرم
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9M9 1h6m0 0v6m0-6L8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+            </div>
+
+            <!-- Drawer Form Body -->
+            <div class="drawer-body">
+                @if (!string.IsNullOrEmpty(Svc.ErrorMessage))
+                {
+                    <div class="drawer-error">
+                        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#dc2626" stroke-width="1.3"/><path d="M8 5v3.5M8 11v.5" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        @Svc.ErrorMessage
+                    </div>
+                }
+
+                <!-- Deal Name -->
+                <div class="df-group df-group-active">
+                    <label class="df-label">نام معامله <span class="df-required">*</span></label>
+                    <input class="df-input df-input-focus"
+                           type="text"
+                           placeholder="مثلاً خرید سرویس جدید"
+                           @bind="Svc.DealName"
+                           @bind:event="oninput"
+                           autofocus
+                           disabled="@Svc.IsLoading" />
+                </div>
+
+                <!-- Pipeline -->
+                <div class="df-group">
+                    <label class="df-label">پایپ‌لاین <span class="df-required">*</span></label>
+                    <div class="df-select-wrap">
+                        <select class="df-input df-select"
+                                @bind="Svc.SelectedPipelineId"
+                                disabled="@Svc.IsLoading">
+                            <option value="">-- انتخاب کنید --</option>
+                            @foreach (var pipeline in Svc.Pipelines)
+                            {
+                                <option value="@pipeline.PipelineId">@pipeline.Label</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(Svc.SelectedPipelineId))
+                        {
+                            <span class="df-pill df-pill-blue">
+                                @(Svc.Pipelines.FirstOrDefault(p => p.PipelineId == Svc.SelectedPipelineId)?.Label ?? Svc.SelectedPipelineId)
+                            </span>
+                        }
+                        <svg class="df-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+
+                <!-- Deal Stage -->
+                <div class="df-group">
+                    <label class="df-label">مرحله معامله <span class="df-required">*</span></label>
+                    <div class="df-select-wrap">
+                        <select class="df-input df-select"
+                                @bind="Svc.SelectedDealStage"
+                                disabled="@(Svc.IsLoading || string.IsNullOrEmpty(Svc.SelectedPipelineId))">
+                            <option value="">-- انتخاب کنید --</option>
+                            @foreach (var stage in Svc.DealStages)
+                            {
+                                <option value="@stage.StageId">@stage.Label</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(Svc.SelectedDealStage))
+                        {
+                            <span class="df-pill df-pill-blue">
+                                @(Svc.DealStages.FirstOrDefault(s => s.StageId == Svc.SelectedDealStage)?.Label ?? Svc.SelectedDealStage)
+                            </span>
+                        }
+                        <svg class="df-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+
+                <!-- Amount -->
+                <div class="df-group">
+                    <label class="df-label">مبلغ (ریال)</label>
+                    <input class="df-input"
+                           type="number"
+                           placeholder="0"
+                           value="@Svc.Amount"
+                           @onchange="e => Svc.Amount = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null"
+                           disabled="@Svc.IsLoading" />
+                </div>
+
+                <!-- Close Date -->
+                <div class="df-group">
+                    <label class="df-label">تاریخ بستن</label>
+                    <div class="df-date-wrap">
+                        <svg class="df-date-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#6b7280" stroke-width="1.3"/><path d="M5 1v4M11 1v4M2 7h12" stroke="#6b7280" stroke-width="1.3" stroke-linecap="round"/></svg>
+                        <input class="df-input df-input-date"
+                               type="date"
+                               value="@(Svc.CloseDate?.ToString("yyyy-MM-dd"))"
+                               @onchange="e => Svc.CloseDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null"
+                               disabled="@Svc.IsLoading" />
+                    </div>
+                </div>
+
+                <!-- Deal Owner -->
+                <div class="df-group">
+                    <label class="df-label">مالک معامله</label>
+                    <div class="df-select-wrap">
+                        <select class="df-input df-select"
+                                @bind="Svc.SelectedOwnerId"
+                                disabled="@Svc.IsLoading">
+                            <option value="">-- انتخاب کنید --</option>
+                            @foreach (var owner in Svc.Owners)
+                            {
+                                <option value="@owner.Id">@($"{owner.FirstName} {owner.LastName}")</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(Svc.SelectedOwnerId))
+                        {
+                            <span class="df-owner-pill">
+                                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="#374151" stroke-width="1.3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="#374151" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                @(Svc.Owners.FirstOrDefault(o => o.Id == Svc.SelectedOwnerId) is var ow && ow != null ? $"{ow.FirstName} {ow.LastName}" : Svc.SelectedOwnerId)
+                            </span>
+                        }
+                        <svg class="df-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+
+                <!-- Deal Type -->
+                <div class="df-group">
+                    <label class="df-label">نوع معامله</label>
+                    <div class="df-select-wrap">
+                        <select class="df-input df-select" @bind="Svc.DealType" disabled="@Svc.IsLoading">
+                            <option value="">-- انتخاب کنید --</option>
+                            <option value="newbusiness">جدید</option>
+                            <option value="existingbusiness">مشتری فعلی</option>
+                            <option value="renewal">تمدید</option>
+                            <option value="upgrade">ارتقاء</option>
+                        </select>
+                        <svg class="df-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="df-group">
+                    <label class="df-label">اولویت</label>
+                    <div class="df-select-wrap">
+                        <select class="df-input df-select" @bind="Svc.Priority" disabled="@Svc.IsLoading">
+                            <option value="">-- انتخاب کنید --</option>
+                            <option value="low">کم</option>
+                            <option value="medium">متوسط</option>
+                            <option value="high">زیاد</option>
+                        </select>
+                        <svg class="df-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+
+                <!-- Description (optional, collapsed) -->
+                <div class="df-group">
+                    <label class="df-label">توضیحات</label>
+                    <textarea class="df-input df-textarea"
+                              placeholder="توضیحات اختیاری..."
+                              @bind="Svc.Description"
+                              @bind:event="oninput"
+                              rows="3"
+                              disabled="@Svc.IsLoading"></textarea>
+                </div>
+
+            </div><!-- /drawer-body -->
+
+            <!-- Drawer Footer -->
+            <div class="drawer-footer">
+                <button class="drawer-btn-primary"
+                        @onclick="HandleDrawerSubmit"
+                        disabled="@(Svc.IsLoading || string.IsNullOrWhiteSpace(Svc.DealName))">
+                    @if (Svc.IsLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    ایجاد
+                </button>
+                <button class="drawer-btn-secondary" @onclick="HandleDrawerSubmitAndAnother" disabled="@(Svc.IsLoading || string.IsNullOrWhiteSpace(Svc.DealName))">
+                    ایجاد و افزودن دیگری
+                </button>
+                <button class="drawer-btn-ghost" @onclick="CloseDrawer" disabled="@Svc.IsLoading">
+                    انصراف
+                </button>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+    // ── Board state ───────────────────────────────────────────────────────────
+    private bool isLoading = true;
+    private HubSpotOwner? selectedOwner;
+    private List<KanbanColumn> columns = new();
+    private List<(string Id, string Name)> pipelines = new();
+    private string? selectedPipelineId;
+    private string? draggedCardId;
+    private string? dragOverColumnId;
+    private string activeTab = "all";
+    private string searchTerm = string.Empty;
+
+    // ── Drawer state ──────────────────────────────────────────────────────────
+    private bool drawerOpen;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPipelines();
+        await LoadKanbanBoard();
+    }
+
+    private async Task LoadPipelines()
+    {
+        pipelines = await KanbanService.GetPipelinesAsync();
+        if (pipelines.Any())
+            selectedPipelineId = pipelines.First().Id;
+    }
+
+    private async Task LoadKanbanBoard()
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            await AdminState.InitializeAsync();
+            selectedOwner = AdminState.GetSelectedOwner();
+            columns = await KanbanService.GetKanbanBoardAsync(selectedOwner?.Id, selectedPipelineId);
+            Logger.LogInformation("Kanban loaded: {Count} columns", columns.Count);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ── Drag & Drop ───────────────────────────────────────────────────────────
+    private void HandleDragStart(string cardId) => draggedCardId = cardId;
+    private void HandleDragOver(string columnId) => dragOverColumnId = columnId;
+
+    private async Task HandleDrop(string targetColumnId)
+    {
+        if (string.IsNullOrEmpty(draggedCardId)) return;
+        var success = await KanbanService.MoveCardAsync(draggedCardId, targetColumnId);
+        if (success) await LoadKanbanBoard();
+        draggedCardId = null;
+        dragOverColumnId = null;
+    }
+
+    // ── Drawer open/close ─────────────────────────────────────────────────────
+    private async Task OpenDrawer()
+    {
+        if (!drawerOpen)
+        {
+            drawerOpen = true;
+            await Svc.InitializeAsync(null);
+        }
+    }
+
+    private void CloseDrawer()
+    {
+        drawerOpen = false;
+        Svc.Reset();
+    }
+
+    private async Task HandleDrawerSubmit()
+    {
+        var dealId = await Svc.CreateDealAsync();
+        if (!string.IsNullOrEmpty(dealId))
+        {
+            CloseDrawer();
+            await LoadKanbanBoard();
+        }
+    }
+
+    private async Task HandleDrawerSubmitAndAnother()
+    {
+        var dealId = await Svc.CreateDealAsync();
+        if (!string.IsNullOrEmpty(dealId))
+        {
+            await LoadKanbanBoard();
+            Svc.Reset();
+            await Svc.InitializeAsync(null);
+        }
+    }
+
+    // ── Filtering ─────────────────────────────────────────────────────────────
+    private IEnumerable<KanbanColumn> FilteredColumns =>
+        columns; // columns are pre-filtered by owner & pipeline from service
+
+    private IEnumerable<KanbanCard> FilteredCards(KanbanColumn column)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return column.Cards;
+        var q = searchTerm.Trim();
+        return column.Cards.Where(c =>
+            (c.Title?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (c.ContactName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private void ViewCardDetails(KanbanCard card) =>
+        Logger.LogInformation("View card: {Id}", card.Id);
+
+    private string FormatCurrency(decimal amount)
+    {
+        if (amount >= 1_000_000_000) return $"‌{(amount / 1_000_000_000):F1}B ت";
+        if (amount >= 1_000_000)     return $"‌{(amount / 1_000_000):F1}M ت";
+        if (amount >= 1_000)         return $"‌{(amount / 1_000):F0}K ت";
+        return $"{amount:N0} ریال";
+    }
+
+    private bool IsOverdue(DateTime d) => d < DateTime.UtcNow;
+
+    private string GetRelativeTime(DateTime dt)
+    {
+        var ts = DateTime.UtcNow - dt;
+        if (ts.TotalMinutes < 1)  return "همین الان";
+        if (ts.TotalMinutes < 60) return $"{(int)ts.TotalMinutes} دقیقه پیش";
+        if (ts.TotalHours   < 24) return $"{(int)ts.TotalHours} ساعت پیش";
+        if (ts.TotalDays    < 7)  return $"{(int)ts.TotalDays} روز پیش";
+        return dt.ToString("yyyy/MM/dd");
+    }
+}
+

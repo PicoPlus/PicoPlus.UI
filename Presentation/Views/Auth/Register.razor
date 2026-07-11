@@ -1,0 +1,219 @@
+@page "/auth/register"
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using PicoPlus.Components.Shared
+@inject PicoPlus.Services.Auth.IRegisterService Svc
+@implements IAsyncDisposable
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<link href="/css/auth.css" rel="stylesheet" />
+
+<div class="auth-container">
+    <div class="auth-card auth-card-wide">
+        <div class="auth-icon"><i class="bi bi-person-plus"></i></div>
+
+        <h1 class="auth-title">ثبت‌نام در سامانه</h1>
+        <p class="auth-subtitle">برای ایجاد حساب کاربری جدید، مراحل زیر را تکمیل کنید</p>
+
+        <!-- Step Indicator -->
+        <div class="auth-steps">
+            <div class="auth-step @(Svc.CurrentStep >= 1 ? "active" : "") @(Svc.IsVerified ? "completed" : "")">
+                <div class="auth-step-circle"><i class="bi bi-@(Svc.IsVerified ? "check" : "1-circle")"></i></div>
+                <small>استعلام هویت</small>
+            </div>
+            <div class="auth-step @(Svc.CurrentStep >= 2 ? "active" : "") @(Svc.OtpSent ? "completed" : "")">
+                <div class="auth-step-circle"><i class="bi bi-@(Svc.OtpSent ? "check" : "2-circle")"></i></div>
+                <small>شماره موبایل</small>
+            </div>
+            <div class="auth-step @(Svc.CurrentStep >= 3 ? "active" : "") @(Svc.CurrentStep >= 4 ? "completed" : "")">
+                <div class="auth-step-circle"><i class="bi bi-@(Svc.CurrentStep >= 4 ? "check" : "3-circle")"></i></div>
+                <small>تایید کد</small>
+            </div>
+            <div class="auth-step @(Svc.CurrentStep >= 4 ? "active" : "")">
+                <div class="auth-step-circle"><i class="bi bi-4-circle"></i></div>
+                <small>تکمیل ثبت نام</small>
+            </div>
+        </div>
+
+        @if (Svc.HasError && !string.IsNullOrEmpty(Svc.ErrorMessage))
+        {
+            <div class="auth-alert auth-alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Svc.ErrorMessage
+            </div>
+        }
+
+        <EditForm Model="@this" OnValidSubmit="@HandleSubmit" class="auth-form">
+            <DataAnnotationsValidator />
+
+            <!-- Step 1 -->
+            @if (Svc.CurrentStep == 1)
+            {
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">کد ملی</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                            <input class="form-control" @bind="Svc.NationalCode" @bind:event="oninput"
+                                   placeholder="کد ملی 10 رقمی" maxlength="10"
+                                   disabled="@(Svc.IsLoading || Svc.IsVerified)" />
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">تاریخ تولد شمسی</label>
+                        <PersianDateInput Value="@Svc.BirthDate"
+                                          ValueChanged="@((string v) => Svc.BirthDate = v)"
+                                          Id="birthDate" Placeholder="1370/01/15"
+                                          Disabled="@(Svc.IsLoading || Svc.IsVerified)" />
+                        <small class="auth-helper"><i class="bi bi-info-circle me-1"></i>فرمت: YYYY/MM/DD</small>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 2: verified, enter phone -->
+            @if (Svc.IsVerified && Svc.CurrentStep >= 2 && Svc.CurrentStep < 3)
+            {
+                <div class="auth-verified mb-4">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>اطلاعات شما با موفقیت تأیید شد</span>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نام</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" value="@Svc.FirstName" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نام خانوادگی</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" value="@Svc.LastName" readonly />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Svc.FatherName))
+                    {
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام پدر</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" value="@Svc.FatherName" readonly />
+                            </div>
+                        </div>
+                    }
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">شماره موبایل</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                            <input class="form-control" @bind="Svc.Phone" @bind:event="oninput"
+                                   placeholder="09123456789" maxlength="11"
+                                   disabled="@(Svc.IsLoading || Svc.OtpSent)" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 3: OTP -->
+            @if (Svc.OtpSent && Svc.CurrentStep == 3)
+            {
+                <div class="auth-otp-section">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-chat-dots-fill text-info" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">کد تایید ارسال شد</h5>
+                        <p class="text-muted">کد تایید 6 رقمی به شماره <strong>@Svc.Phone</strong> ارسال شد</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">کد تایید</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            <input class="form-control" @bind="Svc.OtpCode" @bind:event="oninput"
+                                   placeholder="کد 6 رقمی" maxlength="6" disabled="@Svc.IsLoading"
+                                   style="text-align:center;font-size:1.5rem;letter-spacing:.5rem;" />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Svc.OtpRemainingTime))
+                    {
+                        <div class="text-center mb-3">
+                            <small class="text-muted"><i class="bi bi-clock me-1"></i>زمان باقی مانده: <strong>@Svc.OtpRemainingTime</strong></small>
+                        </div>
+                    }
+                    <div class="text-center">
+                        <button type="button" class="btn btn-link" @onclick="HandleResendOtp"
+                                disabled="@(!Svc.CanResendOtp || Svc.IsLoading)">
+                            <i class="bi bi-arrow-repeat me-1"></i>ارسال مجدد کد
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 4 -->
+            @if (Svc.CurrentStep >= 4)
+            {
+                <div class="auth-verified mb-4">
+                    <i class="bi bi-check-circle-fill"></i><span>شماره موبایل شما تأیید شد</span>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>با کلیک بر روی دکمه ثبت نام، حساب کاربری شما ایجاد خواهد شد
+                </div>
+            }
+
+            <!-- Buttons -->
+            <div class="row"><div class="col-12">
+                @if (Svc.CurrentStep == 1 && !Svc.IsVerified)
+                {
+                    <button type="button" class="btn auth-btn auth-btn-info w-100" @onclick="HandleVerify" disabled="@Svc.IsLoading">
+                        @if (Svc.IsLoading) { <span class="spinner-border spinner-border-sm auth-spinner"></span><span>در حال استعلام...</span> }
+                        else { <i class="bi bi-shield-check"></i><span>استعلام اطلاعات از ثبت احوال</span> }
+                    </button>
+                }
+                else if (Svc.CurrentStep == 2 && !Svc.OtpSent)
+                {
+                    <button type="button" class="btn auth-btn auth-btn-primary w-100" @onclick="HandleSendOtp" disabled="@Svc.IsLoading">
+                        @if (Svc.IsLoading) { <span class="spinner-border spinner-border-sm auth-spinner"></span><span>در حال ارسال...</span> }
+                        else { <i class="bi bi-send"></i><span>ارسال کد تایید</span> }
+                    </button>
+                }
+                else if (Svc.CurrentStep == 3)
+                {
+                    <button type="button" class="btn auth-btn auth-btn-success w-100" @onclick="HandleVerifyOtp" disabled="@Svc.IsLoading">
+                        @if (Svc.IsLoading) { <span class="spinner-border spinner-border-sm auth-spinner"></span><span>در حال تایید...</span> }
+                        else { <i class="bi bi-check-circle"></i><span>تایید کد</span> }
+                    </button>
+                }
+                else if (Svc.CurrentStep >= 4)
+                {
+                    <button type="submit" class="btn auth-btn auth-btn-primary w-100 mb-3" disabled="@Svc.IsLoading">
+                        @if (Svc.IsLoading) { <span class="spinner-border spinner-border-sm auth-spinner"></span><span>در حال ثبت نام...</span> }
+                        else { <i class="bi bi-check-circle"></i><span>تکمیل ثبت نام</span> }
+                    </button>
+                }
+            </div></div>
+        </EditForm>
+
+        <div class="auth-divider"><span class="px-2">یا</span></div>
+        <div class="text-center">
+            <p class="mb-0" style="color: var(--auth-text-muted);">
+                قبلاً ثبت‌نام کرده‌اید؟
+                <a href="/auth/login" class="auth-link">وارد شوید <i class="bi bi-arrow-left me-1"></i></a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Svc.InitializeAsync();
+        StateHasChanged();
+    }
+
+    private async Task HandleVerify()    { await Svc.VerifyNationalIdentityAsync(); StateHasChanged(); }
+    private async Task HandleSendOtp()   { await Svc.SendOtpAsync();                StateHasChanged(); }
+    private async Task HandleVerifyOtp() { await Svc.VerifyOtpAsync();              StateHasChanged(); }
+    private async Task HandleResendOtp() { await Svc.ResendOtpAsync();              StateHasChanged(); }
+    private async Task HandleSubmit()    { await Svc.RegisterAsync(); }
+
+    public async ValueTask DisposeAsync() { Svc.Dispose(); await Task.CompletedTask; }
+}
+

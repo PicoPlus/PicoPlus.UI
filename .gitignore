@@ -1,0 +1,50 @@
+﻿## ── .NET / MSBuild ───────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## ── Visual Studio ────────────────────────────────────────────────────────────
+.vs/
+*.rsuser
+.vscode/
+*.VC.db
+
+## ── NuGet ────────────────────────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+project.lock.json
+artifacts/
+packages/
+!**/packages/build/
+
+## ── Secrets and credentials - NEVER commit these ────────────────────────────
+secrets.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+.env
+!.env.example
+
+## ── Publish output ───────────────────────────────────────────────────────────
+publish/
+**/publish/
+**/Properties/PublishProfiles/
+
+## ── Blazor WASM ──────────────────────────────────────────────────────────────
+wwwroot/_framework/
+
+## ── OS generated ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## ── Rider ────────────────────────────────────────────────────────────────────
+.idea/
+
+## ── Test results ─────────────────────────────────────────────────────────────
+TestResults/
+coverage/
+*.coverage

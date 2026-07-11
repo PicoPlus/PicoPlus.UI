@@ -1,0 +1,54 @@
+@using PicoPlus.Domain.ValueObjects
+
+@* Statistics cards container *@
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <StatisticsCard 
+            Label="میزان کل هزینه ها تاکنون"
+            Value="@Statistics.TotalRevenue"
+            Unit="تومان"
+            IconClass="bi-graph-up-arrow"
+            GradientClass="bg-gradient-blue"
+            AnimationDelay="0.1s" />
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <StatisticsCard 
+            Label="سفارشات در حال انجام"
+            Value="@Statistics.OpenDeals"
+            Unit="مورد"
+            IconClass="bi-hourglass-split"
+            GradientClass="bg-gradient-pink"
+            AnimationDelay="0.2s" />
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <StatisticsCard 
+            Label="سفارشات تکمیل شده"
+            Value="@Statistics.ClosedDeals"
+            Unit="مورد"
+            IconClass="bi-check-circle"
+            GradientClass="bg-gradient-green"
+            AnimationDelay="0.3s" />
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <StatisticsCard 
+            Label="موجودی کیف پول"
+            Value="@WalletBalance"
+            Unit="تومان"
+            IconClass="bi-wallet2"
+            GradientClass="bg-gradient-purple"
+            AnimationDelay="0.4s" />
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public PicoPlus.Domain.ValueObjects.UserStatistics Statistics { get; set; } = new();
+
+    [Parameter]
+    public decimal WalletBalance { get; set; }
+}
+

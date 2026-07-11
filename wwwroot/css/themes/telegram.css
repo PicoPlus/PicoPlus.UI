@@ -1,0 +1,130 @@
+/* =================================================================
+   PicoPlus Design System — Telegram Mini App Theme Adapter
+   Applied via: [data-theme="telegram"]
+
+   This file bridges Telegram WebApp CSS variables into the
+   PicoPlus token system. Every token falls back to light-theme
+   values if the TMA variable is absent (e.g., during development).
+
+   TMA CSS Variables injected by Telegram client:
+     --tg-theme-bg-color
+     --tg-theme-text-color
+     --tg-theme-hint-color
+     --tg-theme-link-color
+     --tg-theme-button-color
+     --tg-theme-button-text-color
+     --tg-theme-secondary-bg-color
+     --tg-theme-header-bg-color
+     --tg-theme-accent-text-color
+     --tg-theme-section-bg-color
+     --tg-theme-section-header-text-color
+     --tg-theme-destructive-text-color
+     --tg-color-scheme  (light | dark)
+   ================================================================= */
+
+[data-theme="telegram"] {
+    /* ── Resolve scheme via JS-injected helper class ────────────── */
+    /* JS adds .tg-dark or .tg-light to <html> based on color_scheme */
+
+    /* ── App Backgrounds ─────────────────────────────────────────── */
+    --bg-app:            var(--tg-theme-secondary-bg-color, #f1f1f1);
+    --bg-surface:        var(--tg-theme-bg-color, #ffffff);
+    --bg-surface-raised: var(--tg-theme-bg-color, #ffffff);
+    --bg-surface-inset:  var(--tg-theme-secondary-bg-color, #f1f1f1);
+    --bg-card:           var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
+    --bg-card-hover:     color-mix(in srgb, var(--tg-theme-bg-color, #ffffff) 90%, black 10%);
+    --bg-overlay:        rgba(0, 0, 0, 0.55);
+
+    /* ── Text ────────────────────────────────────────────────────── */
+    --text-primary:   var(--tg-theme-text-color, #000000);
+    --text-secondary: var(--tg-theme-hint-color, #999999);
+    --text-muted:     var(--tg-theme-hint-color, #aaaaaa);
+    --text-disabled:  color-mix(in srgb, var(--tg-theme-hint-color, #aaa) 50%, transparent 50%);
+    --text-inverse:   var(--tg-theme-button-text-color, #ffffff);
+    --text-on-brand:  var(--tg-theme-button-text-color, #ffffff);
+
+    /* ── Borders ─────────────────────────────────────────────────── */
+    --border-default: color-mix(in srgb, var(--tg-theme-hint-color, #aaa) 30%, transparent 70%);
+    --border-subtle:  color-mix(in srgb, var(--tg-theme-hint-color, #aaa) 15%, transparent 85%);
+    --border-strong:  color-mix(in srgb, var(--tg-theme-hint-color, #aaa) 50%, transparent 50%);
+    --border-focus:   var(--tg-theme-accent-text-color, var(--tg-theme-button-color, #2481cc));
+
+    /* ── Brand / Action ──────────────────────────────────────────── */
+    --color-primary:        var(--tg-theme-button-color, #2481cc);
+    --color-primary-hover:  var(--tg-theme-accent-text-color, #1a6eb8);
+    --color-primary-active: color-mix(in srgb, var(--tg-theme-button-color, #2481cc) 80%, black 20%);
+    --color-primary-subtle: color-mix(in srgb, var(--tg-theme-button-color, #2481cc) 12%, transparent 88%);
+    --color-primary-text:   var(--tg-theme-button-text-color, #ffffff);
+
+    /* ── Semantic Status ─────────────────────────────────────────── */
+    --color-danger:           var(--tg-theme-destructive-text-color, #e53935);
+    --color-danger-surface:   color-mix(in srgb, var(--tg-theme-destructive-text-color, #e53935) 12%, transparent 88%);
+    --color-danger-text:      var(--tg-theme-destructive-text-color, #e53935);
+    --color-danger-border:    color-mix(in srgb, var(--tg-theme-destructive-text-color, #e53935) 30%, transparent 70%);
+
+    /* Link */
+    --text-link:              var(--tg-theme-link-color, var(--tg-theme-button-color, #2481cc));
+
+    /* ── Component: Button ───────────────────────────────────────── */
+    --button-primary-bg:       var(--tg-theme-button-color, #2481cc);
+    --button-primary-bg-hover: var(--color-primary-hover);
+    --button-primary-text:     var(--tg-theme-button-text-color, #ffffff);
+    --button-primary-shadow:   none;
+
+    --button-secondary-bg:      var(--tg-theme-bg-color, #ffffff);
+    --button-secondary-bg-hover:var(--bg-card-hover);
+    --button-secondary-text:    var(--tg-theme-text-color, #000000);
+    --button-secondary-border:  var(--border-default);
+
+    /* ── Component: Card ─────────────────────────────────────────── */
+    --card-bg:          var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
+    --card-bg-hover:    var(--bg-card-hover);
+    --card-border:      var(--border-subtle);
+    --card-shadow:      none;
+    --card-shadow-hover:none;
+
+    /* ── Component: Input ────────────────────────────────────────── */
+    --input-bg:           var(--tg-theme-secondary-bg-color, #f1f1f1);
+    --input-bg-focus:     var(--tg-theme-bg-color, #ffffff);
+    --input-text:         var(--tg-theme-text-color, #000000);
+    --input-text-placeholder: var(--tg-theme-hint-color, #aaaaaa);
+    --input-border:       var(--border-default);
+    --input-border-focus: var(--tg-theme-button-color, #2481cc);
+
+    /* ── Component: Navbar ───────────────────────────────────────── */
+    --navbar-bg:         var(--tg-theme-header-bg-color, var(--tg-theme-bg-color, #ffffff));
+    --navbar-border:     var(--border-subtle);
+    --navbar-text:       var(--tg-theme-text-color, #000000);
+    --navbar-shadow:     none;
+
+    /* ── Component: Toast ────────────────────────────────────────── */
+    --toast-bg:          var(--tg-theme-bg-color, #ffffff);
+    --toast-text:        var(--tg-theme-text-color, #000000);
+    --toast-border:      var(--border-default);
+
+    /* ── Component: Table ────────────────────────────────────────── */
+    --table-bg:          var(--tg-theme-bg-color, #ffffff);
+    --table-bg-header:   var(--tg-theme-secondary-bg-color, #f1f1f1);
+    --table-bg-hover:    var(--bg-card-hover);
+    --table-border:      var(--border-subtle);
+    --table-text:        var(--tg-theme-text-color, #000000);
+    --table-text-header: var(--tg-theme-hint-color, #aaaaaa);
+
+    /* ── Bootstrap Overrides ─────────────────────────────────────── */
+    --bs-body-bg:      var(--bg-app);
+    --bs-body-color:   var(--text-primary);
+    --bs-border-color: var(--border-default);
+    --bs-primary:      var(--color-primary);
+    --bs-surface-dark: var(--bg-surface);
+    --bs-surface-darker: var(--bg-surface-inset);
+}
+
+/* ── Dark colour-scheme inside TMA ─────────────────────────────── */
+[data-theme="telegram"].tg-dark {
+    color-scheme: dark;
+    --bg-card-hover: color-mix(in srgb, var(--tg-theme-bg-color, #212121) 85%, white 15%);
+}
+
+[data-theme="telegram"].tg-light {
+    color-scheme: light;
+}

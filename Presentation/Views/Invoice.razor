@@ -1,0 +1,328 @@
+@page "/invoice/{DealId}"
+@namespace PicoPlus.Views
+@using PicoPlus.Services.UserPanel
+@using PicoPlus.Domain.Extensions
+@using PicoPlus.Services.Utils
+@inject DealDetailService DealDetailSvc
+@inject IPersianDateService PersianDate
+
+<PageTitle>فاکتور سفارش</PageTitle>
+
+@if (_loading)
+{
+    <div class="invoice-loading">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">در حال بارگذاری اطلاعات…</p>
+    </div>
+}
+else if (_vm is null || _vm.ErrorMessage != null)
+{
+    <div class="invoice-error">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-1"></i>
+        <p class="mt-3">@(_vm?.ErrorMessage ?? "سفارش یافت نشد.")</p>
+    </div>
+}
+else
+{
+    var deal  = _vm.Deal;
+    var items = _vm.LineItems;
+    var total = items.Sum(i => i.LineTotal);
+    var hasDiscount = items.Any(i => i.DiscountPct > 0);
+
+    <div class="invoice-page" dir="rtl" lang="fa">
+
+        <!-- ── Header ─────────────────────────────────────────────────── -->
+        <div class="invoice-header">
+            <div class="brand">
+                <span class="brand-name">نوین‌نت</span>
+                <span class="brand-sub">مشهد — قاسم‌آباد — امامیه ۳۳ — کافی‌نت نوین</span>
+            </div>
+            <div class="invoice-meta">
+                <div class="invoice-badge">فاکتور رسمی</div>
+                <table class="meta-table">
+                    <tr>
+                        <td class="meta-label">شماره سفارش</td>
+                        <td class="meta-val">#@deal.Id</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">تاریخ صدور</td>
+                        <td class="meta-val">@PersianDate.FormatDate(deal.CreatedAt)</td>
+                    </tr>
+                    @if (deal.CloseDate.HasValue)
+                    {
+                        <tr>
+                            <td class="meta-label">تاریخ نهایی‌شدن</td>
+                            <td class="meta-val">@PersianDate.FormatDate(deal.CloseDate.Value)</td>
+                        </tr>
+                    }
+                    <tr>
+                        <td class="meta-label">وضعیت</td>
+                        <td class="meta-val">
+                            <span class="stage-badge stage-@deal.Stage.GetBadgeClass()">
+                                @deal.Stage.GetDisplayName()
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Deal title ─────────────────────────────────────────────── -->
+        <div class="deal-title">@deal.DealName</div>
+
+        <!-- ── Line items ─────────────────────────────────────────────── -->
+        @if (items.Count == 0)
+        {
+            <div class="empty-items">
+                <i class="bi bi-inbox"></i>
+                <span>آیتمی برای این سفارش ثبت نشده است.</span>
+            </div>
+        }
+        else
+        {
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th class="col-num">#</th>
+                        <th>شرح خدمت / محصول</th>
+                        <th class="col-num">تعداد</th>
+                        <th class="col-money">قیمت واحد (ریال)</th>
+                        @if (hasDiscount)
+                        {
+                            <th class="col-num">تخفیف</th>
+                        }
+                        <th class="col-money">جمع (ریال)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int row = 0; }
+                    @foreach (var item in items)
+                    {
+                        row++;
+                        <tr>
+                            <td class="col-num text-muted">@row</td>
+                            <td>
+                                @item.Name
+                                @if (!string.IsNullOrEmpty(item.Sku))
+                                {
+                                    <span class="sku-tag">@item.Sku</span>
+                                }
+                            </td>
+                            <td class="col-num">@item.Quantity</td>
+                            <td class="col-money">@Fmt(item.Price)</td>
+                            @if (hasDiscount)
+                            {
+                                <td class="col-num">
+                                    @if (item.DiscountPct > 0)
+                                    {
+                                        <span class="discount-pill">@item.DiscountPct.ToString("0.##")٪</span>
+                                    }
+                                    else { <span class="text-muted">—</span> }
+                                </td>
+                            }
+                            <td class="col-money fw-bold">@Fmt(item.LineTotal)</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="@(hasDiscount ? 4 : 3)" class="total-label">مبلغ کل قابل پرداخت</td>
+                        <td colspan="@(hasDiscount ? 2 : 2)" class="total-amount">@Fmt(total) ریال</td>
+                    </tr>
+                </tfoot>
+            </table>
+        }
+
+        <!-- ── Notes ──────────────────────────────────────────────────── -->
+        @if (_vm.Notes.Count > 0)
+        {
+            <div class="section-title">یادداشت‌ها</div>
+            <div class="notes-list">
+                @foreach (var note in _vm.Notes)
+                {
+                    <div class="note-card">
+                        <div class="note-date">@PersianDate.FormatDate(note.CreatedAt)</div>
+                        <div class="note-body">@note.Body</div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── Call logs ──────────────────────────────────────────────── -->
+        @if (_vm.CallLogs.Count > 0)
+        {
+            <div class="section-title">سوابق تماس و پیگیری</div>
+            <div class="logs-list">
+                @foreach (var log in _vm.CallLogs)
+                {
+                    <div class="log-row">
+                        <span class="log-type log-@log.Type.ToLower()">@LogTypeLabel(log.Type)</span>
+                        <span class="log-subject">@log.Subject</span>
+                        <span class="log-date text-muted">@PersianDate.FormatDate(log.Timestamp)</span>
+                        @if (!string.IsNullOrEmpty(log.Status))
+                        {
+                            <span class="log-status">@log.Status</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── Footer ─────────────────────────────────────────────────── -->
+        <div class="invoice-footer">
+            <p>از اعتماد شما سپاسگزاریم.</p>
+            <p>پشتیبانی: <span dir="ltr">09040201536</span></p>
+        </div>
+
+    </div>
+}
+
+<style>
+    body { background: #f4f6f9; }
+
+    .invoice-loading, .invoice-error {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; min-height: 60vh; color: #6c757d;
+    }
+
+    .invoice-page {
+        font-family: Tahoma, 'Segoe UI', sans-serif;
+        direction: rtl; text-align: right;
+        max-width: 860px; margin: 2rem auto;
+        background: #fff; border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0,0,0,.10);
+        padding: 2.5rem 2.5rem 2rem;
+        color: #1a1a2e;
+    }
+
+    /* Header */
+    .invoice-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        border-bottom: 2px solid #2563eb; padding-bottom: 1.25rem; margin-bottom: 1.5rem;
+    }
+    .brand { display: flex; flex-direction: column; gap: .25rem; }
+    .brand-name { font-size: 1.5rem; font-weight: 700; color: #2563eb; }
+    .brand-sub  { font-size: .78rem; color: #6c757d; }
+    .invoice-meta { text-align: left; }
+    .invoice-badge {
+        display: inline-block; background: #2563eb; color: #fff;
+        border-radius: 6px; padding: .2rem .75rem; font-size: .8rem;
+        font-weight: 600; margin-bottom: .5rem;
+    }
+    .meta-table { font-size: .85rem; border-collapse: collapse; }
+    .meta-table td { padding: .15rem .5rem; }
+    .meta-label { color: #6c757d; white-space: nowrap; }
+    .meta-val   { font-weight: 600; }
+
+    /* Stage badge */
+    .stage-badge { padding: .2rem .6rem; border-radius: 20px; font-size: .78rem; font-weight: 600; }
+    .stage-success { background: #d1fae5; color: #065f46; }
+    .stage-warning { background: #fef3c7; color: #92400e; }
+    .stage-info    { background: #dbeafe; color: #1e40af; }
+    .stage-primary { background: #ede9fe; color: #5b21b6; }
+    .stage-danger  { background: #fee2e2; color: #991b1b; }
+    .stage-secondary { background: #f3f4f6; color: #374151; }
+
+    /* Deal title */
+    .deal-title {
+        font-size: 1.15rem; font-weight: 700; color: #1e3a5f;
+        background: #f0f4ff; border-radius: 8px;
+        padding: .6rem 1rem; margin-bottom: 1.5rem;
+    }
+
+    /* Items table */
+    .items-table {
+        width: 100%; border-collapse: collapse;
+        font-size: .9rem; margin-bottom: 1.5rem;
+    }
+    .items-table thead tr { background: #2563eb; color: #fff; }
+    .items-table thead th { padding: .6rem .75rem; font-weight: 600; }
+    .items-table tbody tr:nth-child(even) { background: #f8faff; }
+    .items-table tbody td { padding: .55rem .75rem; border-bottom: 1px solid #e5e7eb; }
+    .col-num   { text-align: center; width: 60px; }
+    .col-money { text-align: left; width: 140px; }
+    .sku-tag {
+        font-size: .72rem; background: #e0e7ff; color: #3730a3;
+        border-radius: 4px; padding: .1rem .4rem; margin-right: .4rem;
+    }
+    .discount-pill {
+        background: #fef3c7; color: #92400e;
+        border-radius: 12px; padding: .1rem .45rem; font-size: .78rem;
+    }
+    .total-row { background: #1e3a5f; color: #fff; }
+    .total-label  { text-align: right; padding: .65rem .75rem; font-weight: 600; }
+    .total-amount { text-align: left;  padding: .65rem .75rem; font-size: 1.05rem; font-weight: 700; }
+
+    /* Notes */
+    .section-title {
+        font-size: 1rem; font-weight: 700; color: #2563eb;
+        border-right: 4px solid #2563eb; padding-right: .6rem;
+        margin: 1.5rem 0 .75rem;
+    }
+    .notes-list { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1rem; }
+    .note-card {
+        background: #f8faff; border: 1px solid #dbeafe;
+        border-radius: 8px; padding: .7rem 1rem;
+    }
+    .note-date { font-size: .75rem; color: #6c757d; margin-bottom: .25rem; }
+    .note-body { font-size: .88rem; white-space: pre-wrap; }
+
+    /* Logs */
+    .logs-list { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+    .log-row {
+        display: flex; align-items: center; gap: .6rem;
+        background: #f9fafb; border-radius: 6px; padding: .45rem .75rem;
+        font-size: .85rem;
+    }
+    .log-type {
+        font-size: .72rem; font-weight: 700; border-radius: 12px;
+        padding: .1rem .5rem; white-space: nowrap;
+    }
+    .log-call    { background: #dbeafe; color: #1e40af; }
+    .log-email   { background: #d1fae5; color: #065f46; }
+    .log-meeting { background: #ede9fe; color: #5b21b6; }
+    .log-subject { flex: 1; }
+    .log-date    { font-size: .75rem; }
+    .log-status  { font-size: .75rem; background: #f3f4f6; border-radius: 4px; padding: .1rem .4rem; }
+
+    /* Footer */
+    .invoice-footer {
+        margin-top: 2rem; border-top: 1px solid #e5e7eb;
+        padding-top: 1rem; text-align: center;
+        font-size: .82rem; color: #6c757d;
+    }
+    .invoice-footer p { margin: .15rem 0; }
+
+    /* Empty */
+    .empty-items {
+        text-align: center; padding: 1.5rem; color: #9ca3af;
+        font-size: .9rem; display: flex; flex-direction: column; gap: .4rem;
+    }
+    .empty-items i { font-size: 2rem; }
+</style>
+
+@code {
+    [Parameter] public string DealId { get; set; } = string.Empty;
+
+    private DealDetailService.DealDetailViewModel? _vm;
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _vm = null;
+        _vm = await DealDetailSvc.LoadDealDetailsAsync(DealId);
+        _loading = false;
+    }
+
+    private static string Fmt(decimal n)
+        => string.Format("{0:N0}", n).Replace(",", "،");
+
+    private static string LogTypeLabel(string type) => type.ToLower() switch
+    {
+        "call"    => "تماس",
+        "email"   => "ایمیل",
+        "meeting" => "جلسه",
+        _         => type
+    };
+}

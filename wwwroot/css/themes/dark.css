@@ -1,0 +1,125 @@
+/* =================================================================
+   PicoPlus Design System — Dark Theme
+   Applied via: [data-theme="dark"]
+   Activate: document.documentElement.setAttribute('data-theme','dark')
+   ================================================================= */
+
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* ── App Backgrounds ─────────────────────────────────────────── */
+    --bg-app:            #0f172a;
+    --bg-surface:        #1e293b;
+    --bg-surface-raised: #1e293b;
+    --bg-surface-inset:  #0f172a;
+    --bg-card:           #1e293b;
+    --bg-card-hover:     #263045;
+    --bg-overlay:        rgba(0, 0, 0, 0.70);
+
+    /* ── Text ────────────────────────────────────────────────────── */
+    --text-primary:   #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted:     #64748b;
+    --text-disabled:  #475569;
+    --text-inverse:   #0f172a;
+    --text-on-brand:  #ffffff;
+
+    /* ── Borders ─────────────────────────────────────────────────── */
+    --border-default: #334155;
+    --border-subtle:  #1e293b;
+    --border-strong:  #475569;
+    --border-focus:   var(--color-brand-400);
+
+    /* ── Brand / Action ──────────────────────────────────────────── */
+    --color-primary:        var(--color-brand-400);   /* #818cf8 */
+    --color-primary-hover:  var(--color-brand-300);   /* #a5b4fc */
+    --color-primary-active: var(--color-brand-200);   /* #c7d2fe */
+    --color-primary-subtle: rgba(129, 140, 248, 0.15);
+    --color-primary-text:   #0f172a;
+
+    /* ── Semantic Status ─────────────────────────────────────────── */
+    --color-success:          #4ade80;
+    --color-success-surface:  rgba(74, 222, 128, 0.12);
+    --color-success-text:     #4ade80;
+    --color-success-border:   rgba(74, 222, 128, 0.30);
+
+    --color-warning:          #fbbf24;
+    --color-warning-surface:  rgba(251, 191, 36, 0.12);
+    --color-warning-text:     #fbbf24;
+    --color-warning-border:   rgba(251, 191, 36, 0.30);
+
+    --color-danger:           #f87171;
+    --color-danger-surface:   rgba(248, 113, 113, 0.12);
+    --color-danger-text:      #f87171;
+    --color-danger-border:    rgba(248, 113, 113, 0.30);
+
+    --color-info:             #38bdf8;
+    --color-info-surface:     rgba(56, 189, 248, 0.12);
+    --color-info-text:        #38bdf8;
+    --color-info-border:      rgba(56, 189, 248, 0.30);
+
+    /* ── Component: Button ───────────────────────────────────────── */
+    --button-primary-bg:      var(--color-primary);
+    --button-primary-bg-hover:var(--color-brand-300);
+    --button-primary-text:    #0f172a;
+    --button-primary-shadow:  0 4px 12px rgba(129, 140, 248, 0.3);
+
+    --button-secondary-bg:      var(--bg-surface);
+    --button-secondary-bg-hover:var(--bg-card-hover);
+    --button-secondary-text:    var(--text-primary);
+    --button-secondary-border:  var(--border-default);
+
+    /* ── Component: Card ─────────────────────────────────────────── */
+    --card-bg:          var(--bg-card);
+    --card-bg-hover:    var(--bg-card-hover);
+    --card-border:      var(--border-default);
+    --card-shadow:      0 1px 3px rgba(0, 0, 0, 0.4);
+    --card-shadow-hover:0 4px 16px rgba(0, 0, 0, 0.5);
+
+    /* ── Component: Input ────────────────────────────────────────── */
+    --input-bg:           var(--bg-surface-inset);
+    --input-bg-focus:     var(--bg-surface);
+    --input-bg-disabled:  rgba(255, 255, 255, 0.05);
+    --input-text:         var(--text-primary);
+    --input-text-placeholder: var(--text-muted);
+    --input-border:       var(--border-default);
+    --input-border-focus: var(--border-focus);
+
+    /* ── Component: Navbar ───────────────────────────────────────── */
+    --navbar-bg:         var(--bg-surface);
+    --navbar-border:     var(--border-default);
+    --navbar-text:       var(--text-primary);
+    --navbar-shadow:     0 1px 3px rgba(0, 0, 0, 0.5);
+
+    /* ── Component: Modal ────────────────────────────────────────── */
+    --modal-bg:          var(--bg-surface);
+    --modal-border:      var(--border-default);
+    --modal-header-bg:   var(--bg-surface-inset);
+
+    /* ── Component: Toast ────────────────────────────────────────── */
+    --toast-bg:          #0f172a;
+    --toast-text:        #e2e8f0;
+    --toast-border:      #1e293b;
+
+    /* ── Component: Table ────────────────────────────────────────── */
+    --table-bg:          var(--bg-surface);
+    --table-bg-header:   var(--bg-surface-inset);
+    --table-bg-hover:    var(--bg-card-hover);
+    --table-border:      var(--border-default);
+    --table-text:        var(--text-primary);
+    --table-text-header: var(--text-secondary);
+
+    /* ── Interactive overlays ────────────────────────────────────── */
+    --color-hover-overlay:  rgba(255, 255, 255, 0.04);
+    --color-active-overlay: rgba(255, 255, 255, 0.08);
+    --color-focus-ring:     rgba(129, 140, 248, 0.40);
+    --color-disabled-bg:    rgba(255, 255, 255, 0.06);
+    --color-disabled-text:  var(--text-disabled);
+
+    /* ── Bootstrap Variable Overrides ───────────────────────────── */
+    --bs-body-bg:          var(--bg-app);
+    --bs-body-color:       var(--text-primary);
+    --bs-border-color:     var(--border-default);
+    --bs-surface-dark:     var(--bg-surface);
+    --bs-surface-darker:   var(--bg-surface-inset);
+}

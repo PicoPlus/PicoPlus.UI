@@ -1,0 +1,236 @@
+@page "/admin/analytics"
+@layout Components.Layout.AdminLayout
+@using PicoPlus.Services.Admin
+@using PicoPlus.State.Admin
+@using PicoPlus.Models.Admin
+@inject DashboardService DashboardService
+@inject AdminStateService AdminState
+
+<PageTitle>آنالیز و گزارش - پنل مدیریت</PageTitle>
+
+<div class="analytics-page">
+    <div class="page-header mb-4">
+        <h2>
+            <i class="bi bi-graph-up me-2"></i>
+            آنالیز و آمار فروش
+        </h2>
+        @if (selectedOwner != null)
+        {
+            <p class="text-muted">مالک انتخاب‌شده: <strong>@selectedOwner.FullName</strong></p>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+            <p class="mt-3 text-muted">در حال بارگذاری آمار...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Performance Overview -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="metric-icon bg-primary">
+                        <i class="bi bi-percent"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3>@statistics.ConversionRate.ToString("F1")%</h3>
+                        <p>نرخ تبدیل</p>
+                        <div class="metric-trend positive">
+                            <i class="bi bi-arrow-up"></i>
+                            <span>+5.3% نسبت به ماه قبل</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="metric-icon bg-success">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3>@statistics.AverageDaysToClose</h3>
+                        <p>میانگین روز تا بستن قرارداد</p>
+                        <div class="metric-trend negative">
+                            <i class="bi bi-arrow-down"></i>
+                            <span>-2 روز نسبت به ماه قبل</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="metric-icon bg-info">
+                        <i class="bi bi-currency-exchange"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3>@FormatCurrency(statistics.AverageDealValue)</h3>
+                        <p>میانگین ارزش معامله</p>
+                        <div class="metric-trend positive">
+                            <i class="bi bi-arrow-up"></i>
+                            <span>+12% نسبت به ماه قبل</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart me-2"></i>
+                            روند درآمد ماهانه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder">
+                            <i class="bi bi-bar-chart display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">نمودار درآمد ماهانه در ۱۲ ماه گذشته</p>
+                            <p class="small text-muted">(برای نمایش نمودارها می‌توانید Chart.js یا ApexCharts را نصب کنید)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pie-chart me-2"></i>
+                            وضعیت قیف فروش
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder" style="height: 300px;">
+                            <i class="bi bi-pie-chart display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">نمودار توزیع مراحل معاملات</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline Analysis -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel me-2"></i>
+                    آنالیز قیف فروش تفصیلی
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>مرحله</th>
+                                <th>تعداد معاملات</th>
+                                <th>ارزش کل</th>
+                                <th>میانگین ارزش</th>
+                                <th>سهم از کل</th>
+                                <th>نرخ موفقیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stage in statistics.PipelineStages)
+                            {
+                                <tr>
+                                    <td><strong>@stage.StageName</strong></td>
+                                    <td>@stage.DealCount</td>
+                                    <td>@FormatCurrency(stage.TotalValue)</td>
+                                    <td>@FormatCurrency(stage.DealCount > 0 ? stage.TotalValue / stage.DealCount : 0)</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" 
+                                                 style="width: @GetStagePercentage(stage)%"
+                                                 role="progressbar">
+                                                @GetStagePercentage(stage).ToString("F1")%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">85%</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Heatmap -->
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-heat me-2"></i>
+                            نقشه حرارتی فعالیت‌ها
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="heatmap-placeholder">
+                            <i class="bi bi-grid-3x3-gap display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">نقشه فعالیت‌های روزانه هفتگی</p>
+                            <p class="small text-muted">نمایش فعالیت‌های فروش بر اساس روزهای هفته</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private Models.Admin.HubSpotOwner? selectedOwner;
+    private DashboardStatistics statistics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnalytics();
+    }
+
+    private async Task LoadAnalytics()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AdminState.InitializeAsync();
+            selectedOwner = AdminState.GetSelectedOwner();
+
+            statistics = await DashboardService.GetDashboardStatisticsAsync(selectedOwner?.Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string FormatCurrency(decimal amount)
+    {
+        if (amount >= 1_000_000_000)
+            return $"{(amount / 1_000_000_000):F1}B ت";
+            if (amount >= 1_000_000)
+                return $"{(amount / 1_000_000):F1}M ت";
+            if (amount >= 1_000)
+                return $"{(amount / 1_000):F0}K ت";
+            
+            return $"{amount:N0} تومان";
+    }
+
+    private decimal GetStagePercentage(PipelineStageStats stage)
+    {
+        if (statistics.TotalDeals == 0) return 0;
+        return (decimal)stage.DealCount / statistics.TotalDeals * 100;
+    }
+}
+

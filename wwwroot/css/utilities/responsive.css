@@ -1,0 +1,352 @@
+/* =================================================================
+   PicoPlus Design System — Responsive Utilities
+   Mobile-first. Breakpoints match Bootstrap 5.
+   ================================================================= */
+
+/* ── Page Layout ─────────────────────────────────────────────────── */
+.page-content {
+    min-height:       calc(100dvh - var(--navbar-height));
+    padding:          var(--space-8) 0;
+    padding-bottom:   calc(var(--space-8) + var(--safe-bottom));
+    background-color: var(--bg-app);
+}
+
+.page-content-dark {
+    min-height: 100dvh;
+    background: var(--bg-app);
+    padding-top: var(--space-4);
+    padding-bottom: calc(var(--space-4) + var(--safe-bottom));
+}
+
+.auth-container {
+    min-height:      100dvh;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    background:      var(--bg-app);
+    padding:         var(--space-8) var(--space-4);
+    padding-top:     calc(var(--space-8) + var(--safe-top));
+    padding-bottom:  calc(var(--space-8) + var(--safe-bottom));
+}
+
+.container-custom {
+    max-width: var(--max-content-width);
+    margin:    0 auto;
+    padding:   0 var(--space-4);
+}
+
+/* ── Responsive Stat Cards ───────────────────────────────────────── */
+@media (max-width: 992px) {
+    .stat-value-dark  { font-size: var(--text-3xl); }
+    .stat-icon-dark   { width: 3.75rem; height: 3.75rem; font-size: var(--text-2xl); }
+}
+
+@media (max-width: 768px) {
+    /* Stat cards stack vertically */
+    .stat-card-dark {
+        flex-direction: column;
+        text-align:     center;
+    }
+
+    .stat-info       { text-align: center; }
+    .stat-icon-dark  { margin-top: var(--space-4); }
+
+    /* Tabs become vertical on small screens */
+    .modern-tabs     { flex-direction: column; }
+
+    /* Tables — reduce padding */
+    .table-dark-custom                               { font-size: var(--text-sm); }
+    .table-dark-custom thead th,
+    .table-dark-custom tbody td                      { padding: var(--space-3) var(--space-2); }
+    .line-items-section                              { padding: var(--space-4); }
+    .line-items-section .table-responsive            { font-size: var(--text-sm); }
+    .line-items-section .table thead th,
+    .line-items-section .table tbody td              { padding: var(--space-2) var(--space-2); }
+
+    /* Auth */
+    .auth-card       { padding: var(--space-6); }
+    .auth-title      { font-size: var(--text-2xl); }
+    .auth-icon       { width: 4rem; height: 4rem; }
+    .auth-icon i     { font-size: var(--text-2xl); }
+    .role-selection  { flex-direction: column; }
+    .role-tabs       { flex-direction: column; }
+    .role-tab        { width: 100%; }
+
+    /* Cards */
+    .card-body,
+    .dark-card-body  { padding: var(--space-4); }
+
+    /* Buttons */
+    .btn             { padding: var(--padding-button-sm); }
+
+    /* Modal */
+    .modal-light-body { padding: var(--space-6) var(--space-4); }
+    .modal-light      { width: 95%; }
+}
+
+@media (max-width: 576px) {
+    .stat-value-dark  { font-size: var(--text-2xl); }
+
+    /* User dropdown stacks */
+    .user-dropdown-btn {
+        flex-direction: column;
+        align-items:    flex-start;
+        gap:            var(--space-2);
+    }
+
+    /* Admin layout: collapse sidebar off-canvas */
+    .admin-sidebar {
+        position:   fixed;
+        right:      0;
+        top:        0;
+        bottom:     0;
+        z-index:    var(--z-overlay);
+        transform:  translateX(100%);
+        transition: transform 0.3s ease;
+        width:      80vw;
+        max-width:  var(--sidebar-width);
+    }
+
+    .admin-sidebar.open { transform: translateX(0); }
+
+    .admin-main { width: 100%; }
+
+    /* Deal dialog compact */
+    .modal-light  { width: 100%; max-width: 100%; margin: 0; border-radius: var(--radius-2xl) var(--radius-2xl) 0 0; }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+}
+
+/* ── Table ───────────────────────────────────────────────────────── */
+.table {
+    color:       var(--table-text);
+    border-color:var(--table-border);
+    background:  var(--table-bg);
+}
+
+.table th,
+.table td {
+    text-align:     center;
+    vertical-align: middle;
+    color:          var(--table-text);
+    border-color:   var(--table-border);
+}
+
+.table thead th {
+    background:     var(--table-bg-header);
+    color:          var(--table-text-header);
+    font-weight:    var(--weight-semibold);
+    border-bottom:  2px solid var(--table-border);
+}
+
+.table tbody { border-color: var(--table-border); }
+
+.table-hover tbody tr:hover { background: var(--table-bg-hover); }
+
+.table-dark-custom {
+    width:          100%;
+    border-collapse:separate;
+    border-spacing: 0;
+}
+
+.table-dark-custom thead         { background: var(--table-bg-header); }
+.table-dark-custom thead th      {
+    padding:      var(--space-4) var(--space-6);
+    color:        var(--table-text-header);
+    font-weight:  var(--weight-semibold);
+    font-size:    var(--text-sm);
+    border-bottom:1px solid var(--table-border);
+}
+
+.table-dark-custom tbody tr      { transition: background 0.15s; }
+.table-dark-custom tbody td      {
+    padding:      var(--space-5) var(--space-6);
+    color:        var(--table-text);
+    border-bottom:1px solid var(--table-border);
+}
+
+.deal-row-dark                   { cursor: pointer; }
+.deal-row-dark:hover             { background: var(--table-bg-hover); }
+
+/* ── Deal Amount / Date ──────────────────────────────────────────── */
+.deal-id-badge {
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size:     var(--text-xs);
+    color:         var(--text-secondary);
+    font-weight:   var(--weight-semibold);
+}
+
+.deal-title  { font-weight: var(--weight-semibold); color: var(--text-primary); }
+.deal-amount { color: var(--color-success); font-weight: var(--weight-bold); font-size: var(--text-lg); }
+.deal-date   { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* ── Spinners ────────────────────────────────────────────────────── */
+.spinner-wrapper {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+    min-height:      12.5rem;
+}
+
+.spinner {
+    width:        3.125rem;
+    height:       3.125rem;
+    border:       5px solid rgba(129, 140, 248, 0.2);
+    border-top:   5px solid var(--color-primary);
+    border-radius:var(--radius-full);
+    animation:    spin 0.8s linear infinite;
+}
+
+.spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.15em; }
+
+/* ── Loading Overlay ─────────────────────────────────────────────── */
+.loading-overlay {
+    position:        fixed;
+    inset:           0;
+    background:      var(--bg-overlay);
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    z-index:         var(--z-spinner);
+}
+
+/* ── Product Dropdown ────────────────────────────────────────────── */
+.product-dropdown {
+    position:      absolute;
+    top:           100%;
+    left:          0;
+    right:         0;
+    background:    var(--card-bg);
+    border:        1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    max-height:    18.75rem;
+    overflow-y:    auto;
+    z-index:       var(--z-dropdown);
+    margin-top:    var(--space-1);
+    box-shadow:    var(--shadow-lg);
+}
+
+.product-dropdown-item {
+    padding:      var(--space-3) var(--space-4);
+    cursor:       pointer;
+    border-bottom:1px solid var(--border-subtle);
+    transition:   background 0.15s ease;
+    color:        var(--text-primary);
+}
+
+.product-dropdown-item:last-child { border-bottom: none; }
+.product-dropdown-item:hover      { background: var(--bg-card-hover); }
+
+.product-dropdown-item.active {
+    background:    var(--color-primary-subtle);
+    border-right:  3px solid var(--color-primary);
+}
+
+.product-dropdown-item .fw-semibold { color: var(--text-primary); display: block; margin-bottom: var(--space-1); }
+.product-dropdown-item .text-muted  { color: var(--text-muted) !important; font-size: 0.8rem; }
+
+/* ── Table Products ──────────────────────────────────────────────── */
+.table-products                { color: var(--text-primary); }
+.table-products thead th       { background: var(--table-bg-header); color: var(--table-text-header); font-weight: var(--weight-semibold); border-color: var(--table-border); }
+.table-products tbody tr       { border-color: var(--table-border); }
+.table-products tbody td       { color: var(--table-text); vertical-align: middle; }
+.table-products tbody tr:hover { background: var(--color-primary-subtle); }
+
+.product-name { color: var(--text-primary); font-weight: var(--weight-medium); }
+.product-sku  { color: var(--text-secondary); font-size: 0.8rem; }
+
+/* ── Line Item Actions ───────────────────────────────────────────── */
+.line-item-actions { display: flex; gap: var(--space-2); }
+
+.line-item-actions .btn-sm {
+    padding:      var(--space-1) var(--space-2);
+    font-size:    var(--text-xs);
+    background:   var(--color-primary-subtle);
+    border:       1px solid rgba(129, 140, 248, 0.30);
+    color:        var(--color-brand-300);
+    transition:   all 0.2s ease;
+}
+
+.line-item-actions .btn-sm:hover {
+    background:   rgba(129, 140, 248, 0.25);
+    border-color: var(--color-primary);
+    color:        var(--color-brand-200);
+}
+
+/* ── Compact Deal Dialog ─────────────────────────────────────────── */
+.deal-modal-compact   { max-width: 37.5rem !important; border-radius: var(--radius-xl); }
+.deal-header-compact  { padding: var(--space-4) var(--space-6) !important; gap: var(--space-4); }
+.deal-body-compact    { padding: var(--space-5) !important; max-height: 65vh; overflow-y: auto; }
+.deal-footer-compact  { padding: var(--space-4) var(--space-6) !important; gap: var(--space-3); display: flex; justify-content: flex-end; }
+.deal-form-compact    { display: flex; flex-direction: column; gap: 0; }
+
+.deal-form-compact .dark-input {
+    background: var(--input-bg) !important;
+    border:     1px solid var(--input-border) !important;
+    color:      var(--input-text) !important;
+}
+
+.deal-form-compact .dark-input:focus {
+    border-color: var(--input-border-focus) !important;
+    background:   var(--input-bg-focus) !important;
+}
+
+.contact-info-badge {
+    display:      flex;
+    align-items:  center;
+    gap:          var(--space-2);
+    background:   var(--color-primary-subtle);
+    border:       1px solid rgba(129, 140, 248, 0.30);
+    border-radius:var(--radius-md);
+    padding:      var(--space-3) var(--space-4);
+    color:        var(--color-brand-300);
+    font-size:    var(--text-sm);
+    font-weight:  var(--weight-medium);
+}
+
+/* ── Invoice ─────────────────────────────────────────────────────── */
+.invoice-header {
+    border-bottom: 2px solid var(--color-primary);
+    margin-bottom: var(--space-4);
+    padding-bottom:var(--space-4);
+    color:         var(--text-primary);
+}
+
+.invoice-title      { color: var(--color-primary); font-weight: var(--weight-bold); }
+.invoice-number,
+.invoice-date       { color: var(--color-danger); }
+.invoice-footer     { border-top: 2px solid var(--color-primary); margin-top: var(--space-4); padding-top: var(--space-4); color: var(--text-primary); }
+.invoice-table th,
+.invoice-table td   { vertical-align: middle; text-align: center; color: var(--text-primary); }
+.invoice-table thead th { background: var(--table-bg-header); border-color: var(--table-border); font-weight: var(--weight-semibold); }
+
+/* ── Utility Classes ─────────────────────────────────────────────── */
+.text-muted-persian  { color: var(--text-muted) !important; font-size: var(--text-sm); }
+.border-top-persian  { border-top: 1px solid var(--border-default) !important; }
+.shadow-persian      { box-shadow: var(--shadow-md) !important; }
+.shadow-persian-sm   { box-shadow: var(--shadow-sm) !important; }
+.shadow-persian-lg   { box-shadow: var(--shadow-lg) !important; }
+.persian-text        { font-family: var(--font-persian) !important; direction: rtl; text-align: right; }
+
+/* ── Animations ──────────────────────────────────────────────────── */
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0);     }
+}
+
+.fade-in     { animation: fadeIn     0.35s ease-in-out backwards; }
+.tab-fade-in { animation: tabFadeIn  0.4s  cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* ── Print ───────────────────────────────────────────────────────── */
+@media print {
+    .navbar, .top-header, .btn-action, .modern-tabs-container,
+    .loading-overlay, .fab-create-deal, .no-print { display: none !important; }
+    .dark-card, .card { border: 1px solid #ccc !important; box-shadow: none !important; }
+}

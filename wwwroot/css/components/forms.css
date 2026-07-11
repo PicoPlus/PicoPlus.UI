@@ -1,0 +1,304 @@
+/* =================================================================
+   PicoPlus Design System — Form Component
+   RTL Persian, all colors via tokens.
+   ================================================================= */
+
+/* ── Base Controls ───────────────────────────────────────────────── */
+.form-control,
+.form-select,
+.dark-input {
+    width:           100%;
+    background:      var(--input-bg);
+    border:          1px solid var(--input-border);
+    border-radius:   var(--input-radius, var(--radius-md));
+    padding:         var(--padding-input);
+    color:           var(--input-text);
+    font-family:     var(--font-base);
+    font-size:       var(--text-base);
+    line-height:     var(--leading-normal);
+    min-height:      var(--input-height, var(--touch-target-md));
+    text-align:      var(--text-align-start, right);
+    direction:       rtl;
+    transition:      border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    appearance:      none;
+    -webkit-appearance: none;
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+.dark-input::placeholder {
+    color: var(--input-text-placeholder);
+}
+
+/* Focus */
+.form-control:focus,
+.form-select:focus,
+.dark-input:focus {
+    outline:          none;
+    border-color:     var(--input-border-focus);
+    background:       var(--input-bg-focus);
+    box-shadow:       var(--input-focus-ring, var(--focus-ring));
+    color:            var(--input-text);
+}
+
+/* Disabled */
+.form-control:disabled,
+.form-select:disabled,
+.dark-input[readonly] {
+    background: var(--input-bg-disabled, var(--color-disabled-bg));
+    color:      var(--color-disabled-text);
+    cursor:     not-allowed;
+    opacity:    0.75;
+}
+
+/* ── Floating Label RTL ──────────────────────────────────────────── */
+.form-floating > label {
+    right:         0;
+    left:          auto;
+    padding-right: var(--space-3);
+    padding-left:  var(--space-3);
+    color:         var(--text-secondary);
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    padding-right: var(--space-3);
+    padding-left:  var(--space-3);
+}
+
+/* ── Label ───────────────────────────────────────────────────────── */
+.form-label,
+.dark-label,
+.label-compact {
+    color:         var(--text-secondary);
+    font-size:     var(--font-size-label);
+    font-weight:   var(--font-weight-label);
+    margin-bottom: var(--space-2);
+    display:       block;
+    text-align:    var(--text-align-start, right);
+}
+
+/* ── Input Group ─────────────────────────────────────────────────── */
+.input-group-text {
+    background:    var(--bg-surface-inset);
+    border:        1px solid var(--input-border);
+    color:         var(--text-primary);
+    font-size:     var(--text-base);
+    padding:       var(--space-3) var(--space-4);
+}
+
+/* RTL input-group border radius swap */
+.input-group .form-control:first-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.input-group .form-control:last-child  { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.input-group .input-group-text:first-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.input-group .input-group-text:last-child  { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.input-group:focus-within .input-group-text { border-color: var(--input-border-focus); }
+
+/* ── Checkbox RTL ────────────────────────────────────────────────── */
+.form-check {
+    padding-right: 1.5em;
+    padding-left:  0;
+    text-align:    right;
+}
+
+.form-check-input {
+    float:        right;
+    margin-right: -1.5em;
+    margin-left:  0;
+    border:       1.5px solid var(--border-default);
+    background:   var(--input-bg);
+}
+
+.form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color:     var(--color-primary);
+}
+
+.form-check-input:focus {
+    box-shadow: var(--focus-ring);
+    border-color: var(--border-focus);
+}
+
+/* ── Checkbox general RTL alignment ─────────────────────────────── */
+input[type="checkbox"] {
+    margin-left:  var(--space-2);
+    margin-right: 0;
+}
+
+/* ── Select Dropdown Arrow RTL ───────────────────────────────────── */
+select.dark-input,
+select.form-select {
+    background-image:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat:   no-repeat;
+    background-position: left var(--space-4) center;
+    padding-left:        var(--space-10);
+}
+
+/* ── Textarea ────────────────────────────────────────────────────── */
+textarea.form-control,
+textarea.dark-input {
+    resize:     vertical;
+    min-height: 6rem;
+    height:     auto;
+}
+
+/* ── Date Picker – browser chrome ───────────────────────────────── */
+input[type="date"].dark-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    filter:  invert(var(--calendar-icon-invert, 0));
+}
+
+[data-theme="dark"] input[type="date"].dark-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* ── Alert / Message Banners ─────────────────────────────────────── */
+.alert {
+    padding:       var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    border:        1px solid transparent;
+    display:       flex;
+    align-items:   flex-start;
+    gap:           var(--space-3);
+    font-size:     var(--text-base);
+}
+
+.alert-danger,
+.auth-alert-danger {
+    background:   var(--color-danger-surface);
+    color:        var(--color-danger-text);
+    border-color: var(--color-danger-border);
+}
+
+.alert-success,
+.auth-alert-success {
+    background:   var(--color-success-surface);
+    color:        var(--color-success-text);
+    border-color: var(--color-success-border);
+}
+
+.alert-warning {
+    background:   var(--color-warning-surface);
+    color:        var(--color-warning-text);
+    border-color: var(--color-warning-border);
+}
+
+.alert-info,
+.auth-alert-info {
+    background:   var(--color-info-surface);
+    color:        var(--color-info-text);
+    border-color: var(--color-info-border);
+}
+
+/* compact alert variant */
+.alert-sm {
+    padding:  var(--space-2) var(--space-3) !important;
+    font-size:var(--text-sm) !important;
+    margin-bottom: var(--space-2) !important;
+}
+
+/* ── Validation Messages ─────────────────────────────────────────── */
+.validation-message {
+    color:      var(--color-danger);
+    font-size:  var(--text-sm);
+    margin-top: var(--space-1);
+    display:    block;
+}
+
+.valid.modified:not([type="checkbox"]) {
+    outline: 1px solid var(--color-success);
+}
+
+.invalid {
+    outline: 1px solid var(--color-danger);
+}
+
+/* ── Role Selection (auth) ───────────────────────────────────────── */
+.role-tabs {
+    display:       flex;
+    gap:           var(--space-2);
+    background:    var(--bg-surface-inset);
+    padding:       var(--space-1);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+    border:        1px solid var(--border-default);
+}
+
+.role-tab {
+    flex:          1;
+    padding:       var(--space-3) var(--space-4);
+    border:        none;
+    background:    transparent;
+    color:         var(--text-secondary);
+    font-weight:   var(--weight-semibold);
+    font-size:     var(--text-base);
+    border-radius: var(--radius-md);
+    min-height:    var(--touch-target-min);
+    transition:    all 0.2s ease;
+    cursor:        pointer;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+}
+
+.role-tab:hover:not(:disabled) {
+    color:      var(--text-primary);
+    background: var(--color-primary-subtle);
+}
+
+.role-tab.active {
+    background: var(--color-primary-subtle);
+    color:      var(--color-primary);
+    box-shadow: var(--shadow-xs);
+}
+
+.role-tab:disabled {
+    opacity: 0.5;
+    cursor:  not-allowed;
+}
+
+/* ── Progress Bar ────────────────────────────────────────────────── */
+.progress {
+    height:        0.75rem;
+    border-radius: var(--radius-full);
+    background:    var(--border-subtle);
+    overflow:      hidden;
+}
+
+.progress-bar {
+    border-radius: var(--radius-full);
+    background:    var(--color-primary);
+    transition:    width 0.4s ease;
+}
+
+/* ── Badge ───────────────────────────────────────────────────────── */
+.badge {
+    font-weight:    var(--weight-semibold);
+    padding:        var(--space-1) var(--space-3);
+    border-radius:  var(--badge-radius, var(--radius-full));
+    font-size:      var(--text-xs);
+    display:        inline-flex;
+    align-items:    center;
+    gap:            var(--space-1);
+}
+
+.badge.bg-success  { background: var(--color-success-surface)  !important; color: var(--color-success-text);  }
+.badge.bg-danger   { background: var(--color-danger-surface)   !important; color: var(--color-danger-text);   }
+.badge.bg-warning  { background: var(--color-warning-surface)  !important; color: var(--color-warning-text);  }
+.badge.bg-info     { background: var(--color-info-surface)     !important; color: var(--color-info-text);     }
+
+/* ── Status Badges ───────────────────────────────────────────────── */
+.status-badge {
+    padding:      var(--space-1) var(--space-3);
+    border-radius:var(--radius-full);
+    font-weight:  var(--weight-semibold);
+    font-size:    var(--text-xs);
+    display:      inline-block;
+}
+
+.status-success { background: var(--color-success-surface); color: var(--color-success); }
+.status-danger  { background: var(--color-danger-surface);  color: var(--color-danger);  }
+.status-warning { background: var(--color-warning-surface); color: var(--color-warning); }
+.status-info    { background: var(--color-info-surface);    color: var(--color-info);    }
+.status-primary { background: var(--color-primary-subtle);  color: var(--color-primary); }

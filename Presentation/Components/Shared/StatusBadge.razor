@@ -1,0 +1,14 @@
+@using PicoPlus.Domain.Enums
+@using PicoPlus.Domain.Extensions
+
+@* Status badge component for deal stages *@
+
+<span class="status-badge status-@Stage.GetBadgeClass()" role="status" aria-label="وضعیت: @Stage.GetDisplayName()">
+    @Stage.GetDisplayName()
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public PicoPlus.Domain.Enums.DealStage Stage { get; set; }
+}
+

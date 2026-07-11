@@ -1,0 +1,50 @@
+/* =================================================================
+   PicoPlus Design System — Shadow & Elevation Tokens
+   ================================================================= */
+
+:root {
+    /* ── Elevation Scale ─────────────────────────────────────────── */
+    --shadow-none: none;
+
+    /* Level 1 — Subtle card lift */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+    /* Level 2 — Cards, dropdowns */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+                 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+
+    /* Level 3 — Elevated cards, popovers */
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+    /* Level 4 — Modals, drawers */
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+    /* Level 5 — Floating layers */
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+    /* Level 6 — Authentication overlays */
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    /* ── Colour-Tinted Shadows (brand accent) ───────────────────── */
+    --shadow-brand-sm: 0 4px 12px rgba(129, 140, 248, 0.25);
+    --shadow-brand-md: 0 6px 16px rgba(129, 140, 248, 0.35);
+    --shadow-brand-lg: 0 8px 24px rgba(99,  102, 241, 0.40);
+
+    --shadow-fab:   0 4px 20px rgba(142, 84, 233, 0.55);
+    --shadow-fab-hover: 0 8px 28px rgba(142, 84, 233, 0.65);
+
+    /* ── Inset Shadows ───────────────────────────────────────────── */
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+    /* ── Focus Ring ──────────────────────────────────────────────── */
+    --focus-ring: 0 0 0 3px var(--color-focus-ring, rgba(129, 140, 248, 0.35));
+    --focus-ring-sm: 0 0 0 2px var(--color-focus-ring, rgba(129, 140, 248, 0.35));
+
+    /* ── Bootstrap Overrides ─────────────────────────────────────── */
+    --bs-box-shadow:    var(--shadow-md);
+    --bs-box-shadow-sm: var(--shadow-sm);
+    --bs-box-shadow-lg: var(--shadow-lg);
+}

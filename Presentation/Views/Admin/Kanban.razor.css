@@ -1,0 +1,1217 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PicoPlus · Deals Board  — HubSpot-inspired enterprise CRM layout
+   Uses the app's existing purple-gradient theme as the outer chrome.
+   All board-specific styles are self-contained here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Root container ─────────────────────────────────────────────────────── */
+.deals-board-root {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+
+/* ── Board main area ─────────────────────────────────────────────────────── */
+.board-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: margin-left 0.28s ease;
+}
+
+.deals-board-root.drawer-is-open .board-main {
+    /* Board stays fully visible — drawer overlays on top */
+}
+
+/* ── Title row ───────────────────────────────────────────────────────────── */
+.board-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px 8px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.board-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    line-height: 1.2;
+}
+
+.title-caret {
+    width: 12px;
+    height: 8px;
+    color: #6b7280;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.btn-create-deal {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 7px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.12s;
+    line-height: 1.4;
+}
+
+.btn-create-deal svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.btn-create-deal:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.btn-create-deal:active {
+    transform: translateY(0);
+    filter: brightness(.96);
+}
+
+/* ── Saved-view tabs ─────────────────────────────────────────────────────── */
+.board-tabs {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 24px;
+    flex-shrink: 0;
+}
+
+.tabs-list {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    overflow-x: auto;
+}
+
+.tab-item {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-item:hover {
+    color: #374151;
+    background: #f9fafb;
+}
+
+.tab-item.active {
+    color: #111827;
+    font-weight: 700;
+    border-bottom-color: #667eea;
+}
+
+.tab-add {
+    background: none;
+    border: none;
+    padding: 10px 10px;
+    color: #9ca3af;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+}
+
+.tab-add svg {
+    width: 14px;
+    height: 14px;
+}
+
+.tab-add:hover {
+    color: #374151;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.board-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    color: #9ca3af;
+}
+
+.toolbar-search {
+    padding: 6px 32px 6px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    color: #374151;
+    background: #f9fafb;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.toolbar-search:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    background: #fff;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.toolbar-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.filter-count {
+    background: #667eea;
+    color: #fff;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.pipeline-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+}
+
+.pipeline-pill svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.pipeline-select {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    color: #374151;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+}
+
+.pipeline-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    padding: 0;
+}
+
+.btn-refresh svg {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-refresh:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ── Filter chips row ───────────────────────────────────────────────────── */
+.filter-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.chip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 0.81rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+}
+
+.chip-btn svg {
+    width: 9px;
+    height: 7px;
+}
+
+.chip-btn:hover {
+    background: #f3f4f6;
+}
+
+.chip-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 50%;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.12s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.chip-icon-btn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.chip-icon-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.chip-advanced {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 0.81rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    margin-right: auto;
+    transition: background 0.12s;
+}
+
+.chip-advanced svg {
+    width: 12px;
+    height: 12px;
+}
+
+.chip-advanced:hover {
+    background: #e5e7eb;
+}
+
+/* ── Board states ─────────────────────────────────────────────────────────── */
+.board-loading,
+.board-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+/* ── Kanban board ─────────────────────────────────────────────────────────── */
+.kanban-board {
+    display: flex;
+    gap: 16px;                /* 8px × 2 between columns */
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    padding: 16px 24px 0;     /* 8px × 2 top; 8px × 3 sides */
+    min-height: 0;
+    align-items: flex-start;
+    background: #f3f4f6;
+}
+
+.kanban-board::-webkit-scrollbar {
+    height: 6px;
+}
+
+.kanban-board::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kanban-board::-webkit-scrollbar-thumb {
+    background: #c1c7d0;
+    border-radius: 3px;
+}
+
+.kanban-board::-webkit-scrollbar-thumb:hover {
+    background: #a8b0bb;
+}
+
+/* ── Kanban column ─────────────────────────────────────────────────────────── */
+.kb-column {
+    flex-shrink: 0;
+    width: 272px;             /* Adjusted for better 4-5 column visibility */
+    min-width: 272px;
+    display: flex;
+    flex-direction: column;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    max-height: calc(100vh - 300px);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.12s ease;
+}
+
+.kb-column:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+/* ── Column header ─────────────────────────────────────────────────────────── */
+.kb-col-header {
+    padding: 12px 14px 10px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+}
+
+.kb-col-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kb-col-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8125rem;     /* 13px */
+    font-weight: 600;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    white-space: nowrap;
+    letter-spacing: -0.005em;
+}
+
+.kb-col-chip.chip-won {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.kb-col-chip.chip-lost {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+.kb-col-count {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 2px 8px;
+    line-height: 1.6;
+}
+
+/* ── Cards area ─────────────────────────────────────────────────────────────── */
+.kb-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 80px;
+}
+
+.kb-cards::-webkit-scrollbar {
+    width: 5px;
+}
+
+.kb-cards::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kb-cards::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.kb-cards::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ── Individual card ─────────────────────────────────────────────────────────── */
+.kb-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: grab;
+    transition: box-shadow 0.16s ease, transform 0.12s ease, border-color 0.12s ease;
+    animation: cardIn 0.2s ease;
+}
+
+.kb-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    border-color: #d1d5db;
+}
+
+.kb-card:active {
+    cursor: grabbing;
+}
+
+.kb-card-won {
+    border-right: 3px solid #22c55e;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.kb-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.kb-card-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.4;
+    flex: 1;
+    word-break: break-word;
+}
+
+.kb-priority {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.kb-priority-high   { background: #ef4444; }
+.kb-priority-medium { background: #f59e0b; }
+.kb-priority-low    { background: #22c55e; }
+
+.kb-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-bottom: 3px;
+}
+
+.kb-card-meta svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.meta-overdue {
+    color: #dc2626;
+}
+
+.kb-card-amount {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #059669;
+    margin: 5px 0 3px;
+}
+
+.kb-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.kb-card-time {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+
+.kb-card-view {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color 0.12s;
+    display: flex;
+    align-items: center;
+}
+
+.kb-card-view svg {
+    width: 13px;
+    height: 13px;
+}
+
+.kb-card-view:hover {
+    color: #667eea;
+}
+
+/* ── Column empty state ─────────────────────────────────────────────────────── */
+.kb-col-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    gap: 6px;
+    color: #d1d5db;
+    font-size: 0.78rem;
+}
+
+/* ── Column footer ─────────────────────────────────────────────────────────── */
+.kb-col-footer {
+    padding: 12px 12px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    border-radius: 0 0 8px 8px;
+    flex-shrink: 0;
+}
+
+.kb-col-total {
+    font-size: 0.8125rem;     /* 13px */
+    color: #374151;
+    margin-bottom: 8px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.kb-total-label .text-muted {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.kb-col-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    white-space: nowrap;
+    height: 32px;
+}
+
+.kb-col-add svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.kb-col-add:hover {
+    background: #f3f4f6;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CREATE DEAL SLIDE-OVER DRAWER
+   8px spacing system · 580px width · HubSpot-style precision
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.deal-drawer {
+    position: absolute;
+    top: 0;
+    left: 0;                  /* RTL: drawer opens from left side */
+    width: 580px;             /* 560–620px spec, using middle value */
+    max-width: 96vw;
+    height: 100%;
+    background: #fff;
+    border-right: 1px solid #d0d7de;
+    box-shadow: -2px 0 16px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    z-index: 400;
+    overflow: hidden;
+    animation: drawerSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes drawerSlideIn {
+    from { transform: translateX(-100%); opacity: 0.6; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Drawer header (68px height per spec) ───────────────────────────────────── */
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;      /* 8px × 2 = 16px top/bottom; 8px × 4 = 32px left/right */
+    border-bottom: 1px solid #dfe3e8;
+    flex-shrink: 0;
+    background: #fff;
+    min-height: 68px;
+}
+
+.drawer-title {
+    font-size: 1.25rem;       /* 20px; enterprise heading size */
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.drawer-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.drawer-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.drawer-close:active {
+    background: #e5e7eb;
+}
+
+/* ── Drawer subheader (Edit this form link) ─────────────────────────────── */
+.drawer-subheader {
+    padding: 12px 32px;       /* 8px × 1.5 = 12px; 8px × 4 = 32px sides */
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-shrink: 0;
+    background: #fafbfc;
+}
+
+.edit-form-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;     /* 13px */
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.12s, text-decoration 0.12s;
+    padding: 0;
+}
+
+.edit-form-link svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.edit-form-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* ── Drawer body / scrollable form ─────────────────────────────────────── */
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 32px;       /* 8px × 4 = 32px all sides */
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #fff;
+}
+
+.drawer-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.drawer-body::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 3px;
+}
+
+.drawer-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.drawer-body::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ── Drawer error banner ─────────────────────────────────────────────────── */
+.drawer-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 0.84375rem;    /* 13.5px */
+    color: #991b1b;
+    margin-bottom: 16px;      /* 8px × 2 */
+    line-height: 1.5;
+}
+
+.drawer-error svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* ── Form field group (8px spacing) ────────────────────────────────────────── */
+.df-group {
+    padding: 16px 0;          /* 8px × 2 vertical spacing */
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.df-group:first-child {
+    padding-top: 0;
+}
+
+.df-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.df-group-active .df-input {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    background: #fff;
+}
+
+.df-label {
+    display: block;
+    font-size: 0.8125rem;     /* 13px */
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;       /* 8px per spec */
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+}
+
+.df-required {
+    color: #ef4444;
+    margin-left: 2px;
+    font-size: 0.8rem;
+}
+
+/* ── Form inputs (40px height per spec) ────────────────────────────────────── */
+.df-input {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;       /* 40px total height: 10px top/bottom + line-height 20px */
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;      /* 14px */
+    color: #111827;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+    line-height: 1.5;
+    height: 40px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.df-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+.df-input:disabled {
+    background: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.df-input::placeholder {
+    color: #c1c7d0;
+}
+
+.df-input-focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+.df-textarea {
+    resize: vertical;
+    min-height: 88px;         /* 8px × 11 */
+    padding: 12px 12px;
+    height: auto;
+    line-height: 1.6;
+}
+
+/* ── Select wrapper with pill overlay ───────────────────────────────────── */
+.df-select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.df-select {
+    padding-left: 36px;       /* space for chevron: 8px + 9px + 8px */
+    padding-right: 48px;      /* space for pill */
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.df-chevron {
+    position: absolute;
+    left: 12px;
+    width: 10px;
+    height: 6px;
+    pointer-events: none;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+/* Pills for selected values */
+.df-pill {
+    position: absolute;
+    right: 12px;
+    font-size: 0.75rem;       /* 12px */
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 16px;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.df-pill-blue {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.df-owner-pill {
+    position: absolute;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 16px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    pointer-events: none;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.df-owner-pill svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+/* ── Date field wrapper ─────────────────────────────────────────────────── */
+.df-date-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.df-date-icon {
+    position: absolute;
+    left: 12px;
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+    color: #9ca3af;
+    z-index: 1;
+}
+
+.df-input-date {
+    padding-left: 40px;       /* space for calendar icon */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRAWER FOOTER (8px spacing · sticky position)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.drawer-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;                 /* 8px per spec */
+    padding: 16px 32px;       /* 16px vertical; 32px horizontal (8px × 4) */
+    border-top: 1px solid #dfe3e8;
+    background: #fff;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.drawer-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 24px;       /* 40px total height same as inputs */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;      /* 14px */
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, box-shadow 0.15s ease;
+    line-height: 1.4;
+    white-space: nowrap;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.drawer-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.drawer-btn-primary:active:not(:disabled) {
+    filter: brightness(0.96);
+}
+
+.drawer-btn-primary:disabled {
+    opacity: 0.50;
+    cursor: not-allowed;
+    filter: none;
+}
+
+.drawer-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: #fff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    line-height: 1.4;
+    white-space: nowrap;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.drawer-btn-secondary:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.drawer-btn-secondary:active:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.drawer-btn-secondary:disabled {
+    opacity: 0.50;
+    cursor: not-allowed;
+}
+
+.drawer-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    background: none;
+    color: #6b7280;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    line-height: 1.4;
+    white-space: nowrap;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.drawer-btn-ghost:hover:not(:disabled) {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.drawer-btn-ghost:active:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.drawer-btn-ghost:disabled {
+    opacity: 0.50;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 991px) {
+    .deal-drawer {
+        width: 100%;
+        max-width: 100%;
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+    }
+
+    .kb-column {
+        width: 240px;
+        min-width: 220px;
+    }
+
+    .board-title-row,
+    .board-toolbar,
+    .filter-chips-row,
+    .board-tabs {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .kanban-board {
+        padding: 12px 16px 0;
+    }
+}
+
+/* ── Full-bleed override: remove admin-content padding for the board page ── */
+/* This is appended at the end so specificity works correctly.                */
+/* Blazor scoped CSS only affects elements rendered by this component,        */
+/* so .deals-board-root here gets the scoped attribute automatically.         */
+.deals-board-root {
+    margin: -1.5rem;        /* cancel the admin-content 1.5rem padding        */
+    height: calc(100% + 3rem);  /* compensate for the top + bottom removal    */
+}

@@ -1,0 +1,51 @@
+@using PicoPlus.Localization.Abstractions
+@using PicoPlus.Localization.Services
+@implements IAsyncDisposable
+
+@inject ILocalizationService L
+@inject ScopedLocalizationService ScopedL
+
+<select class="form-select form-select-sm" @onchange="OnChange" value="@L.CurrentLanguage"
+        title="@L["SelectLanguage"]">
+    @foreach (var lang in L.AvailableLanguages)
+    {
+        <option value="@lang.Code">@lang.FlagIcon @lang.NativeName</option>
+    }
+</select>
+
+@code {
+    /// <summary>
+    /// Raised after a language switch completes — lets parent components react if needed.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnLanguageChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ScopedL.InitialiseAsync();
+            L.LanguageChanged += HandleLanguageChanged;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        var code = e.Value?.ToString() ?? L.CurrentLanguage;
+        await L.SetLanguageAsync(code);
+
+        if (OnLanguageChanged.HasDelegate)
+            await OnLanguageChanged.InvokeAsync(code);
+    }
+
+    private void HandleLanguageChanged(object? sender, PicoPlus.Localization.Models.LanguageChangedEventArgs args)
+        => InvokeAsync(StateHasChanged);
+
+    public ValueTask DisposeAsync()
+    {
+        L.LanguageChanged -= HandleLanguageChanged;
+        return ValueTask.CompletedTask;
+    }
+}
+

@@ -1,0 +1,153 @@
+@page "/auth/login"
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<PicoPlus.Resources.SharedResource> L
+@inject PicoPlus.Services.Auth.AuthService AuthSvc
+@inject NavigationManager Navigation
+@inject PicoPlus.Services.Utils.LiaraApiService LiaraService
+@inject PicoPlus.Infrastructure.Services.IDialogService DialogService
+@inject PicoPlus.Infrastructure.Services.ISessionStorageService SessionStorage
+@inject PicoPlus.Infrastructure.Services.ILocalStorageService LocalStorage
+@inject PicoPlus.Infrastructure.State.AuthenticationStateService AuthState
+@inject ILogger<Login> Logger
+
+<link href="/css/auth.css" rel="stylesheet" />
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-icon">
+            <i class="bi bi-shield-lock"></i>
+        </div>
+
+        <h1 class="auth-title">@L["Welcome"]</h1>
+        <p class="auth-subtitle">@L["EnterNationalCode"]</p>
+
+        @if (_hasError)
+        {
+            <div class="auth-alert auth-alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                @_errorMessage
+            </div>
+        }
+
+        <EditForm Model="@this" OnValidSubmit="@HandleLogin" class="auth-form">
+            <DataAnnotationsValidator />
+
+            <div class="mb-4">
+                <label for="nationalCode" class="form-label">@L["NationalCode"]</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                    <InputText id="nationalCode"
+                               class="form-control"
+                               @bind-Value="_nationalCode"
+                               placeholder="@L["EnterNationalCode"]"
+                               maxlength="10"
+                               disabled="@_isLoading"
+                               autocomplete="off" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn auth-btn auth-btn-primary w-100 mb-3" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm auth-spinner"></span>
+                    <span>در حال ورود...</span>
+                }
+                else
+                {
+                    <i class="bi bi-box-arrow-in-left"></i>
+                    <span>@L["SignInUser"]</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="auth-divider"><span class="px-2">—</span></div>
+
+        <div class="text-center">
+            <p class="mb-0" style="color: var(--auth-text-muted);">
+                @L["NotRegistered"]
+                <a href="/auth/register" class="auth-link">
+                    @L["Register"] <i class="bi bi-arrow-left me-1"></i>
+                </a>
+            </p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_buildVersion))
+        {
+            <div class="text-center mt-4" style="opacity: 0.6;">
+                <small style="color: var(--auth-text-muted); font-size: 0.75rem;">
+                    <i class="bi bi-gear me-1"></i> نسخه @_buildVersion
+                </small>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string  _nationalCode  = string.Empty;
+    private bool    _isLoading;
+    private bool    _hasError;
+    private string? _errorMessage;
+    private string? _buildVersion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _buildVersion = await LiaraService.GetCurrentBuildVersionAsync(); }
+        catch { _buildVersion = null; }
+    }
+
+    private async Task HandleLogin()
+    {
+        _hasError = false;
+        _errorMessage = null;
+
+        // Validate
+        var code = _nationalCode.Trim();
+        if (code.Length != 10 || !code.All(char.IsDigit) || !IsValidIranianNationalCode(code))
+        {
+            _hasError = true; _errorMessage = "کد ملی معتبر نیست"; return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var contact = await AuthSvc.FindContactByNationalCodeAsync(code);
+            if (contact is not null)
+            {
+                contact = await AuthSvc.EnrichContactAsync(contact);
+                AuthState.SetAuthenticatedUser(contact);
+                var dto = AuthState.CurrentUser;
+                await SessionStorage.SetItemAsync("LogInState",   1,     default);
+                await SessionStorage.SetItemAsync("ContactModel", dto,   default);
+                await SessionStorage.SetItemAsync("user_role",    "User",default);
+                await LocalStorage.SetItemAsync  ("LogInState",   1,     default);
+                await LocalStorage.SetItemAsync  ("ContactModel", dto,   default);
+                await LocalStorage.SetItemAsync  ("user_role",    "User",default);
+                Navigation.NavigateTo("/user");
+            }
+            else
+            {
+                await SessionStorage.SetItemAsync("PendingNationalCode", code, default);
+                await DialogService.ShowInfoAsync("کاربر یافت نشد", "حسابی با این کد ملی یافت نشد. لطفاً ثبت‌نام کنید.");
+                Navigation.NavigateTo("/auth/register");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Login error");
+            _hasError = true; _errorMessage = "خطا در ورود. لطفاً دوباره تلاش کنید.";
+        }
+        finally { _isLoading = false; }
+    }
+
+    private static bool IsValidIranianNationalCode(string code)
+    {
+        if (code.Length != 10 || code.All(c => c == code[0])) return false;
+        var sum = 0;
+        for (var i = 0; i < 9; i++) sum += (code[i] - '0') * (10 - i);
+        var r = sum % 11;
+        var check = r < 2 ? r : 11 - r;
+        return check == code[9] - '0';
+    }
+}
+

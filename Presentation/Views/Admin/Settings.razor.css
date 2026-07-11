@@ -1,0 +1,39 @@
+.settings-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header h2 {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.card {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    background: white;
+    border-bottom: 2px solid #f8f9fa;
+    padding: 1.25rem;
+}
+
+.card-header h5 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

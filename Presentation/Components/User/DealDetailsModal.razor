@@ -1,0 +1,369 @@
+@using PicoPlus.Domain.Entities
+@using PicoPlus.Domain.Extensions
+@using PicoPlus.Services.UserPanel
+@using System.Globalization
+
+@inject IPersianDateService DateService
+@inject DealDetailService DealDetailService
+@inject ILogger<DealDetailsModal> Logger
+
+@* Enhanced deal details modal with notes, files, and engagement logs *@
+
+@if (IsVisible && Deal != null)
+{
+    <div class="modal-overlay" 
+         @onclick="CloseModal" 
+         role="dialog" 
+         aria-modal="true" 
+         aria-labelledby="dealModalTitle">
+        <div class="modal-light modal-lg" @onclick:stopPropagation="true">
+            <div class="modal-light-header">
+                <h5 id="dealModalTitle" class="modal-light-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    جزئیات معامله
+                </h5>
+                <button type="button" 
+                        class="btn-close-dark" 
+                        @onclick="CloseModal" 
+                        aria-label="بستن">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-light-body modal-scrollable" dir="rtl">
+                @if (_isLoading)
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <p class="mt-2 text-muted">در حال بارگذاری اطلاعات...</p>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        @_errorMessage
+                    </div>
+
+                    <!-- Still show basic deal info -->
+                    <div class="deal-title-section mb-3">
+                        <h6 class="persian-text">@Deal.DealName</h6>
+                        <small>شناسه: @Deal.Id</small>
+                    </div>
+                }
+                else
+                {
+                    <!-- Deal Info Section -->
+                    <div class="deal-info-section mb-4">
+                        <div class="deal-title-section mb-3">
+                            <h6 class="persian-text">@_dealDetails?.Deal.DealName</h6>
+                            <small>شناسه: @_dealDetails?.Deal.Id</small>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <InfoBox 
+                                    Label="مبلغ معامله"
+                                    Value="@($"{DateService.FormatNumber(_dealDetails?.Deal.Amount ?? 0)} تومان")"
+                                    ValueClass="text-success" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <InfoBox 
+                                    Label="وضعیت"
+                                    Value="@_dealDetails?.Deal.Stage.GetDisplayName()" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <InfoBox 
+                                    Label="تاریخ ایجاد"
+                                    Value="@DateService.FormatDate(_dealDetails?.Deal.CreatedAt ?? DateTime.Now)" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <InfoBox 
+                                    Label="آخرین ویرایش"
+                                    Value="@DateService.FormatDate(_dealDetails?.Deal.UpdatedAt ?? DateTime.Now)" />
+                            </div>
+
+                            @if (_dealDetails?.Deal.CloseDate.HasValue == true)
+                            {
+                                <div class="col-md-6">
+                                    <InfoBox 
+                                        Label="تاریخ بسته شدن"
+                                        Value="@DateService.FormatDate(_dealDetails.Deal.CloseDate)" />
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(_dealDetails?.Deal.Pipeline))
+                            {
+                                <div class="col-md-6">
+                                    <InfoBox 
+                                        Label="پایپ‌لاین"
+                                        Value="@_dealDetails.Deal.Pipeline" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Tabs for Notes and Logs -->
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(_activeTab == "notes" ? "active" : "")" 
+                                    @onclick="@(() => _activeTab = "notes")"
+                                    type="button" role="tab">
+                                <i class="bi bi-chat-left-text me-2"></i>
+                                یادداشت‌ها (@(_dealDetails?.Notes.Count ?? 0))
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(_activeTab == "logs" ? "active" : "")" 
+                                    @onclick="@(() => _activeTab = "logs")"
+                                    type="button" role="tab">
+                                <i class="bi bi-clock-history me-2"></i>
+                                فعالیت‌ها (@(_dealDetails?.CallLogs.Count ?? 0))
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Notes Tab -->
+                    @if (_activeTab == "notes")
+                    {
+                        <div class="tab-pane show active" role="tabpanel">
+                            @if (_dealDetails?.Notes == null || _dealDetails.Notes.Count == 0)
+                            {
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    هیچ یادداشتی برای این معامله وجود ندارد.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="notes-list">
+                                    @foreach (var note in _dealDetails.Notes)
+                                    {
+                                        <div class="note-item card bg-light border-secondary mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-person-circle me-1"></i>
+                                                            @note.CreatedBy
+                                                        </small>
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar me-1"></i>
+                                                        @note.CreatedAt.ToString("yyyy-MM-dd HH:mm", new CultureInfo("fa-IR"))
+                                                    </small>
+                                                </div>
+                                                <p class="card-text text-dark mb-2">@((MarkupString)note.Body.Replace("\n", "<br>"))</p>
+
+                                                @if (note.AttachmentIds.Count > 0)
+                                                {
+                                                    <div class="attachments-section">
+                                                        <small class="text-muted d-block mb-2">
+                                                            <i class="bi bi-paperclip me-1"></i>
+                                                            @note.AttachmentIds.Count پیوست
+                                                        </small>
+                                                        <div class="attachment-list">
+                                                            @foreach (var attachId in note.AttachmentIds)
+                                                            {
+                                                                <span class="badge bg-secondary me-2">
+                                                                    <i class="bi bi-file me-1"></i>
+                                                                    @attachId
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Engagement Logs Tab -->
+                    @if (_activeTab == "logs")
+                    {
+                        <div class="tab-pane show active" role="tabpanel">
+                            @if (_dealDetails?.CallLogs == null || _dealDetails.CallLogs.Count == 0)
+                            {
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    هیچ فعالیتی برای این معامله ثبت نشده است.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="engagement-list">
+                                    @foreach (var log in _dealDetails.CallLogs)
+                                    {
+                                        <div class="engagement-item card bg-light border-secondary mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="engagement-icon me-3">
+                                                        @switch (log.Type)
+                                                        {
+                                                            case "call":
+                                                                <i class="bi bi-telephone-fill text-success"></i>
+                                                                break;
+                                                            case "email":
+                                                                <i class="bi bi-envelope-fill text-info"></i>
+                                                                break;
+                                                            case "meeting":
+                                                                <i class="bi bi-calendar-event text-warning"></i>
+                                                                break;
+                                                            default:
+                                                                <i class="bi bi-activity text-secondary"></i>
+                                                                break;
+                                                        }
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="card-title mb-1">@log.Subject</h6>
+                                                        <small class="text-muted d-block mb-2">
+                                                            <i class="bi bi-calendar me-1"></i>
+                                                            @log.Timestamp.ToString("yyyy-MM-dd HH:mm", new CultureInfo("fa-IR"))
+                                                        </small>
+
+                                                        @if (!string.IsNullOrEmpty(log.Description))
+                                                        {
+                                                            <p class="card-text text-dark small mb-2">@log.Description</p>
+                                                        }
+
+                                                        <div class="engagement-meta">
+                                                            @if (!string.IsNullOrEmpty(log.Duration))
+                                                            {
+                                                                <span class="badge bg-secondary me-2">
+                                                                    <i class="bi bi-hourglass-split me-1"></i>
+                                                                    @log.Duration ثانیه
+                                                                </span>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(log.Status))
+                                                            {
+                                                                <span class="badge bg-info">
+                                                                    <i class="bi bi-info-circle me-1"></i>
+                                                                    @log.Status
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <div class="modal-light-footer">
+                <button type="button" 
+                        class="btn-secondary-dark" 
+                        @onclick="CloseModal">
+                    <i class="bi bi-x-lg me-2"></i>بستن
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-lg {
+        max-width: 800px;
+    }
+
+    .modal-scrollable {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .deal-info-section {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+    }
+
+    .note-item {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+
+    .attachments-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .engagement-item {
+        transition: all 0.3s ease;
+    }
+
+    .engagement-item:hover {
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .engagement-icon {
+        font-size: 1.5rem;
+    }
+
+    .engagement-meta {
+        margin-top: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public PicoPlus.Domain.Entities.Deal? Deal { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private DealDetailService.DealDetailViewModel? _dealDetails;
+    private bool _isLoading;
+    private string? _errorMessage;
+    private string _activeTab = "notes";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Deal != null && (_dealDetails == null || _dealDetails.Deal.Id != Deal.Id))
+        {
+            await LoadDealDetailsAsync();
+        }
+    }
+
+    private async Task LoadDealDetailsAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _dealDetails = null;
+
+        try
+        {
+            _dealDetails = await DealDetailService.LoadDealDetailsAsync(Deal!.Id);
+
+            if (!string.IsNullOrEmpty(_dealDetails.ErrorMessage))
+            {
+                _errorMessage = _dealDetails.ErrorMessage;
+                Logger.LogWarning("Error loading deal details: {Error}", _dealDetails.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"خطا در بارگذاری جزئیات: {ex.Message}";
+            Logger.LogError(ex, "Error loading deal details for {DealId}", Deal?.Id);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CloseModal() => await OnClose.InvokeAsync();
+}
+

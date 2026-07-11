@@ -1,0 +1,356 @@
+/* =================================================================
+   PicoPlus Design System — Navigation Component
+   Top header, tabs, dropdowns, modals, sidebar, tables, scrollbar.
+   ================================================================= */
+
+/* ── Top Header ──────────────────────────────────────────────────── */
+.top-header {
+    background:     var(--navbar-bg);
+    border-bottom:  1px solid var(--navbar-border);
+    position:       sticky;
+    top:            0;
+    top:            calc(0px + var(--safe-top));
+    z-index:        var(--z-sticky);
+    box-shadow:     var(--navbar-shadow, var(--shadow-xs));
+    height:         var(--navbar-height);
+    display:        flex;
+    align-items:    center;
+}
+
+/* ── Navbar (Bootstrap) ──────────────────────────────────────────── */
+.navbar {
+    background:     var(--navbar-bg) !important;
+    border-bottom:  1px solid var(--navbar-border);
+    box-shadow:     var(--navbar-shadow);
+    min-height:     var(--navbar-height);
+}
+
+.navbar-brand {
+    margin-left:  var(--space-4);
+    margin-right: 0;
+    color:        var(--text-primary) !important;
+    font-weight:  var(--weight-bold);
+}
+
+.navbar-nav { text-align: right; }
+
+.nav-link {
+    padding-right: var(--space-4) !important;
+    padding-left:  var(--space-4) !important;
+    font-weight:   var(--weight-medium);
+    color:         var(--text-primary) !important;
+    min-height:    var(--touch-target-min);
+    display:       flex;
+    align-items:   center;
+}
+
+.nav-link:hover {
+    color: var(--color-primary) !important;
+}
+
+/* ── Brand Logo ──────────────────────────────────────────────────── */
+.brand-logo {
+    color:      var(--text-primary);
+    font-size:  var(--text-xl);
+    font-weight:var(--weight-bold);
+    display:    flex;
+    align-items:center;
+    gap:        var(--space-2);
+}
+
+/* ── User Header Dropdown ─────────────────────────────────────────── */
+.user-info-header { display: flex; align-items: center; gap: var(--space-4); }
+
+.user-dropdown-btn {
+    background:    transparent;
+    border:        none;
+    color:         var(--text-primary);
+    display:       flex;
+    align-items:   center;
+    gap:           var(--space-3);
+    padding:       var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    min-height:    var(--touch-target-min);
+    transition:    background 0.2s ease;
+}
+
+.user-dropdown-btn:hover { background: var(--bg-card-hover); }
+
+.user-avatar-header {
+    width:           2.5rem;
+    height:          2.5rem;
+    border-radius:   var(--radius-full);
+    background:      var(--gradient-brand);
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    color:           #fff;
+    font-weight:     var(--weight-semibold);
+    font-size:       var(--text-md);
+    flex-shrink:     0;
+}
+
+.user-name-header  { font-weight: var(--weight-semibold); }
+.user-phone-header { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* ── Dropdown ────────────────────────────────────────────────────── */
+.dropdown-menu,
+.modern-dropdown {
+    background:    var(--card-bg);
+    border:        1px solid var(--card-border);
+    border-radius: var(--radius-xl);
+    padding:       var(--space-2);
+    box-shadow:    var(--shadow-lg);
+    text-align:    right;
+}
+
+.dropdown-item,
+.modern-dropdown .dropdown-item {
+    color:         var(--text-primary);
+    border-radius: var(--radius-md);
+    padding:       var(--space-2) var(--space-4);
+    min-height:    var(--touch-target-min);
+    display:       flex;
+    align-items:   center;
+    gap:           var(--space-2);
+    transition:    background 0.15s ease;
+    background:    transparent;
+    border:        none;
+    width:         100%;
+    text-align:    right;
+    cursor:        pointer;
+    font-size:     var(--text-base);
+}
+
+.dropdown-item:hover,
+.modern-dropdown .dropdown-item:hover {
+    background: var(--bg-card-hover);
+    color:      var(--color-primary);
+}
+
+.modern-dropdown .dropdown-divider,
+.dropdown-divider { border-color: var(--border-default); }
+
+/* ── Modern Tabs ─────────────────────────────────────────────────── */
+.modern-tabs-container {
+    background:    var(--card-bg);
+    border-radius: var(--radius-xl);
+    padding:       var(--space-2);
+    margin-bottom: var(--space-6);
+    border:        1px solid var(--card-border);
+}
+
+.modern-tabs {
+    display: flex;
+    gap:     var(--space-2);
+}
+
+.modern-tab {
+    flex:          1;
+    background:    transparent;
+    border:        none;
+    color:         var(--text-secondary);
+    padding:       var(--space-4) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight:   var(--weight-semibold);
+    min-height:    var(--touch-target-md);
+    transition:    all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor:        pointer;
+}
+
+.modern-tab:hover {
+    background: var(--bg-card-hover);
+    color:      var(--text-primary);
+}
+
+.modern-tab.active {
+    background: var(--gradient-brand);
+    color:      #fff;
+    box-shadow: var(--shadow-brand-sm);
+}
+
+/* ── Modal Overlay ───────────────────────────────────────────────── */
+.modal-overlay {
+    position:   fixed;
+    inset:      0;
+    background: var(--bg-overlay);
+    display:    flex;
+    align-items:center;
+    justify-content: center;
+    z-index:    var(--z-modal);
+    animation:  fadeIn 0.25s ease;
+    padding:    var(--space-4);
+    padding-bottom: calc(var(--space-4) + var(--safe-bottom));
+}
+
+/* ── Modal Container ─────────────────────────────────────────────── */
+.modal-light {
+    background:    var(--modal-bg);
+    border:        1px solid var(--modal-border);
+    border-radius: var(--modal-radius, var(--radius-2xl));
+    max-width:     43.75rem;
+    width:         100%;
+    max-height:    90vh;
+    overflow:      hidden;
+    animation:     slideUp 0.28s ease-out;
+    box-shadow:    var(--modal-shadow, var(--shadow-2xl));
+    display:       flex;
+    flex-direction:column;
+}
+
+.modal-light.modal-lg { max-width: 56.25rem; }
+
+.modal-content {
+    background: var(--modal-bg);
+    color:      var(--text-primary);
+    border:     1px solid var(--modal-border);
+}
+
+.modal-header {
+    background:    var(--modal-header-bg);
+    border-bottom: 1px solid var(--modal-border);
+    padding:       var(--space-5) var(--space-6);
+}
+
+.modal-footer {
+    background: var(--modal-header-bg);
+    border-top: 1px solid var(--modal-border);
+    padding:    var(--space-4) var(--space-6);
+}
+
+.modal-header .btn-close { margin: 0 auto 0 0; }
+
+/* ── Modal Light Sections ────────────────────────────────────────── */
+.modal-light-header {
+    padding:         var(--space-6) var(--space-8);
+    border-bottom:   1px solid var(--modal-border);
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    background:      var(--gradient-brand);
+    flex-shrink:     0;
+}
+
+.modal-light-title {
+    color:       #fff;
+    margin:      0;
+    font-weight: var(--weight-bold);
+    font-size:   var(--text-xl);
+}
+
+.modal-light-body {
+    padding:    var(--space-8);
+    overflow-y: auto;
+    flex:       1;
+}
+
+.modal-light-footer {
+    padding:         var(--space-5) var(--space-8);
+    border-top:      1px solid var(--modal-border);
+    display:         flex;
+    justify-content: flex-end;
+    gap:             var(--space-4);
+    flex-shrink:     0;
+}
+
+/* ── Breadcrumb RTL ──────────────────────────────────────────────── */
+.breadcrumb { direction: rtl; }
+
+.breadcrumb-item + .breadcrumb-item::before {
+    float:          right;
+    padding-left:   var(--space-2);
+    padding-right:  0;
+    content:        "/";
+    color:          var(--text-muted);
+}
+
+/* ── Pagination RTL ──────────────────────────────────────────────── */
+.pagination { direction: rtl; }
+
+/* ── Sidebar (Admin) ─────────────────────────────────────────────── */
+.admin-layout {
+    display:    flex;
+    min-height: 100vh;
+    direction:  rtl;
+}
+
+.admin-sidebar {
+    width:      var(--sidebar-width);
+    background: var(--navbar-bg);
+    border-left:1px solid var(--navbar-border);
+    display:    flex;
+    flex-direction: column;
+    flex-shrink:0;
+    position:   sticky;
+    top:        0;
+    height:     100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding:       var(--space-6);
+    border-bottom: 1px solid var(--navbar-border);
+    color:         var(--text-primary);
+}
+
+.sidebar-nav {
+    padding: var(--space-4) var(--space-2);
+    flex:    1;
+    display: flex;
+    flex-direction: column;
+    gap:     var(--space-1);
+}
+
+.sidebar-nav .nav-item {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--space-2);
+    padding:       var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color:         var(--text-secondary);
+    text-decoration: none;
+    font-weight:   var(--weight-medium);
+    min-height:    var(--touch-target-min);
+    transition:    background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-nav .nav-item:hover {
+    background: var(--bg-card-hover);
+    color:      var(--text-primary);
+}
+
+.sidebar-nav .nav-item.active {
+    background: var(--color-primary-subtle);
+    color:      var(--color-primary);
+    font-weight:var(--weight-semibold);
+}
+
+.sidebar-footer {
+    padding:    var(--space-4);
+    border-top: 1px solid var(--navbar-border);
+}
+
+.admin-main {
+    flex:       1;
+    display:    flex;
+    flex-direction: column;
+    overflow:   hidden;
+}
+
+.admin-header {
+    padding:    var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--navbar-border);
+    background: var(--navbar-bg);
+}
+
+.admin-content {
+    flex:    1;
+    padding: var(--space-6);
+    overflow-y: auto;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: var(--bg-surface-inset); }
+::-webkit-scrollbar-thumb    { background: var(--border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

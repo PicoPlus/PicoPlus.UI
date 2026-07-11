@@ -1,0 +1,149 @@
+/* =================================================================
+   PicoPlus Design System — Toast Notification Component
+   All colors via tokens. RTL-first.
+   ================================================================= */
+
+.toast-container {
+    position:       fixed;
+    top:            calc(var(--space-5) + var(--safe-top));
+    left:           var(--space-5);        /* RTL: left side */
+    z-index:        var(--z-toast);
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--space-3);
+    max-width:      25rem;
+    width:          calc(100vw - var(--space-10));
+    pointer-events: none;
+}
+
+.toast {
+    display:        flex;
+    align-items:    center;
+    gap:            var(--space-4);
+    padding:        var(--space-4) var(--space-5);
+    background:     var(--toast-bg);
+    border-radius:  var(--toast-radius, var(--radius-xl));
+    box-shadow:     0 8px 24px rgba(0, 0, 0, 0.35);
+    border:         1px solid var(--toast-border);
+    border-right:   none;
+    border-left:    4px solid transparent;   /* RTL accent stripe */
+    animation:      toastSlideIn 0.28s ease-out;
+    color:          var(--toast-text);
+    font-family:    var(--font-base);
+    pointer-events: auto;
+}
+
+/* ── Accent stripe by type ───────────────────────────────────────── */
+.toast.toast-success { border-left-color: var(--color-success); }
+.toast.toast-error   { border-left-color: var(--color-danger);  }
+.toast.toast-info    { border-left-color: var(--color-info);    }
+.toast.toast-warning { border-left-color: var(--color-warning); }
+
+/* ── Icon ────────────────────────────────────────────────────────── */
+.toast-icon {
+    font-size:       var(--text-xl);
+    flex-shrink:     0;
+    width:           2rem;
+    height:          2rem;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    border-radius:   var(--radius-full);
+}
+
+.toast-success .toast-icon { background: rgba(74, 222, 128, 0.15);  color: var(--color-success); }
+.toast-error   .toast-icon { background: rgba(248, 113, 113, 0.15); color: var(--color-danger);  }
+.toast-info    .toast-icon { background: rgba(56, 189, 248, 0.15);  color: var(--color-info);    }
+.toast-warning .toast-icon { background: rgba(251, 191, 36, 0.15);  color: var(--color-warning); }
+
+/* ── Content ─────────────────────────────────────────────────────── */
+.toast-content {
+    flex:           1;
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--space-1);
+    min-width:      0;
+}
+
+.toast-title {
+    font-weight: var(--weight-semibold);
+    font-size:   var(--text-sm);
+    color:       var(--toast-text);
+    margin:      0;
+}
+
+.toast-message {
+    font-size:   var(--text-xs);
+    color:       color-mix(in srgb, var(--toast-text) 75%, transparent 25%);
+    margin:      0;
+    line-height: var(--leading-normal);
+}
+
+/* ── Close Button ────────────────────────────────────────────────── */
+.toast-close {
+    background:    none;
+    border:        none;
+    color:         var(--text-muted);
+    cursor:        pointer;
+    padding:       0;
+    font-size:     var(--text-md);
+    width:         var(--touch-target-min);
+    height:        var(--touch-target-min);
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition:    background 0.15s ease, color 0.15s ease;
+    flex-shrink:   0;
+    margin:        calc(var(--space-4) * -1);
+    margin-right:  calc(var(--space-4) * -1);
+}
+
+.toast-close:hover {
+    background: var(--color-hover-overlay, rgba(255,255,255,0.08));
+    color:      var(--toast-text);
+}
+
+/* ── Animations ──────────────────────────────────────────────────── */
+@keyframes toastSlideIn {
+    from { transform: translateX(-120%); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes toastSlideOut {
+    from { transform: translateX(0);     opacity: 1; }
+    to   { transform: translateX(-120%); opacity: 0; }
+}
+
+.toast.toast-hiding {
+    animation: toastSlideOut 0.25s ease-in forwards;
+}
+
+/* ── LTR fallback (if dir="ltr" is ever set) ────────────────────── */
+[dir="ltr"] .toast-container {
+    left:  auto;
+    right: var(--space-5);
+}
+
+[dir="ltr"] .toast {
+    border-left:  none;
+    border-right: 4px solid transparent;
+}
+
+[dir="ltr"] .toast.toast-success { border-right-color: var(--color-success); }
+[dir="ltr"] .toast.toast-error   { border-right-color: var(--color-danger);  }
+[dir="ltr"] .toast.toast-info    { border-right-color: var(--color-info);    }
+[dir="ltr"] .toast.toast-warning { border-right-color: var(--color-warning); }
+
+@keyframes toastSlideInRtl {
+    from { transform: translateX(120%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes toastSlideOutRtl {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(120%); opacity: 0; }
+}
+
+[dir="ltr"] .toast              { animation-name: toastSlideInRtl; }
+[dir="ltr"] .toast.toast-hiding { animation-name: toastSlideOutRtl; }

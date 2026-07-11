@@ -1,0 +1,137 @@
+/* =================================================================
+   PicoPlus Design System — Color Tokens
+   Semantic, scale-based, theme-agnostic.
+   These are the default (light) raw values; themes override them.
+   ================================================================= */
+
+:root {
+    /* ── Brand Palette (scale) ──────────────────────────────────── */
+    --color-brand-50:  #eef2ff;
+    --color-brand-100: #e0e7ff;
+    --color-brand-200: #c7d2fe;
+    --color-brand-300: #a5b4fc;
+    --color-brand-400: #818cf8;
+    --color-brand-500: #6366f1;
+    --color-brand-600: #4f46e5;
+    --color-brand-700: #4338ca;
+    --color-brand-800: #3730a3;
+    --color-brand-900: #312e81;
+
+    /* ── Neutral Palette (scale) ────────────────────────────────── */
+    --color-neutral-0:   #ffffff;
+    --color-neutral-50:  #f9fafb;
+    --color-neutral-100: #f3f4f6;
+    --color-neutral-200: #e5e7eb;
+    --color-neutral-300: #d1d5db;
+    --color-neutral-400: #9ca3af;
+    --color-neutral-500: #6b7280;
+    --color-neutral-600: #4b5563;
+    --color-neutral-700: #374151;
+    --color-neutral-800: #1f2937;
+    --color-neutral-900: #111827;
+    --color-neutral-950: #030712;
+
+    /* ── Status Palette ─────────────────────────────────────────── */
+    --color-success-light:  #dcfce7;
+    --color-success-base:   #10b981;
+    --color-success-dark:   #15803d;
+    --color-success-border: #86efac;
+
+    --color-warning-light:  #fef9c3;
+    --color-warning-base:   #f59e0b;
+    --color-warning-dark:   #92400e;
+    --color-warning-border: #fde047;
+
+    --color-danger-light:   #fee2e2;
+    --color-danger-base:    #ef4444;
+    --color-danger-dark:    #991b1b;
+    --color-danger-border:  #fca5a5;
+
+    --color-info-light:     #dbeafe;
+    --color-info-base:      #3b82f6;
+    --color-info-dark:      #1e40af;
+    --color-info-border:    #93c5fd;
+
+    --color-cyan-light:     #cffafe;
+    --color-cyan-base:      #06b6d4;
+    --color-cyan-dark:      #164e63;
+
+    /* ── Semantic Action Colors ─────────────────────────────────── */
+    --color-action-primary:         var(--color-brand-400);
+    --color-action-primary-hover:   var(--color-brand-500);
+    --color-action-primary-active:  var(--color-brand-600);
+    --color-action-primary-subtle:  var(--color-brand-50);
+    --color-action-primary-text:    #ffffff;
+
+    --color-action-secondary:       var(--color-neutral-200);
+    --color-action-secondary-hover: var(--color-neutral-300);
+    --color-action-secondary-text:  var(--color-neutral-800);
+
+    /* ── Semantic Surface Colors (Light Base) ───────────────────── */
+    --color-surface-app:      var(--color-neutral-50);
+    --color-surface-base:     var(--color-neutral-0);
+    --color-surface-elevated: var(--color-neutral-0);
+    --color-surface-overlay:  rgba(0, 0, 0, 0.5);
+    --color-surface-subtle:   var(--color-neutral-50);
+    --color-surface-inset:    var(--color-neutral-100);
+
+    /* ── Semantic Text Colors (Light Base) ──────────────────────── */
+    --color-text-primary:   var(--color-neutral-800);
+    --color-text-secondary: var(--color-neutral-500);
+    --color-text-muted:     var(--color-neutral-400);
+    --color-text-disabled:  var(--color-neutral-300);
+    --color-text-inverse:   var(--color-neutral-0);
+    --color-text-link:      var(--color-brand-500);
+    --color-text-link-hover:var(--color-brand-600);
+
+    /* ── Semantic Border Colors (Light Base) ────────────────────── */
+    --color-border-default: var(--color-neutral-300);
+    --color-border-subtle:  var(--color-neutral-200);
+    --color-border-strong:  var(--color-neutral-400);
+    --color-border-focus:   var(--color-brand-400);
+
+    /* ── Status Semantic Aliases ────────────────────────────────── */
+    --color-status-success:         var(--color-success-base);
+    --color-status-success-surface: var(--color-success-light);
+    --color-status-success-text:    var(--color-success-dark);
+    --color-status-success-border:  var(--color-success-border);
+
+    --color-status-warning:         var(--color-warning-base);
+    --color-status-warning-surface: var(--color-warning-light);
+    --color-status-warning-text:    var(--color-warning-dark);
+    --color-status-warning-border:  var(--color-warning-border);
+
+    --color-status-danger:          var(--color-danger-base);
+    --color-status-danger-surface:  var(--color-danger-light);
+    --color-status-danger-text:     var(--color-danger-dark);
+    --color-status-danger-border:   var(--color-danger-border);
+
+    --color-status-info:            var(--color-info-base);
+    --color-status-info-surface:    var(--color-info-light);
+    --color-status-info-text:       var(--color-info-dark);
+    --color-status-info-border:     var(--color-info-border);
+
+    /* ── Gradient Presets ───────────────────────────────────────── */
+    --gradient-brand:   linear-gradient(135deg, var(--color-brand-400) 0%, var(--color-brand-600) 100%);
+    --gradient-cyan:    linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+    --gradient-rose:    linear-gradient(135deg, #f87171 0%, #f43f5e 100%);
+    --gradient-emerald: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    --gradient-purple:  linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    --gradient-violet:  linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+
+    /* ── Overlay / Glass ────────────────────────────────────────── */
+    --color-overlay-light: rgba(255, 255, 255, 0.8);
+    --color-overlay-dark:  rgba(0, 0, 0, 0.5);
+    --color-overlay-brand: rgba(129, 140, 248, 0.15);
+    --glass-bg:            rgba(255, 255, 255, 0.7);
+    --glass-border:        rgba(255, 255, 255, 0.3);
+    --glass-blur:          12px;
+
+    /* ── Interactive State Modifiers ────────────────────────────── */
+    --color-hover-overlay:   rgba(0, 0, 0, 0.04);
+    --color-active-overlay:  rgba(0, 0, 0, 0.08);
+    --color-focus-ring:      rgba(129, 140, 248, 0.35);
+    --color-disabled-bg:     var(--color-neutral-100);
+    --color-disabled-text:   var(--color-neutral-400);
+    --color-disabled-border: var(--color-neutral-200);
+}
