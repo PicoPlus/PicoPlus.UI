@@ -47,6 +47,7 @@ public class RegisterService : IRegisterService
     public string ErrorMessage { get; private set; } = string.Empty;
 
     public  string? ShahkarStatus   { get; private set; }
+    private string? _pendingContactId;
     private System.Timers.Timer? _otpTimer;
 
     private readonly IDomainEventDispatcher _eventDispatcher;
@@ -81,19 +82,20 @@ public class RegisterService : IRegisterService
     {
         // Always reset all step state so a new registration session starts clean,
         // regardless of any previous incomplete flow on the same server circuit.
-        IsVerified       = false;
-        OtpSent          = false;
-        OtpCode          = string.Empty;
-        OtpRemainingTime = string.Empty;
-        CanResendOtp     = true;
-        CurrentStep      = 1;
-        HasError         = false;
-        ErrorMessage     = string.Empty;
-        FirstName        = string.Empty;
-        LastName         = string.Empty;
-        FatherName       = string.Empty;
-        Gender           = string.Empty;
-        ShahkarStatus    = null;
+        IsVerified        = false;
+        OtpSent           = false;
+        OtpCode           = string.Empty;
+        OtpRemainingTime  = string.Empty;
+        CanResendOtp      = true;
+        CurrentStep       = 1;
+        HasError          = false;
+        ErrorMessage      = string.Empty;
+        FirstName         = string.Empty;
+        LastName          = string.Empty;
+        FatherName        = string.Empty;
+        Gender            = string.Empty;
+        ShahkarStatus     = null;
+        _pendingContactId = null;
         _otpTimer?.Stop();
 
         var pending = await _sessionStorage.GetItemAsync<string>("PendingNationalCode", ct);
@@ -124,6 +126,34 @@ public class RegisterService : IRegisterService
                 CurrentStep = 2;
                 HasError    = false;
                 ErrorMessage = string.Empty;
+
+                // Create the HubSpot contact immediately after identity verification
+                // so the lead is captured in CRM even if the user drops off later.
+                try
+                {
+                    var draft = new Domain.Entities.Contact
+                    {
+                        Id           = string.Empty,
+                        FirstName    = FirstName,
+                        LastName     = LastName,
+                        NationalCode = NationalCode,
+                        Phone        = string.Empty,
+                        Email        = $"{NationalCode}@picoplus.app",
+                        DateOfBirth  = BirthDate,
+                        FatherName   = FatherName,
+                        Gender       = Gender,
+                        ShahkarStatus = "pending"
+                    };
+                    var created = await _contactRepo.CreateAsync(draft);
+                    _pendingContactId = string.IsNullOrEmpty(created.Id) ? null : created.Id;
+                    _logger.LogInformation("HubSpot contact pre-created with id {Id} after identity verification", _pendingContactId);
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal: log and continue — contact will be created in RegisterAsync as fallback
+                    _logger.LogWarning(ex, "Failed to pre-create HubSpot contact after identity verification");
+                }
+
                 await _dialogService.ShowSuccessAsync("هویت تأیید شد", $"اطلاعات شما با موفقیت تأیید شد: {FirstName} {LastName}");
             }
             else
@@ -158,11 +188,30 @@ public class RegisterService : IRegisterService
             var result = _otpService.ValidateOtp(Phone, OtpCode);
             if (result.IsValid)
             {
-                await _dialogService.ShowSuccessAsync("تأیید موفق", "شماره موبایل با موفقیت تأیید شد!");
-                ShahkarStatus = "0"; // Shahkar verification disabled
+                ShahkarStatus = "0";
                 CurrentStep  = 4;
                 HasError     = false;
                 ErrorMessage = string.Empty;
+
+                // Update the pre-created HubSpot contact with the now-verified phone number.
+                if (!string.IsNullOrEmpty(_pendingContactId))
+                {
+                    try
+                    {
+                        await _contactRepo.UpdateAsync(_pendingContactId, new Dictionary<string, string>
+                        {
+                            ["phone"]          = Phone,
+                            ["shahkar_status"] = "0"
+                        });
+                        _logger.LogInformation("HubSpot contact {Id} updated with verified phone after OTP", _pendingContactId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to update HubSpot contact phone after OTP verification");
+                    }
+                }
+
+                await _dialogService.ShowSuccessAsync("تأیید موفق", "شماره موبایل با موفقیت تأیید شد!");
             }
             else
             {
@@ -177,23 +226,60 @@ public class RegisterService : IRegisterService
         if (!ValidateFinalData()) return;
         await ExecuteAsync(async () =>
         {
-            var newContact = new Contact
+            // If the contact was pre-created during identity verification, reuse it.
+            // Otherwise create it now as a fallback (e.g. if pre-creation failed).
+            string contactId;
+            if (!string.IsNullOrEmpty(_pendingContactId))
             {
-                Id           = string.Empty,
-                FirstName    = FirstName,
-                LastName     = LastName,
-                NationalCode = NationalCode,
-                Phone        = Phone,
-                Email        = $"{NationalCode}@picoplus.app",
-                DateOfBirth  = BirthDate,
-                FatherName   = FatherName,
-                Gender       = Gender,
-                ShahkarStatus = ShahkarStatus ?? "0"
-            };
+                contactId = _pendingContactId;
+                // Ensure final fields are set (phone already updated after OTP, but sync the rest)
+                try
+                {
+                    await _contactRepo.UpdateAsync(contactId, new Dictionary<string, string>
+                    {
+                        ["phone"]          = Phone,
+                        ["shahkar_status"] = ShahkarStatus ?? "0"
+                    });
+                }
+                catch (Exception ex) { _logger.LogWarning(ex, "Final contact update failed"); }
+            }
+            else
+            {
+                var newContact = new Contact
+                {
+                    Id            = string.Empty,
+                    FirstName     = FirstName,
+                    LastName      = LastName,
+                    NationalCode  = NationalCode,
+                    Phone         = Phone,
+                    Email         = $"{NationalCode}@picoplus.app",
+                    DateOfBirth   = BirthDate,
+                    FatherName    = FatherName,
+                    Gender        = Gender,
+                    ShahkarStatus = ShahkarStatus ?? "0"
+                };
+                var created = await _contactRepo.CreateAsync(newContact);
+                contactId = created.Id;
+            }
 
-            var created = await _contactRepo.CreateAsync(newContact);
-            if (!string.IsNullOrEmpty(created.Id))
+            if (!string.IsNullOrEmpty(contactId))
             {
+                var finalContact = new Contact
+                {
+                    Id            = contactId,
+                    FirstName     = FirstName,
+                    LastName      = LastName,
+                    NationalCode  = NationalCode,
+                    Phone         = Phone,
+                    Email         = $"{NationalCode}@picoplus.app",
+                    DateOfBirth   = BirthDate,
+                    FatherName    = FatherName,
+                    Gender        = Gender,
+                    ShahkarStatus = ShahkarStatus ?? "0"
+                };
+                var created = finalContact;
+                if (!string.IsNullOrEmpty(created.Id))
+                {
                 _authState.SetAuthenticatedUser(created);
                 var dto = _authState.CurrentUser;
                 await _sessionStorage.SetItemAsync("LogInState",   1,   ct);
@@ -203,19 +289,20 @@ public class RegisterService : IRegisterService
                 catch (Exception ex) { _logger.LogWarning(ex, "Welcome SMS failed"); }
 
                 // Raise domain event — handled asynchronously by ContactRegisteredHandler.
-                await _eventDispatcher.DispatchAsync(new ContactRegisteredEvent
-                {
-                    ContactId    = created.Id,
-                    FirstName    = FirstName,
-                    LastName     = LastName,
-                    Phone        = Phone,
-                    Email        = created.Email,
-                    NationalCode = NationalCode,
-                    ShahkarStatus = ShahkarStatus,
-                }, ct);
+                    await _eventDispatcher.DispatchAsync(new ContactRegisteredEvent
+                    {
+                        ContactId    = created.Id,
+                        FirstName    = FirstName,
+                        LastName     = LastName,
+                        Phone        = Phone,
+                        Email        = created.Email,
+                        NationalCode = NationalCode,
+                        ShahkarStatus = ShahkarStatus,
+                    }, ct);
 
-                await _dialogService.ShowSuccessAsync("ثبت نام موفق", $"خوش آمدید {FirstName} {LastName}!");
-                _navigationService.NavigateTo("/user");
+                    await _dialogService.ShowSuccessAsync("ثبت نام موفق", $"خوش آمدید {FirstName} {LastName}!");
+                    _navigationService.NavigateTo("/user");
+                }
             }
             else
             {
