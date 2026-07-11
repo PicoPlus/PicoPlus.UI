@@ -1,8 +1,44 @@
 @inherits LayoutComponentBase
 @using PicoPlus.Components.Shared
+@inject PicoPlus.Services.Utils.LiaraApiService LiaraService
 
 <div class="page">
     @Body
 </div>
 
 <ToastContainer />
+
+@if (!string.IsNullOrEmpty(_version))
+{
+    <div class="app-version-badge">
+        <i class="bi bi-layers me-1"></i>v@_version
+    </div>
+}
+
+<style>
+    .app-version-badge {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.45);
+        background: rgba(0,0,0,0.25);
+        padding: 2px 10px;
+        border-radius: 20px;
+        pointer-events: none;
+        z-index: 9999;
+        white-space: nowrap;
+        backdrop-filter: blur(4px);
+    }
+</style>
+
+@code {
+    private string? _version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _version = await LiaraService.GetCurrentBuildVersionAsync(); }
+        catch { _version = null; }
+    }
+}
