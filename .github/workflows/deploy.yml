@@ -1,0 +1,59 @@
+name: Build & Deploy to Plesk
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1 — Checkout with full history so git rev-list --count works
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2 — Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # 3 — Restore
+      - name: Restore dependencies
+        run: dotnet restore PicoPlus.sln
+
+      # 4 — Publish (self-contained, release, linux-x64)
+      #     The SetGitBuildNumber target in .csproj runs automatically here
+      - name: Publish
+        run: |
+          dotnet publish PicoPlus.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained false \
+            --output ./publish
+
+      # 5 — Write appsettings secrets from GitHub Secrets into publish output
+      #     This keeps real tokens out of the repo
+      - name: Write appsettings.Production.json
+        run: |
+          cat > ./publish/appsettings.Production.json << 'EOF'
+          ${{ secrets.APPSETTINGS_PRODUCTION }}
+          EOF
+
+      # 6 — Upload to Plesk via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./publish/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/appsettings.Development.json
