@@ -1,14 +1,14 @@
 @page "/auth/login"
 @using Microsoft.AspNetCore.Components.Forms
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<PicoPlus.Resources.SharedResource> L
-@inject PicoPlus.Services.Auth.AuthService AuthSvc
+@using NovinCRM.Localization.Abstractions
+@inject ILocalizationService L
+@inject NovinCRM.Services.Auth.AuthService AuthSvc
 @inject NavigationManager Navigation
-@inject PicoPlus.Services.Utils.LiaraApiService LiaraService
-@inject PicoPlus.Infrastructure.Services.IDialogService DialogService
-@inject PicoPlus.Infrastructure.Services.ISessionStorageService SessionStorage
-@inject PicoPlus.Infrastructure.Services.ILocalStorageService LocalStorage
-@inject PicoPlus.Infrastructure.State.AuthenticationStateService AuthState
+@inject NovinCRM.Services.Utils.LiaraApiService LiaraService
+@inject NovinCRM.Infrastructure.Services.IDialogService DialogService
+@inject NovinCRM.Infrastructure.Services.ISessionStorageService SessionStorage
+@inject NovinCRM.Infrastructure.Services.ILocalStorageService LocalStorage
+@inject NovinCRM.Infrastructure.State.AuthenticationStateService AuthState
 @inject ILogger<Login> Logger
 
 <link href="/css/auth.css" rel="stylesheet" />
