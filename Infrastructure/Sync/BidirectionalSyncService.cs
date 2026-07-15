@@ -41,26 +41,32 @@ namespace NovinCRM.Infrastructure.Sync;
 /// </summary>
 public sealed class BidirectionalSyncService
 {
-    private readonly IContactRepository  _contactRepo;
-    private readonly IDealRepository     _dealRepo;
-    private readonly IMemoryCache        _cache;
-    private readonly ISyncStateRepository _syncState;
+    private readonly IContactRepository        _contactRepo;
+    private readonly IDealRepository           _dealRepo;
+    private readonly IMemoryCache              _cache;
+    private readonly ISyncStateRepository      _syncState;
+    private readonly IComplianceAuditLog       _auditLog;
+    private readonly IContactSessionRevocation _sessionRevocation;
     private readonly ILogger<BidirectionalSyncService> _logger;
 
     // Cache keys are now centralised in CacheKeys — no local string constants needed.
 
     public BidirectionalSyncService(
-        IContactRepository  contactRepo,
-        IDealRepository     dealRepo,
-        IMemoryCache        cache,
-        ISyncStateRepository syncState,
+        IContactRepository        contactRepo,
+        IDealRepository           dealRepo,
+        IMemoryCache              cache,
+        ISyncStateRepository      syncState,
+        IComplianceAuditLog       auditLog,
+        IContactSessionRevocation sessionRevocation,
         ILogger<BidirectionalSyncService> logger)
     {
-        _contactRepo = contactRepo;
-        _dealRepo    = dealRepo;
-        _cache       = cache;
-        _syncState   = syncState;
-        _logger      = logger;
+        _contactRepo       = contactRepo;
+        _dealRepo          = dealRepo;
+        _cache             = cache;
+        _syncState         = syncState;
+        _auditLog          = auditLog;
+        _sessionRevocation = sessionRevocation;
+        _logger            = logger;
     }
 
     // ── Creation ──────────────────────────────────────────────────────────────
@@ -163,6 +169,15 @@ public sealed class BidirectionalSyncService
 
     // ── Privacy deletion ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Handles a HubSpot <c>privacy.deletionRequest</c> webhook event.
+    ///
+    /// Steps (closes issue #63 / HP-8):
+    ///   1. Mark the contact as deleted in the sync-state store.
+    ///   2. Invalidate all in-memory caches for the contact.
+    ///   3. Record the deletion in the compliance audit log.
+    ///   4. Revoke any active Blazor sessions for the contact.
+    /// </summary>
     public async Task HandlePrivacyDeletionAsync(HubSpotWebhookEvent ev, CancellationToken ct)
     {
         _logger.LogInformation(
@@ -172,11 +187,42 @@ public sealed class BidirectionalSyncService
         var objectType = ev.ObjectType.ToString().ToLowerInvariant();
         var objectId   = ev.ObjectId.ToString();
 
+        // 1. Mark deleted in sync-state (prevents stale reads from the cache layer)
         await _syncState.MarkDeletedAsync(objectType, objectId, ct);
+
+        // 2. Invalidate caches
         await InvalidateObjectCacheAsync(objectType, objectId, ct);
 
         if (ev.ObjectType == HubSpotObjectType.Contact)
             await InvalidateContactPanelCacheAsync(objectId, ct).ConfigureAwait(false);
+
+        // 3. Write compliance audit record — must happen regardless of session state
+        try
+        {
+            await _auditLog.RecordPrivacyDeletionAsync(objectId, ev.OccurredAt, ct);
+        }
+        catch (Exception ex)
+        {
+            // Log but do not rethrow — session revocation must still run
+            _logger.LogError(ex,
+                "Sync.PrivacyDeletion: audit log write failed for contactId={ContactId}",
+                objectId);
+        }
+
+        // 4. Revoke active sessions — must not prevent audit log from completing
+        if (ev.ObjectType == HubSpotObjectType.Contact)
+        {
+            try
+            {
+                await _sessionRevocation.RevokeContactSessionsAsync(objectId, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Sync.PrivacyDeletion: session revocation failed for contactId={ContactId}",
+                    objectId);
+            }
+        }
     }
 
     // ── Cache helpers ─────────────────────────────────────────────────────────
