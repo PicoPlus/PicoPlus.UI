@@ -1,14 +1,18 @@
+#nullable enable
+
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace NovinCRM.Services.Auth;
+namespace NovinCRM.Application.Features.Auth;
 
 /// <summary>
 /// Service for generating and validating OTP (One-Time Password) codes.
 /// OTP state is stored in <see cref="IDistributedCache"/> (Redis when configured,
 /// in-process memory cache otherwise), so codes survive application restarts
 /// and work correctly across multiple instances.
+///
+/// Namespace aligned with folder structure (fixes issue #68 / MP-5).
 /// </summary>
 public class OtpService
 {
@@ -106,7 +110,7 @@ public class OtpService
         }
 
         // Normalize and trim both codes for comparison
-        var normalizedStoredCode = otpData.Code.Trim();
+        var normalizedStoredCode  = otpData.Code.Trim();
         var normalizedEnteredCode = enteredCode.Trim();
 
         // Validate code — do NOT log OTP values.
@@ -116,7 +120,7 @@ public class OtpService
             _cache.Remove(key);
             return new OtpValidationResult
             {
-                IsValid = true,
+                IsValid      = true,
                 ErrorMessage = string.Empty
             };
         }
@@ -145,7 +149,7 @@ public class OtpService
     /// </summary>
     public TimeSpan? GetRemainingTime(string phoneNumber)
     {
-        var key = CacheKey(NormalizePhoneNumber(phoneNumber));
+        var key  = CacheKey(NormalizePhoneNumber(phoneNumber));
         var json = _cache.GetString(key);
         if (json is null) return null;
 
@@ -180,25 +184,21 @@ public class OtpService
 
         // If starts with 98, remove it (Iran country code)
         if (digits.StartsWith("98") && digits.Length == 12)
-        {
             digits = digits.Substring(2);
-        }
 
         // If starts with 0, keep it
         if (!digits.StartsWith("0") && digits.Length == 10)
-        {
             digits = "0" + digits;
-        }
 
         return digits;
     }
 
     private sealed class OtpData
     {
-        public string Code { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
-        public int AttemptCount { get; set; }
+        public string   Code         { get; set; } = string.Empty;
+        public DateTime CreatedAt    { get; set; }
+        public DateTime ExpiresAt    { get; set; }
+        public int      AttemptCount { get; set; }
     }
 }
 
@@ -207,6 +207,6 @@ public class OtpService
 /// </summary>
 public class OtpValidationResult
 {
-    public bool IsValid { get; set; }
+    public bool   IsValid      { get; set; }
     public string ErrorMessage { get; set; } = string.Empty;
 }
