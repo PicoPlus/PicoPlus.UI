@@ -46,7 +46,7 @@
     <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="DotNetEnv" Version="3.2.0" />
-    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="MediatR" Version="14.2.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="RestSharp" Version="114.0.0" />
