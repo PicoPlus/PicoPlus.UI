@@ -129,9 +129,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Check admin access
+        // Check admin access — if not authorized, redirect here so Blazor
+        // handles NavigationException at the correct component boundary.
         var hasAccess = await AuthHandler.EnsureAdminAccessAsync();
-        if (!hasAccess) return;
+        if (!hasAccess)
+        {
+            Navigation.NavigateTo("/admin/login", true);
+            return;
+        }
 
         // Load admin info
         adminInfo = await AuthHandler.GetAdminUserInfoAsync();
@@ -188,4 +193,3 @@
         AdminState.OnStateChanged -= HandleStateChanged;
     }
 }
-

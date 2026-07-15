@@ -11,18 +11,15 @@ public class AdminAuthorizationHandler
 {
     private readonly AuthenticationStateService _authState;
     private readonly ISessionStorageService _sessionStorage;
-    private readonly NavigationManager _navigation;
     private readonly ILogger<AdminAuthorizationHandler> _logger;
 
     public AdminAuthorizationHandler(
         AuthenticationStateService authState,
         ISessionStorageService sessionStorage,
-        NavigationManager navigation,
         ILogger<AdminAuthorizationHandler> logger)
     {
         _authState = authState;
         _sessionStorage = sessionStorage;
-        _navigation = navigation;
         _logger = logger;
     }
 
@@ -67,20 +64,16 @@ public class AdminAuthorizationHandler
     }
 
     /// <summary>
-    /// Ensure user is admin or redirect to login
+    /// Returns true if the user is admin. Does NOT navigate — callers are
+    /// responsible for redirecting so that Blazor can handle NavigationException
+    /// at the correct component boundary.
     /// </summary>
     public async Task<bool> EnsureAdminAccessAsync(CancellationToken cancellationToken = default)
     {
         var isAdmin = await IsAdminAsync(cancellationToken);
-        
         if (!isAdmin)
-        {
-            _logger.LogWarning("Unauthorized admin access attempt. Redirecting to admin login.");
-            _navigation.NavigateTo("/admin/login", true);
-            return false;
-        }
-
-        return true;
+            _logger.LogWarning("Unauthorized admin access attempt.");
+        return isAdmin;
     }
 
     /// <summary>
