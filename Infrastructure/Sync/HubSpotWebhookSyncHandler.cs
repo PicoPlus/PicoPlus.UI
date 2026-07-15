@@ -2,10 +2,10 @@
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Sync;
+namespace NovinCRM.Infrastructure.Sync;
 
 /// <summary>
 /// Routes every verified inbound HubSpot webhook event to the

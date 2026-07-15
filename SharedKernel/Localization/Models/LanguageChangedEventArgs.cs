@@ -1,7 +1,7 @@
-namespace PicoPlus.Localization.Models;
+namespace NovinCRM.Localization.Models;
 
 /// <summary>
-/// Event arguments raised by <see cref="PicoPlus.Localization.Abstractions.ILocalizationService.LanguageChanged"/>.
+/// Event arguments raised by <see cref="NovinCRM.Localization.Abstractions.ILocalizationService.LanguageChanged"/>.
 /// </summary>
 public sealed class LanguageChangedEventArgs : EventArgs
 {

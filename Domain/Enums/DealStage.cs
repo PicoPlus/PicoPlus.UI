@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Domain.Enums;
+namespace NovinCRM.Domain.Enums;
 
 /// <summary>
 /// Strongly-typed enumeration for deal pipeline stages.

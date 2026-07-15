@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
-using PicoPlus.Localization.Abstractions;
-using PicoPlus.Localization.Services;
+using NovinCRM.Localization.Abstractions;
+using NovinCRM.Localization.Services;
 
-namespace PicoPlus.Localization.Components;
+namespace NovinCRM.Localization.Components;
 
 /// <summary>
 /// Base class for all Blazor components that consume localization.

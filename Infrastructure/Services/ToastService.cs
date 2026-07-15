@@ -1,4 +1,4 @@
-namespace PicoPlus.Infrastructure.Services;
+namespace NovinCRM.Infrastructure.Services;
 
 /// <summary>
 /// Service for managing toast notifications

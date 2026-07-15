@@ -1,4 +1,4 @@
-ï»¿using System.Net.Http;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.CRM.Objects
+namespace NovinCRM.Services.CRM.Objects
 {
     /// <summary>
     /// HubSpot Contacts API Service
@@ -48,7 +48,7 @@ namespace PicoPlus.Services.CRM.Objects
             var httpClient = _httpClientFactory.CreateClient("HubSpot");
             var url = $"{BaseUrl}/search";
 
-            // Build payload â€” omit "after" entirely when not provided; HubSpot returns 400 on null
+            // Build payload — omit "after" entirely when not provided; HubSpot returns 400 on null
             var payloadDict = new Dictionary<string, object>
             {
                 ["limit"] = limit,
@@ -120,7 +120,7 @@ namespace PicoPlus.Services.CRM.Objects
                 });
             }
 
-            // Build payload â€” omit null fields entirely; HubSpot returns 400 on null "after"/"query"
+            // Build payload — omit null fields entirely; HubSpot returns 400 on null "after"/"query"
             var payloadDict = new Dictionary<string, object>
             {
                 ["limit"] = limit,

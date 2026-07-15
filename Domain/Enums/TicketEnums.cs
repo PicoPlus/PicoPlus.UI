@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Domain.Enums;
+namespace NovinCRM.Domain.Enums;
 
 /// <summary>
 /// Lifecycle status for a support ticket.

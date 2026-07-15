@@ -2,11 +2,11 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
-using PicoPlus.Services.SMS;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
+using NovinCRM.Services.SMS;
 
-namespace PicoPlus.Application.Features.CRM.EventHandlers;
+namespace NovinCRM.Application.Features.CRM.EventHandlers;
 
 /// <summary>
 /// Sends a deal-closed SMS to the associated contact when a deal is moved to

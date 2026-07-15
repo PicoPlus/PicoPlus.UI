@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Domain.Entities;
+namespace NovinCRM.Domain.Entities;
 
 /// <summary>
 /// Domain entity representing a HubSpot owner (sales rep / team member).

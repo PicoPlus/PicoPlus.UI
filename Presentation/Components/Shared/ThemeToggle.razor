@@ -1,0 +1,54 @@
+@namespace NovinCRM.Components.Shared
+@inject IJSRuntime JS
+
+@*
+    ThemeToggle — toggles between light and dark mode.
+    - Reads current theme from window.picoTheme.getTheme() on first render.
+    - Calls window.picoTheme.toggle() on click (persists to localStorage automatically).
+    - Shows 🌙 (moon) in light mode and ☀ (sun) in dark mode.
+    - Has aria-label for accessibility; works with keyboard (button element).
+*@
+
+<button class="btn-action theme-toggle-btn"
+        type="button"
+        @onclick="ToggleThemeAsync"
+        aria-label="@(_isDark ? "تغییر به حالت روشن" : "تغییر به حالت تاریک")"
+        title="@(_isDark ? "حالت روشن" : "حالت تاریک")">
+    <i class="bi @(_isDark ? "bi-sun-fill" : "bi-moon-fill")"></i>
+</button>
+
+@code {
+    private bool _isDark;
+    private bool _initialised;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialised)
+        {
+            _initialised = true;
+            try
+            {
+                var theme = await JS.InvokeAsync<string>("picoThemeGetTheme");
+                _isDark = theme == "dark";
+                StateHasChanged();
+            }
+            catch
+            {
+                // JS interop not available yet (prerender) — default to light
+            }
+        }
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("picoThemeToggle");
+            _isDark = !_isDark;
+        }
+        catch
+        {
+            // Graceful degradation if JS unavailable
+        }
+    }
+}

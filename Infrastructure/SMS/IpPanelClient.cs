@@ -5,9 +5,9 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PicoPlus.SMS.Models.IPPanel;
+using NovinCRM.SMS.Models.IPPanel;
 
-namespace PicoPlus.Services.SMS;
+namespace NovinCRM.Services.SMS;
 
 /// <summary>
 /// Low-level IPPanel Edge API HTTP client.

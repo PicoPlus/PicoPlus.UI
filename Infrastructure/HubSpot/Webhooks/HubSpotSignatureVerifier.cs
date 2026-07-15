@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Verifies HubSpot webhook request authenticity using the v3 signature scheme.

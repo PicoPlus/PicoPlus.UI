@@ -4,10 +4,10 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Dual-channel, thread-safe, in-process webhook event queue.
@@ -31,16 +31,17 @@ namespace PicoPlus.Infrastructure.Webhooks;
 ///
 /// Lifetime: Singleton.
 /// </summary>
-public sealed class InMemoryWebhookEventQueue : IWebhookEventQueue
+public sealed class InMemoryWebhookEventQueue : IRetryableEventQueue
 {
     private readonly Channel<HubSpotWebhookEvent>  _mainChannel;
     private readonly Channel<EventEnvelope>        _retryChannel;
     private readonly ILogger<InMemoryWebhookEventQueue> _logger;
 
-    // Expose the retry channel reader/writer to the dispatcher without
-    // leaking it through the public IWebhookEventQueue interface.
-    internal ChannelReader<EventEnvelope> RetryReader  => _retryChannel.Reader;
-    internal ChannelWriter<EventEnvelope> RetryWriter  => _retryChannel.Writer;
+    // IRetryableEventQueue — exposed to the dispatcher via the interface,
+    // not as internal members, so any IRetryableEventQueue implementation can
+    // replace InMemoryWebhookEventQueue without breaking the dispatcher.
+    public ChannelReader<EventEnvelope> RetryReader => _retryChannel.Reader;
+    public ChannelWriter<EventEnvelope> RetryWriter => _retryChannel.Writer;
 
     public InMemoryWebhookEventQueue(
         IOptions<HubSpotWebhookOptions>        options,

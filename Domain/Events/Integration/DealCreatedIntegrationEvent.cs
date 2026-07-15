@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Domain.Events.Integration;
+namespace NovinCRM.Domain.Events.Integration;
 
 /// <summary>
 /// Integration event published when a new deal is created.

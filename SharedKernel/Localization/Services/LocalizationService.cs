@@ -3,10 +3,10 @@ using System.Collections.Frozen;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PicoPlus.Localization.Abstractions;
-using PicoPlus.Localization.Models;
+using NovinCRM.Localization.Abstractions;
+using NovinCRM.Localization.Models;
 
-namespace PicoPlus.Localization.Services;
+namespace NovinCRM.Localization.Services;
 
 /// <summary>
 /// Singleton core implementation of <see cref="ILocalizationService"/>.

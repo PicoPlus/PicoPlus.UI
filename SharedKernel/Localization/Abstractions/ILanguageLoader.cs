@@ -1,4 +1,4 @@
-namespace PicoPlus.Localization.Abstractions;
+namespace NovinCRM.Localization.Abstractions;
 
 /// <summary>
 /// Responsible for discovering and loading raw translation dictionaries from the file system.

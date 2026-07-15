@@ -2,10 +2,10 @@ using System.Globalization;
 using Blazored.LocalStorage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PicoPlus.Localization.Abstractions;
-using PicoPlus.Localization.Models;
+using NovinCRM.Localization.Abstractions;
+using NovinCRM.Localization.Models;
 
-namespace PicoPlus.Localization.Services;
+namespace NovinCRM.Localization.Services;
 
 /// <summary>
 /// Scoped wrapper around the singleton <see cref="LocalizationService"/>.
@@ -37,7 +37,7 @@ public sealed class ScopedLocalizationService : ILocalizationService, IAsyncDisp
     private bool _initialized;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
-    private const string StorageKey = "picoplus_lang";
+    private const string StorageKey = "NovinCRM_lang";
 
     // ── Constructor ────────────────────────────────────────────────────────────
 

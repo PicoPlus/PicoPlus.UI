@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components;
-using PicoPlus.Domain.Aggregates;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.Enums;
-using PicoPlus.Infrastructure.Services;
-using PicoPlus.Services.UserPanel;
+using NovinCRM.Domain.Aggregates;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.Enums;
+using NovinCRM.Infrastructure.Services;
+using NovinCRM.Services.UserPanel;
 
-namespace PicoPlus.Pages.User;
+namespace NovinCRM.Pages.User;
 
 /// <summary>
 /// Code-behind for user panel page.

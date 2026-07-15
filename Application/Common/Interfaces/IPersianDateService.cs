@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Services.UserPanel;
+namespace NovinCRM.Services.UserPanel;
 
 /// <summary>
 /// Service for Persian date formatting and conversion

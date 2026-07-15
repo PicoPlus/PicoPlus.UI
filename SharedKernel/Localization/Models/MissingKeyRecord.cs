@@ -1,4 +1,4 @@
-namespace PicoPlus.Localization.Models;
+namespace NovinCRM.Localization.Models;
 
 /// <summary>
 /// Describes a missing-key event, used for diagnostics and optional reporting pipelines.

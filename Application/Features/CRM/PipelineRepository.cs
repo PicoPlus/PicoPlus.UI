@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.ValueObjects;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.ValueObjects;
 
-namespace PicoPlus.Services.CRM;
+namespace NovinCRM.Services.CRM;
 
 /// <summary>
 /// Implements IPipelineRepository by delegating to the existing Pipelines service.

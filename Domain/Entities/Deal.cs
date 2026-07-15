@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Enums;
+using NovinCRM.Domain.Enums;
 
-namespace PicoPlus.Domain.Entities;
+namespace NovinCRM.Domain.Entities;
 
 /// <summary>
 /// Domain entity representing a sales deal.

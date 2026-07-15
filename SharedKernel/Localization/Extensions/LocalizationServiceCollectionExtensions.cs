@@ -1,19 +1,19 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using PicoPlus.Localization.Abstractions;
-using PicoPlus.Localization.Models;
-using PicoPlus.Localization.Services;
+using NovinCRM.Localization.Abstractions;
+using NovinCRM.Localization.Models;
+using NovinCRM.Localization.Services;
 
-namespace PicoPlus.Localization.Extensions;
+namespace NovinCRM.Localization.Extensions;
 
 /// <summary>
-/// Extension methods for registering the PicoPlus JSON localization system with the DI container.
+/// Extension methods for registering the NovinCRM JSON localization system with the DI container.
 /// </summary>
 public static class LocalizationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers all services required by the PicoPlus localization system.
+    /// Registers all services required by the NovinCRM localization system.
     ///
     /// Lifetime decisions:
     /// <list type="bullet">
@@ -55,7 +55,7 @@ public static class LocalizationServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Optional delegate to override default <see cref="LocalizationOptions"/>.</param>
-    public static IServiceCollection AddPicoPlusLocalization(
+    public static IServiceCollection AddNovinCRMLocalization(
         this IServiceCollection services,
         Action<LocalizationOptions>? configure = null)
     {
@@ -93,7 +93,7 @@ public static class LocalizationServiceCollectionExtensions
 
     /// <summary>
     /// Enables hot-reload of localization files in the Development environment.
-    /// Call this after <see cref="AddPicoPlusLocalization"/> if desired.
+    /// Call this after <see cref="AddNovinCRMLocalization"/> if desired.
     /// </summary>
     public static IServiceCollection EnableLocalizationHotReload(this IServiceCollection services)
     {

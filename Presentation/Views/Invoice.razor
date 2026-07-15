@@ -1,10 +1,13 @@
 @page "/invoice/{DealId}"
-@namespace PicoPlus.Views
-@using PicoPlus.Services.UserPanel
-@using PicoPlus.Domain.Extensions
-@using PicoPlus.Services.Utils
+@namespace NovinCRM.Views
+@using NovinCRM.Services.UserPanel
+@using NovinCRM.Domain.Extensions
+@using NovinCRM.Services.Utils
+@using NovinCRM.Application.Common.Interfaces
 @inject DealDetailService DealDetailSvc
 @inject IPersianDateService PersianDate
+@inject IInvoiceAccessTokenRepository TokenRepo
+@inject NovinCRM.Services.CRM.Engagements.Notes Notes
 
 <PageTitle>فاکتور سفارش</PageTitle>
 
@@ -13,6 +16,13 @@
     <div class="invoice-loading">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-3 text-muted">در حال بارگذاری اطلاعات…</p>
+    </div>
+}
+else if (_tokenError != null)
+{
+    <div class="invoice-error">
+        <i class="bi bi-shield-exclamation text-warning fs-1"></i>
+        <p class="mt-3">@_tokenError</p>
     </div>
 }
 else if (_vm is null || _vm.ErrorMessage != null)
@@ -127,7 +137,7 @@ else
                 <tfoot>
                     <tr class="total-row">
                         <td colspan="@(hasDiscount ? 4 : 3)" class="total-label">مبلغ کل قابل پرداخت</td>
-                        <td colspan="@(hasDiscount ? 2 : 2)" class="total-amount">@Fmt(total) ریال</td>
+                        <td colspan="2" class="total-amount">@Fmt(total) ریال</td>
                     </tr>
                 </tfoot>
             </table>
@@ -166,6 +176,38 @@ else
                     </div>
                 }
             </div>
+        }
+
+        <!-- ── Customer Feedback ─────────────────────────────────────── -->
+        @if (!string.IsNullOrEmpty(Token))
+        {
+            <div class="section-title">نظر شما درباره این سفارش</div>
+            @if (!_feedbackSubmitted)
+            {
+                <div class="feedback-section">
+                    <textarea class="feedback-input"
+                              @bind="_feedbackText"
+                              placeholder="نظر، پیشنهاد یا انتقاد خود را اینجا بنویسید…"
+                              maxlength="1000"
+                              disabled="@_feedbackLoading"></textarea>
+                    <div class="feedback-counter">@(_feedbackText?.Length ?? 0) / ۱۰۰۰</div>
+                    <button class="btn-submit" @onclick="SubmitFeedback"
+                            disabled="@(_feedbackLoading || string.IsNullOrWhiteSpace(_feedbackText))">
+                        @if (_feedbackLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        ثبت نظر
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="feedback-success">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    نظر شما با موفقیت ثبت شد. از اعتماد شما سپاسگزاریم.
+                </div>
+            }
         }
 
         <!-- ── Footer ─────────────────────────────────────────────────── -->
@@ -285,6 +327,32 @@ else
     .log-date    { font-size: .75rem; }
     .log-status  { font-size: .75rem; background: #f3f4f6; border-radius: 4px; padding: .1rem .4rem; }
 
+    /* Feedback */
+    .feedback-section {
+        background: #f8faff; border: 1px solid #dbeafe;
+        border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+    }
+    .feedback-input {
+        width: 100%; min-height: 100px; border: 1px solid #cbd5e1;
+        border-radius: 8px; padding: .6rem .75rem; font-family: Tahoma, sans-serif;
+        font-size: .9rem; resize: vertical; direction: rtl;
+    }
+    .feedback-input:focus { outline: none; border-color: #2563eb; }
+    .feedback-counter { font-size: .75rem; color: #94a3b8; text-align: left; margin: .25rem 0 .6rem; }
+    .btn-submit {
+        background: #2563eb; color: #fff; border: none; border-radius: 8px;
+        padding: .5rem 1.5rem; font-size: .9rem; font-family: Tahoma, sans-serif;
+        cursor: pointer; display: flex; align-items: center; gap: .4rem;
+    }
+    .btn-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+    .btn-submit:not(:disabled):hover { background: #1d4ed8; }
+    .feedback-success {
+        background: #f0fdf4; border: 1px solid #bbf7d0;
+        border-radius: 10px; padding: .85rem 1.25rem;
+        color: #166534; font-size: .95rem; display: flex; align-items: center;
+        margin-bottom: 1rem;
+    }
+
     /* Footer */
     .invoice-footer {
         margin-top: 2rem; border-top: 1px solid #e5e7eb;
@@ -304,15 +372,64 @@ else
 @code {
     [Parameter] public string DealId { get; set; } = string.Empty;
 
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? Token { get; set; }
+
     private DealDetailService.DealDetailViewModel? _vm;
-    private bool _loading = true;
+    private bool    _loading          = true;
+    private string? _tokenError       = null;
+
+    // Feedback state
+    private string? _feedbackText;
+    private bool    _feedbackLoading;
+    private bool    _feedbackSubmitted;
 
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true;
-        _vm = null;
-        _vm = await DealDetailSvc.LoadDealDetailsAsync(DealId);
+        _loading    = true;
+        _tokenError = null;
+        _vm         = null;
+
+        // If a token is supplied, validate it before loading any deal data
+        if (!string.IsNullOrEmpty(Token))
+        {
+            var entry = await TokenRepo.ValidateAsync(Token);
+            if (entry is null)
+            {
+                // Distinguish expired vs consumed vs unknown by checking separately
+                _tokenError = "این لینک منقضی شده یا قبلاً استفاده شده است.";
+                _loading = false;
+                return;
+            }
+
+            // Token is valid — ensure it matches this deal
+            if (!string.Equals(entry.DealId, DealId, StringComparison.OrdinalIgnoreCase))
+            {
+                _tokenError = "لینک نامعتبر است.";
+                _loading = false;
+                return;
+            }
+        }
+
+        _vm      = await DealDetailSvc.LoadDealDetailsAsync(DealId);
         _loading = false;
+    }
+
+    private async Task SubmitFeedback()
+    {
+        if (string.IsNullOrWhiteSpace(_feedbackText) || string.IsNullOrEmpty(Token)) return;
+        _feedbackLoading = true;
+        try
+        {
+            var body = $"[نظر مشتری]\n{_feedbackText.Trim()}";
+            await Notes.CreateNoteAsync(body, associatedDealId: DealId);
+            await TokenRepo.MarkConsumedAsync(Token);
+            _feedbackSubmitted = true;
+        }
+        finally
+        {
+            _feedbackLoading = false;
+        }
     }
 
     private static string Fmt(decimal n)

@@ -5,7 +5,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.CRM.Objects;
+namespace NovinCRM.Services.CRM.Objects;
 
 /// <summary>
 /// Extension methods for Contact service to handle file uploads

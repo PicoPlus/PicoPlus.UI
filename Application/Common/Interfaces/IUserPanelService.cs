@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Aggregates;
+using NovinCRM.Domain.Aggregates;
 
-namespace PicoPlus.Services.UserPanel;
+namespace NovinCRM.Services.UserPanel;
 
 /// <summary>
 /// Business logic service for user panel operations.

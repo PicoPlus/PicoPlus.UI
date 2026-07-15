@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
-using PicoPlus.Infrastructure.State;
-using PicoPlus.Infrastructure.Services;
+using NovinCRM.Infrastructure.State;
+using NovinCRM.Infrastructure.Services;
 
-namespace PicoPlus.Infrastructure.Authorization;
+namespace NovinCRM.Infrastructure.Authorization;
 
 /// <summary>
 /// Handler for admin authorization checks

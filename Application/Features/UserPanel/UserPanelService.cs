@@ -1,21 +1,21 @@
 #nullable enable
 
 using Microsoft.Extensions.Caching.Memory;
-using PicoPlus.Domain.Aggregates;
-using PicoPlus.Domain.Enums;
-using PicoPlus.Domain.Extensions;
-using PicoPlus.Domain.ValueObjects;
-using PicoPlus.Infrastructure.Services;
-using PicoPlus.Infrastructure.State;
-using PicoPlus.Services.CRM;
-using ContactSvc   = PicoPlus.Services.CRM.Objects.Contact;
-using DealSvc      = PicoPlus.Services.CRM.Objects.Deal;
-using ContactModel = PicoPlus.Models.CRM.Objects.Contact;
-using DealModel    = PicoPlus.Models.CRM.Objects.Deal;
-using DomainContact = PicoPlus.Domain.Entities.Contact;
-using DomainDeal    = PicoPlus.Domain.Entities.Deal;
+using NovinCRM.Domain.Aggregates;
+using NovinCRM.Domain.Enums;
+using NovinCRM.Domain.Extensions;
+using NovinCRM.Domain.ValueObjects;
+using NovinCRM.Infrastructure.Services;
+using NovinCRM.Infrastructure.State;
+using NovinCRM.Services.CRM;
+using ContactSvc   = NovinCRM.Services.CRM.Objects.Contact;
+using DealSvc      = NovinCRM.Services.CRM.Objects.Deal;
+using ContactModel = NovinCRM.Models.CRM.Objects.Contact;
+using DealModel    = NovinCRM.Models.CRM.Objects.Deal;
+using DomainContact = NovinCRM.Domain.Entities.Contact;
+using DomainDeal    = NovinCRM.Domain.Entities.Deal;
 
-namespace PicoPlus.Services.UserPanel;
+namespace NovinCRM.Services.UserPanel;
 
 /// <summary>
 /// Implements IUserPanelService.
@@ -31,7 +31,6 @@ public class UserPanelService : IUserPanelService
     private readonly IMemoryCache _cache;
     private readonly ILogger<UserPanelService> _logger;
 
-    private const string CacheKeyPrefix = "UserPanel_";
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     public UserPanelService(
@@ -57,7 +56,7 @@ public class UserPanelService : IUserPanelService
     {
         try
         {
-            var cacheKey = $"{CacheKeyPrefix}{contactId}";
+            var cacheKey = NovinCRM.Application.Common.CacheKeys.UserPanel(contactId);
             if (_cache.TryGetValue<UserPanelState>(cacheKey, out var cached))
             {
                 _logger.LogDebug("Returning cached panel state for: {ContactId}", contactId);

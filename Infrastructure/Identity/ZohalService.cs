@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace PicoPlus.Services.Identity;
+namespace NovinCRM.Services.Identity;
 
 /// <summary>
 /// Zohal Inquiry Services — national identity and Shahkar endpoints.

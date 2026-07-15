@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Application.Common.Interfaces;
+namespace NovinCRM.Application.Common.Interfaces;
 
 /// <summary>
 /// Processes a single, already-verified HubSpot webhook event.

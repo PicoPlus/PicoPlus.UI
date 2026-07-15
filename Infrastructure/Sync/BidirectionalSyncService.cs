@@ -2,10 +2,10 @@
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Sync;
+namespace NovinCRM.Infrastructure.Sync;
 
 /// <summary>
 /// Full bidirectional synchronisation service.
@@ -47,8 +47,7 @@ public sealed class BidirectionalSyncService
     private readonly ISyncStateRepository _syncState;
     private readonly ILogger<BidirectionalSyncService> _logger;
 
-    // Cache key patterns (must match those used in UserPanelService, KanbanService, etc.)
-    private const string UserPanelCachePrefix = "UserPanel_";
+    // Cache keys are now centralised in CacheKeys — no local string constants needed.
 
     public BidirectionalSyncService(
         IContactRepository  contactRepo,
@@ -192,11 +191,11 @@ public sealed class BidirectionalSyncService
         string objectType, string objectId, CancellationToken _)
     {
         // Generic per-object cache key used by AdminServices / KanbanService.
-        _cache.Remove($"{objectType}:{objectId}");
+        _cache.Remove(NovinCRM.Application.Common.CacheKeys.CrmObject(objectType, objectId));
 
         // Deal changes also invalidate the kanban board cache (no contact scope).
         if (objectType == "deal")
-            _cache.Remove("KanbanBoard");
+            _cache.Remove(NovinCRM.Application.Common.CacheKeys.KanbanBoard);
 
         _logger.LogDebug(
             "SyncCache: invalidated {ObjectType}:{ObjectId}", objectType, objectId);
@@ -206,8 +205,8 @@ public sealed class BidirectionalSyncService
 
     private async Task InvalidateContactPanelCacheAsync(string contactId, CancellationToken ct)
     {
-        _cache.Remove($"{UserPanelCachePrefix}{contactId}");
-        _logger.LogDebug("SyncCache: invalidated UserPanel_{ContactId}", contactId);
+        _cache.Remove(NovinCRM.Application.Common.CacheKeys.UserPanel(contactId));
+        _logger.LogDebug("SyncCache: invalidated userpanel:{ContactId}", contactId);
         await Task.CompletedTask;
     }
 }

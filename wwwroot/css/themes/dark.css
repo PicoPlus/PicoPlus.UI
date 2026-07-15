@@ -69,12 +69,20 @@
     --button-secondary-text:    var(--text-primary);
     --button-secondary-border:  var(--border-default);
 
+    /* ── Shadow token overrides for dark backgrounds ─────────────── */
+    /* Light-theme shadow opacities (0.1) are invisible on dark surfaces.  */
+    /* These overrides re-define the base tokens so the shadow hierarchy    */
+    /* remains intact — card tokens still reference var(--shadow-*).       */
+    --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md:  0 4px 8px  rgba(0, 0, 0, 0.4);
+    --shadow-lg:  0 8px 16px rgba(0, 0, 0, 0.5);
+
     /* ── Component: Card ─────────────────────────────────────────── */
     --card-bg:          var(--bg-card);
     --card-bg-hover:    var(--bg-card-hover);
     --card-border:      var(--border-default);
-    --card-shadow:      0 1px 3px rgba(0, 0, 0, 0.4);
-    --card-shadow-hover:0 4px 16px rgba(0, 0, 0, 0.5);
+    --card-shadow:       var(--shadow-sm);
+    --card-shadow-hover: var(--shadow-md);
 
     /* ── Component: Input ────────────────────────────────────────── */
     --input-bg:           var(--bg-surface-inset);

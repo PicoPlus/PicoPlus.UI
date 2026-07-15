@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Domain.Events.Contact;
+namespace NovinCRM.Domain.Events.Contact;
 
 /// <summary>
 /// Raised when a contact's profile data is enriched from an external

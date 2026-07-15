@@ -1,7 +1,7 @@
-﻿
+
 using System.Text.Json.Serialization;
 
-namespace PicoPlus.Models.CRM.Commerce
+namespace NovinCRM.Models.CRM.Commerce
 {
 #nullable disable
     public class Products

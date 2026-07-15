@@ -1,9 +1,9 @@
 @page "/selectedproductpane"
 @using Microsoft.JSInterop
 @inject IJSRuntime Js
-@inject PicoPlus.Services.CRM.Commerce.Product ProductService
-@inject PicoPlus.Services.CRM.Commerce.LineItem LineItemService
-@inject PicoPlus.Infrastructure.Services.IDialogService DialogService
+@inject NovinCRM.Services.CRM.Commerce.Product ProductService
+@inject NovinCRM.Services.CRM.Commerce.LineItem LineItemService
+@inject NovinCRM.Infrastructure.Services.IDialogService DialogService
 
 <BSCard Header="مدیریت آیتم‌های سفارش" HeaderIcon="bag-plus-fill">
 
@@ -331,10 +331,10 @@
     private decimal Percentage { get; set; } = 0m;
 
     // Selected product from search
-    private PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result? SelectedProduct { get; set; }
+    private NovinCRM.Models.CRM.Commerce.Products.Get.Response.Result? SelectedProduct { get; set; }
 
     // Full product list loaded once on init
-    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> PList { get; set; } = new();
+    private List<NovinCRM.Models.CRM.Commerce.Products.Get.Response.Result> PList { get; set; } = new();
 
     // Live search
     private string _searchQuery = string.Empty;
@@ -343,15 +343,15 @@
         get => _searchQuery;
         set { _searchQuery = value; UpdateSearchResults(); }
     }
-    private List<PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result> SearchResults { get; set; } = new();
-    private PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result? HoveredProduct { get; set; }
+    private List<NovinCRM.Models.CRM.Commerce.Products.Get.Response.Result> SearchResults { get; set; } = new();
+    private NovinCRM.Models.CRM.Commerce.Products.Get.Response.Result? HoveredProduct { get; set; }
     private bool ShowDropdown { get; set; }
 
     // Line items
-    private List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> LineItems { get; set; } = new();
+    private List<NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input> LineItems { get; set; } = new();
     private string LineItemsSearch { get; set; } = string.Empty;
     private bool IsEditing { get; set; }
-    private PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input? ItemBeingEdited { get; set; }
+    private NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input? ItemBeingEdited { get; set; }
 
     // Validation
     private bool quantityError;
@@ -410,7 +410,7 @@
         });
     }
 
-    private void SelectProduct(PicoPlus.Models.CRM.Commerce.Products.Get.Response.Result product)
+    private void SelectProduct(NovinCRM.Models.CRM.Commerce.Products.Get.Response.Result product)
     {
         SelectedProduct = product;
         SearchQuery = product.properties.name ?? string.Empty;
@@ -442,9 +442,9 @@
 
         var total = priceDecimal * Quantity * (1 - Percentage / 100);
 
-        var newItem = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input
+        var newItem = new NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input
         {
-            properties = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Properties
+            properties = new NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Properties
             {
                 name                   = SelectedProduct.properties.name,
                 hs_product_id          = SelectedProduct.id,
@@ -477,7 +477,7 @@
         ResetForm();
     }
 
-    private void EditLineItem(PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input item)
+    private void EditLineItem(NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input item)
     {
         ItemBeingEdited = item;
         IsEditing = true;
@@ -489,7 +489,7 @@
         Percentage = decimal.TryParse(item.properties.hs_discount_percentage, out var d) ? d : 0m;
     }
 
-    private async Task DeleteLineItem(PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input item)
+    private async Task DeleteLineItem(NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input item)
     {
         TotalPrice -= item.properties.TotalPrice;
         LineItems.Remove(item);
@@ -538,9 +538,9 @@
             customPrice <= 0 || customQuantity < 1) return;
 
         var total = CalculateCustomTotal();
-        LineItems.Add(new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input
+        LineItems.Add(new NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input
         {
-            properties = new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Properties
+            properties = new NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Properties
             {
                 name                   = customName,
                 hs_product_id          = null,
@@ -559,14 +559,14 @@
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-    private IEnumerable<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> FilteredLineItems =>
+    private IEnumerable<NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input> FilteredLineItems =>
         string.IsNullOrWhiteSpace(LineItemsSearch)
             ? LineItems
             : LineItems.Where(li =>
                 (li.properties.name?.Contains(LineItemsSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (li.properties.hs_sku?.Contains(LineItemsSearch, StringComparison.OrdinalIgnoreCase) ?? false));
 
-    public List<PicoPlus.Models.CRM.Commerce.LineItem.Create.Request.Input> GetLineItems() => LineItems;
+    public List<NovinCRM.Models.CRM.Commerce.LineItem.Create.Request.Input> GetLineItems() => LineItems;
     public string GetTotalAmount() => TotalPrice.ToString();
 
     private string FormatNumber(decimal? n) =>

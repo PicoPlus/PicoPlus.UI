@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
-namespace PicoPlus.Extensions;
+namespace NovinCRM.Extensions;
 
 /// <summary>
 /// Extension methods for security and authentication

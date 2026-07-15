@@ -1,7 +1,7 @@
-using PicoPlus.Models.Admin;
-using PicoPlus.Services.CRM;
+using NovinCRM.Models.Admin;
+using NovinCRM.Services.CRM;
 
-namespace PicoPlus.Services.Admin;
+namespace NovinCRM.Services.Admin;
 
 /// <summary>
 /// Service for managing HubSpot owners in admin panel

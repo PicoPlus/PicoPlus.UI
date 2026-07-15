@@ -1,15 +1,15 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.Enums;
-using PicoPlus.Domain.Events.Deal;
-using PicoPlus.Domain.Extensions;
-using PicoPlus.Domain.ValueObjects;
-using PicoPlus.Infrastructure.Services;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.Enums;
+using NovinCRM.Domain.Events.Deal;
+using NovinCRM.Domain.Extensions;
+using NovinCRM.Domain.ValueObjects;
+using NovinCRM.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.Deal;
+namespace NovinCRM.Services.Deal;
 
 /// <summary>
 /// Create-deal dialog logic as a plain Application-layer service.

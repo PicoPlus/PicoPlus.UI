@@ -1,4 +1,4 @@
-namespace PicoPlus.Localization.Models;
+namespace NovinCRM.Localization.Models;
 
 /// <summary>
 /// Configuration options for the JSON-based localization system.

@@ -2,7 +2,7 @@
 
 using Newtonsoft.Json;
 
-namespace PicoPlus.SMS.Models.IPPanel;
+namespace NovinCRM.SMS.Models.IPPanel;
 
 // ── Send pattern (OTP / notifications) ───────────────────────────────────────
 // IPPanel Edge API — POST /api/send  (sending_type = "pattern")

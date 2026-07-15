@@ -1,7 +1,7 @@
 using System.Globalization;
-using PicoPlus.Localization.Models;
+using NovinCRM.Localization.Models;
 
-namespace PicoPlus.Localization.Abstractions;
+namespace NovinCRM.Localization.Abstractions;
 
 /// <summary>
 /// Manages the registry of supported languages and maps language codes to

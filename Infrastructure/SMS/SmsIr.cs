@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace PicoPlus.Services.SMS
+namespace NovinCRM.Services.SMS
 {
     /// <summary>
     /// SMS.ir Service - Complete implementation of all SMS.ir API endpoints

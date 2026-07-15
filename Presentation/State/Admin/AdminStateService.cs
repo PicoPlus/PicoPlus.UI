@@ -1,7 +1,7 @@
-using PicoPlus.Models.Admin;
-using PicoPlus.Infrastructure.Services;
+using NovinCRM.Models.Admin;
+using NovinCRM.Infrastructure.Services;
 
-namespace PicoPlus.State.Admin;
+namespace NovinCRM.State.Admin;
 
 /// <summary>
 /// State management for admin panel

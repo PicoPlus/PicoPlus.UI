@@ -1,4 +1,4 @@
-namespace PicoPlus.Infrastructure.Http;
+namespace NovinCRM.Infrastructure.Http;
 
 /// <summary>
 /// Configuration for HubSpot API clients

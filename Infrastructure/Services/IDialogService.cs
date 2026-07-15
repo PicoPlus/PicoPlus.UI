@@ -1,6 +1,6 @@
 using Microsoft.JSInterop;
 
-namespace PicoPlus.Infrastructure.Services;
+namespace NovinCRM.Infrastructure.Services;
 
 /// <summary>
 /// Abstraction for dialog operations

@@ -3,11 +3,11 @@
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Events.Deal;
-using PicoPlus.Domain.Events.Integration;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Events.Deal;
+using NovinCRM.Domain.Events.Integration;
 
-namespace PicoPlus.Application.Features.CRM.EventHandlers;
+namespace NovinCRM.Application.Features.CRM.EventHandlers;
 
 /// <summary>
 /// Handles the <see cref="DealClosedEvent"/> domain event.
@@ -45,7 +45,7 @@ public sealed class DealClosedHandler : INotificationHandler<DealClosedEvent>
             notification.DealId, notification.Stage, notification.ContactId ?? "none");
 
         if (!string.IsNullOrEmpty(notification.ContactId))
-            _cache.Remove($"UserPanel_{notification.ContactId}");
+            _cache.Remove(NovinCRM.Application.Common.CacheKeys.UserPanel(notification.ContactId));
 
         await _publisher.PublishAsync(new DealClosedIntegrationEvent
         {

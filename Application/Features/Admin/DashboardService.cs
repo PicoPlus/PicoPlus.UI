@@ -1,83 +1,67 @@
-using PicoPlus.Models.Admin;
-using ContactService = PicoPlus.Services.CRM.Objects.Contact;
-using DealService = PicoPlus.Services.CRM.Objects.Deal;
-using PicoPlus.Services.CRM;
+using NovinCRM.Models.Admin;
+using DashboardContactService = NovinCRM.Services.CRM.Objects.Contact;
+using DashboardDealService    = NovinCRM.Services.CRM.Objects.Deal;
+using PipelinesService        = NovinCRM.Services.CRM.Pipelines;
 
-namespace PicoPlus.Services.Admin;
+namespace NovinCRM.Services.Admin;
 
 /// <summary>
 /// Service for dashboard statistics and analytics
 /// </summary>
 public class DashboardService
 {
-    private readonly ContactService _contactService;
-    private readonly DealService _dealService;
-    private readonly Pipelines _pipelineService;
+    private readonly DashboardContactService _contactService;
+    private readonly DashboardDealService    _dealService;
+    private readonly PipelinesService        _pipelineService;
     private readonly ILogger<DashboardService> _logger;
 
     public DashboardService(
-        ContactService contactService,
-        DealService dealService,
-        Pipelines pipelineService,
+        DashboardContactService  contactService,
+        DashboardDealService     dealService,
+        PipelinesService         pipelineService,
         ILogger<DashboardService> logger)
     {
-        _contactService = contactService;
-        _dealService = dealService;
+        _contactService  = contactService;
+        _dealService     = dealService;
         _pipelineService = pipelineService;
-        _logger = logger;
+        _logger          = logger;
     }
 
-    /// <summary>
-    /// Get comprehensive dashboard statistics
-    /// </summary>
     public async Task<DashboardStatistics> GetDashboardStatisticsAsync(string? ownerId = null)
     {
         try
         {
-            var stats = new DashboardStatistics();
-
-            // Get all deals using extension method
+            var stats    = new DashboardStatistics();
             var allDeals = await _dealService.GetBatchAsync(limit: 1000);
 
-            // Filter by owner if specified (using helper)
             if (!string.IsNullOrEmpty(ownerId))
-            {
                 allDeals = allDeals.Where(d => PropertyHelpers.GetOwnerId(d.properties) == ownerId).ToList();
-            }
 
-            // Deal statistics
-            stats.TotalDeals = allDeals.Count;
-            stats.OpenDeals = allDeals.Count(d => d.properties?.dealstage != null && 
-                                                   !d.properties.dealstage.Contains("closed"));
-            stats.ClosedWonDeals = allDeals.Count(d => d.properties?.dealstage?.Contains("closedwon") == true);
+            stats.TotalDeals      = allDeals.Count;
+            stats.OpenDeals       = allDeals.Count(d => d.properties?.dealstage != null &&
+                                                         !d.properties.dealstage.Contains("closed"));
+            stats.ClosedWonDeals  = allDeals.Count(d => d.properties?.dealstage?.Contains("closedwon") == true);
             stats.ClosedLostDeals = allDeals.Count(d => d.properties?.dealstage?.Contains("closedlost") == true);
 
-            // Revenue calculations
             stats.TotalRevenue = allDeals
                 .Where(d => d.properties?.amount != null)
-                .Sum(d => decimal.TryParse(d.properties.amount, out var amount) ? amount : 0);
+                .Sum(d => decimal.TryParse(d.properties.amount, out var a) ? a : 0);
 
-            var now = DateTime.UtcNow;
+            var now          = DateTime.UtcNow;
             var startOfMonth = new DateTime(now.Year, now.Month, 1);
-            
+
             stats.MonthlyRevenue = allDeals
                 .Where(d => d.createdAt >= startOfMonth && d.properties?.amount != null)
-                .Sum(d => decimal.TryParse(d.properties.amount, out var amount) ? amount : 0);
+                .Sum(d => decimal.TryParse(d.properties.amount, out var a) ? a : 0);
 
-            stats.AverageDealValue = stats.TotalDeals > 0 
-                ? stats.TotalRevenue / stats.TotalDeals 
-                : 0;
+            stats.AverageDealValue = stats.TotalDeals > 0
+                ? stats.TotalRevenue / stats.TotalDeals : 0;
 
-            // Conversion rate
-            var totalDealsWithOutcome = stats.ClosedWonDeals + stats.ClosedLostDeals;
-            stats.ConversionRate = totalDealsWithOutcome > 0 
-                ? (decimal)stats.ClosedWonDeals / totalDealsWithOutcome * 100 
-                : 0;
+            var totalWithOutcome = stats.ClosedWonDeals + stats.ClosedLostDeals;
+            stats.ConversionRate = totalWithOutcome > 0
+                ? (decimal)stats.ClosedWonDeals / totalWithOutcome * 100 : 0;
 
-            // Pipeline stage statistics
             await LoadPipelineStagesAsync(stats, allDeals);
-
-            // Contact statistics
             stats.TotalContacts = 0;
 
             _logger.LogInformation("Dashboard statistics generated for owner: {Owner}", ownerId ?? "All");
@@ -90,11 +74,9 @@ public class DashboardService
         }
     }
 
-    /// <summary>
-    /// Load pipeline stage statistics
-    /// </summary>
-    private async Task LoadPipelineStagesAsync(DashboardStatistics stats, 
-        List<PicoPlus.Models.CRM.Objects.Deal.GetBatch.Response.Result> deals)
+    private async Task LoadPipelineStagesAsync(
+        DashboardStatistics stats,
+        List<NovinCRM.Models.CRM.Objects.Deal.GetBatch.Response.Result> deals)
     {
         try
         {
@@ -102,7 +84,7 @@ public class DashboardService
             if (pipelinesResponse?.results == null) return;
 
             var stageStats = new List<PipelineStageStats>();
-            
+
             foreach (var pipeline in pipelinesResponse.results)
             {
                 if (pipeline.stages == null) continue;
@@ -110,15 +92,15 @@ public class DashboardService
                 foreach (var stage in pipeline.stages)
                 {
                     var stageDeals = deals.Where(d => d.properties?.dealstage == stage.id).ToList();
-                    
+
                     stageStats.Add(new PipelineStageStats
                     {
-                        StageId = stage.id,
-                        StageName = stage.label,
-                        DealCount = stageDeals.Count,
+                        StageId    = stage.id,
+                        StageName  = stage.label,
+                        DealCount  = stageDeals.Count,
                         TotalValue = stageDeals
                             .Where(d => d.properties?.amount != null)
-                            .Sum(d => decimal.TryParse(d.properties.amount, out var amount) ? amount : 0),
+                            .Sum(d => decimal.TryParse(d.properties.amount, out var a) ? a : 0),
                         Position = stage.displayOrder
                     });
                 }
@@ -132,37 +114,29 @@ public class DashboardService
         }
     }
 
-    /// <summary>
-    /// Get recent activities
-    /// </summary>
     public async Task<List<RecentActivity>> GetRecentActivitiesAsync(string? ownerId = null, int limit = 10)
     {
         try
         {
             var activities = new List<RecentActivity>();
-            
-            var deals = await _dealService.GetBatchAsync(limit: 50);
+            var deals      = await _dealService.GetBatchAsync(limit: 50);
 
             if (!string.IsNullOrEmpty(ownerId))
-            {
                 deals = deals.Where(d => PropertyHelpers.GetOwnerId(d.properties) == ownerId).ToList();
-            }
 
             foreach (var deal in deals.Take(limit))
             {
-                var activity = new RecentActivity
+                activities.Add(new RecentActivity
                 {
-                    Id = deal.id,
-                    Type = "deal",
-                    Title = deal.properties?.dealname ?? "?????? ???? ???",
-                    Description = $"????: {FormatCurrency(deal.properties?.amount)}",
-                    Icon = "bi-briefcase",
-                    Color = GetDealStageColor(deal.properties?.dealstage),
-                    Timestamp = deal.createdAt,
+                    Id           = deal.id,
+                    Type         = "deal",
+                    Title        = deal.properties?.dealname ?? "بدون نام",
+                    Description  = $"مبلغ: {FormatCurrency(deal.properties?.amount)}",
+                    Icon         = "bi-briefcase",
+                    Color        = GetDealStageColor(deal.properties?.dealstage),
+                    Timestamp    = deal.createdAt,
                     RelativeTime = GetRelativeTime(deal.createdAt)
-                };
-
-                activities.Add(activity);
+                });
             }
 
             return activities.OrderByDescending(a => a.Timestamp).ToList();
@@ -174,36 +148,31 @@ public class DashboardService
         }
     }
 
-    private string FormatCurrency(string? amount)
+    private static string FormatCurrency(string? amount)
     {
         if (string.IsNullOrEmpty(amount) || !decimal.TryParse(amount, out var value))
-            return "0 ?????";
-
-        return $"{value:N0} ?????";
+            return "0 تومان";
+        return $"{value:N0} تومان";
     }
 
-    private string GetDealStageColor(string? stage)
+    private static string GetDealStageColor(string? stage)
     {
         if (string.IsNullOrEmpty(stage)) return "text-secondary";
-        
-        if (stage.Contains("closedwon")) return "text-success";
+        if (stage.Contains("closedwon"))  return "text-success";
         if (stage.Contains("closedlost")) return "text-danger";
         if (stage.Contains("qualified")) return "text-primary";
-        if (stage.Contains("proposal")) return "text-info";
-        
+        if (stage.Contains("proposal"))  return "text-info";
         return "text-warning";
     }
 
-    private string GetRelativeTime(DateTime dateTime)
+    private static string GetRelativeTime(DateTime dt)
     {
-        var timeSpan = DateTime.UtcNow - dateTime;
-
-        if (timeSpan.TotalMinutes < 1) return "???? ????";
-        if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes} ????? ???";
-        if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours} ???? ???";
-        if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays} ??? ???";
-        if (timeSpan.TotalDays < 30) return $"{(int)(timeSpan.TotalDays / 7)} ???? ???";
-        
-        return $"{(int)(timeSpan.TotalDays / 30)} ??? ???";
+        var ts = DateTime.UtcNow - dt;
+        if (ts.TotalMinutes < 1)  return "همین الان";
+        if (ts.TotalMinutes < 60) return $"{(int)ts.TotalMinutes} دقیقه پیش";
+        if (ts.TotalHours   < 24) return $"{(int)ts.TotalHours} ساعت پیش";
+        if (ts.TotalDays    < 7)  return $"{(int)ts.TotalDays} روز پیش";
+        if (ts.TotalDays    < 30) return $"{(int)(ts.TotalDays / 7)} هفته پیش";
+        return $"{(int)(ts.TotalDays / 30)} ماه پیش";
     }
 }

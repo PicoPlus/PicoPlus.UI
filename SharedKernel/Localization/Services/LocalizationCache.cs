@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using PicoPlus.Localization.Abstractions;
+using NovinCRM.Localization.Abstractions;
 
-namespace PicoPlus.Localization.Services;
+namespace NovinCRM.Localization.Services;
 
 /// <summary>
 /// Thread-safe, in-memory implementation of <see cref="ILocalizationCache"/>.

@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Domain.Events;
+namespace NovinCRM.Domain.Events;
 
 /// <summary>
 /// Marker interface for integration events.
@@ -9,7 +9,7 @@ namespace PicoPlus.Domain.Events;
 /// it carries the minimum data needed for external consumers to react
 /// without querying back into this system.
 ///
-/// Integration events are dispatched via <see cref="PicoPlus.Application.Common.Interfaces.IIntegrationEventPublisher"/>
+/// Integration events are dispatched via <see cref="NovinCRM.Application.Common.Interfaces.IIntegrationEventPublisher"/>
 /// which routes them through the webhook event pipeline (IWebhookEventQueue → background dispatcher).
 ///
 /// Rules:

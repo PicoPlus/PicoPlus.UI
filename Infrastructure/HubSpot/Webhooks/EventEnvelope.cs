@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Internal wrapper that travels through both the main queue and the retry queue.
@@ -20,6 +20,13 @@ public sealed class EventEnvelope
 
     /// <summary>The verified, parsed domain event.</summary>
     public HubSpotWebhookEvent Event { get; }
+
+    /// <summary>
+    /// Correlation ID that ties together all log entries for this delivery attempt.
+    /// Assigned lazily by the dispatcher on first processing — propagated to retry
+    /// attempts so a single event's full journey can be found in logs.
+    /// </summary>
+    public string? CorrelationId { get; set; }
 
     // ── Retry tracking ────────────────────────────────────────────────────────
 

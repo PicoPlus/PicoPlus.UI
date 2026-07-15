@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace PicoPlus.Infrastructure.Http;
+namespace NovinCRM.Infrastructure.Http;
 
 /// <summary>
 /// Configuration for SMS.ir API HTTP client
@@ -24,7 +24,7 @@ public class SmsIrHttpClientConfig
 
         // API key is added per-request in the service
         client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.DefaultRequestHeaders.Add("User-Agent", "PicoPlus-SmsIr-Client/1.0");
+        client.DefaultRequestHeaders.Add("User-Agent", "NovinCRM-SmsIr-Client/1.0");
 
         return client;
     }

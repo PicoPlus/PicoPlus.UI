@@ -1,9 +1,9 @@
 #nullable enable
 
 using Microsoft.Extensions.Caching.Memory;
-using PicoPlus.Application.Common.Interfaces;
+using NovinCRM.Application.Common.Interfaces;
 
-namespace PicoPlus.Infrastructure.Sync;
+namespace NovinCRM.Infrastructure.Sync;
 
 /// <summary>
 /// In-memory implementation of <see cref="ISyncStateRepository"/>.
@@ -20,35 +20,32 @@ public sealed class InMemorySyncStateRepository : ISyncStateRepository
     private readonly IMemoryCache _cache;
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(24);
 
-    // Key prefixes to avoid collisions with other IMemoryCache consumers.
-    private const string VersionPrefix  = "sync:ver:";
-    private const string DeletedPrefix  = "sync:del:";
-    private const string EventPrefix    = "sync:evt:";
+    // All key patterns are centralised in CacheKeys — no local constants needed.
 
     public InMemorySyncStateRepository(IMemoryCache cache) => _cache = cache;
 
     public Task<long?> GetVersionAsync(string objectType, string objectId, CancellationToken ct = default)
     {
-        var key = $"{VersionPrefix}{objectType}:{objectId}";
+        var key = NovinCRM.Application.Common.CacheKeys.SyncVersion(objectType, objectId);
         return Task.FromResult(_cache.TryGetValue<long>(key, out var v) ? (long?)v : null);
     }
 
     public Task SetVersionAsync(string objectType, string objectId, long versionMs, string eventId, CancellationToken ct = default)
     {
-        _cache.Set($"{VersionPrefix}{objectType}:{objectId}", versionMs, Ttl);
-        _cache.Set($"{EventPrefix}{eventId}", true, Ttl);
+        _cache.Set(NovinCRM.Application.Common.CacheKeys.SyncVersion(objectType, objectId), versionMs, Ttl);
+        _cache.Set(NovinCRM.Application.Common.CacheKeys.SyncEvent(eventId), true, Ttl);
         return Task.CompletedTask;
     }
 
     public Task<bool> IsProcessedAsync(string eventId, CancellationToken ct = default)
-        => Task.FromResult(_cache.TryGetValue($"{EventPrefix}{eventId}", out _));
+        => Task.FromResult(_cache.TryGetValue(NovinCRM.Application.Common.CacheKeys.SyncEvent(eventId), out _));
 
     public Task MarkDeletedAsync(string objectType, string objectId, CancellationToken ct = default)
     {
-        _cache.Set($"{DeletedPrefix}{objectType}:{objectId}", true, Ttl);
+        _cache.Set(NovinCRM.Application.Common.CacheKeys.SyncDeleted(objectType, objectId), true, Ttl);
         return Task.CompletedTask;
     }
 
     public Task<bool> IsDeletedAsync(string objectType, string objectId, CancellationToken ct = default)
-        => Task.FromResult(_cache.TryGetValue($"{DeletedPrefix}{objectType}:{objectId}", out _));
+        => Task.FromResult(_cache.TryGetValue(NovinCRM.Application.Common.CacheKeys.SyncDeleted(objectType, objectId), out _));
 }

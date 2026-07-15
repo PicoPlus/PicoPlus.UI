@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Domain.Enums;
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain.Enums;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Domain.Events.Deal;
+namespace NovinCRM.Domain.Events.Deal;
 
 /// <summary>
 /// Raised when a deal moves from one pipeline stage to another.

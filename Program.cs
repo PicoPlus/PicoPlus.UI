@@ -1,21 +1,27 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Blazored.SessionStorage;
 using Blazored.LocalStorage;
-using PicoPlus.Components;          // App lives in PicoPlus.Components (namespace preserved)
-using PicoPlus.Infrastructure.Authorization;
-using PicoPlus.Infrastructure.Http; // ShecanDnsHttpClientHandler namespace (file moved, namespace preserved)
-using PicoPlus.Infrastructure.Services;
-using PicoPlus.Infrastructure.State;
-using PicoPlus.Infrastructure.Sync;
-using PicoPlus.Infrastructure.Webhooks;
-using PicoPlus.Presentation.Webhooks;
-using PicoPlus.Services.Admin;
-using PicoPlus.Services.Auth;
-using PicoPlus.Services.UserPanel;
-using PicoPlus.State.Admin;
+using NovinCRM.Components;          // App lives in NovinCRM.Components (namespace preserved)
+using NovinCRM.Infrastructure.Authorization;
+using NovinCRM.Infrastructure.Http; // ShecanDnsHttpClientHandler namespace (file moved, namespace preserved)
+using NovinCRM.Infrastructure.Logging;
+using NovinCRM.Infrastructure.Services;
+using NovinCRM.Infrastructure.State;
+using NovinCRM.Infrastructure.Sync;
+using NovinCRM.Infrastructure.Webhooks;
+using NovinCRM.Presentation.Webhooks;
+using NovinCRM.Application.Features.CRM.Commerce;
+using NovinCRM.Application.Features.CRM.EventHandlers;
+using NovinCRM.Infrastructure.HubSpot.CRM.Commerce;
+using NovinCRM.Services.Admin;
+using NovinCRM.Services.Auth;
+using NovinCRM.Services.UserPanel;
+using NovinCRM.State.Admin;
 using DotNetEnv;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
-using PicoPlus.Localization.Extensions;
+using NovinCRM.Localization.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +39,18 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
     .AddUserSecrets<Program>(optional: true);
+
+// ── Sentry — error monitoring, tracing, and structured logs ──────────────────
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = "https://3c72551a13dba31fa8fea00b077170cc@o4508578883895296.ingest.de.sentry.io/4511738441498704";
+    // Disable verbose SDK debug output in production
+    o.Debug = !builder.Environment.IsProduction();
+    // Capture 100% of transactions for tracing (tune down in production as needed)
+    o.TracesSampleRate = 1.0;
+    // Forward ASP.NET Core log entries to Sentry
+    o.EnableLogs = true;
+});
 
 // Configure Kestrel for production (HTTP only) and development (HTTPS)
 builder.WebHost.ConfigureKestrel(options =>
@@ -77,8 +95,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedUICultures = supportedCultures;
 });
 
-// ── PicoPlus JSON localization system ────────────────────────────────────────────────────────
-builder.Services.AddPicoPlusLocalization();
+// ── NovinCRM JSON localization system ────────────────────────────────────────────────────────
+builder.Services.AddNovinCRMLocalization();
 
 // Enable hot-reload in Development for instant JSON edits
 if (builder.Environment.IsDevelopment())
@@ -90,6 +108,11 @@ builder.Services.AddResponseCompression(options =>
     options.EnableForHttps = true;
 });
 
+// ── Correlation ID service ─────────────────────────────────────────────────
+// Singleton: the AsyncLocal<> inside CorrelationIdService is per-execution-context,
+// so one singleton instance works correctly across all concurrent requests.
+builder.Services.AddSingleton<CorrelationIdService>();
+
 // Razor Components
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -100,10 +123,12 @@ builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddScoped<INavigationService, NavigationService>();
 builder.Services.AddSingleton<ToastService>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.IDialogService, DialogServiceWrapper>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ISessionStorageService, SessionStorageServiceWrapper>();
-builder.Services.AddScoped<PicoPlus.Infrastructure.Services.ILocalStorageService, LocalStorageServiceWrapper>();
-builder.Services.AddSingleton<AuthenticationStateService>();
+builder.Services.AddScoped<NovinCRM.Infrastructure.Services.IDialogService, DialogServiceWrapper>();
+builder.Services.AddScoped<NovinCRM.Infrastructure.Services.ISessionStorageService, SessionStorageServiceWrapper>();
+builder.Services.AddScoped<NovinCRM.Infrastructure.Services.ILocalStorageService, LocalStorageServiceWrapper>();
+// AuthenticationStateService — scoped: each Blazor circuit gets its own instance
+// with its own in-memory state, backed by IDistributedCache for cross-restart durability.
+builder.Services.AddScoped<AuthenticationStateService>();
 
 // Admin Services
 builder.Services.AddScoped<AdminAuthorizationHandler>();
@@ -115,28 +140,34 @@ builder.Services.AddScoped<KanbanService>();
 // Authentication Service
 builder.Services.AddScoped<AuthService>();
 
+// ── HubSpot token validation — fail-fast on startup ─────────────────────
+// Resolved once, before DI container is built, so a missing token causes an
+// immediate startup error rather than a confusing 401 at runtime.
+var hubSpotToken = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
+    ?? builder.Configuration["HubSpot:Token"]
+    ?? throw new InvalidOperationException(
+        "HubSpot:Token is required. Set the HUBSPOT_TOKEN environment variable or " +
+        "HubSpot:Token in configuration.");
+
 // HttpClient with Shecan
 builder.Services.AddHttpClient("HubSpot", (sp, client) =>
 {
-    var configuration = sp.GetRequiredService<IConfiguration>();
-
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 
-    var token = Environment.GetEnvironmentVariable("HUBSPOT_TOKEN")
-                ?? configuration["HubSpot:Token"];
-
-    if (!string.IsNullOrEmpty(token))
-    {
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-    }
-
+    // Authorization header value is set but never written to logs
+    // (SanitizingLoggingHandler strips it before any log sink sees it).
+    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {hubSpotToken}");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
-.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
+.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler())
+.AddHttpMessageHandler<SanitizingLoggingHandler>();
+
+// Register the sanitizing handler so DI can inject it
+builder.Services.AddTransient<SanitizingLoggingHandler>();
 
 // Zohal API
-builder.Services.AddHttpClient<PicoPlus.Services.Identity.ZohalService>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.Identity.ZohalService>((sp, client) =>
 {
     client.BaseAddress = new Uri("https://service.zohal.io");
     client.Timeout = TimeSpan.FromSeconds(30);
@@ -144,7 +175,7 @@ builder.Services.AddHttpClient<PicoPlus.Services.Identity.ZohalService>((sp, cli
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 // Liara API
-builder.Services.AddHttpClient<PicoPlus.Services.Utils.LiaraApiService>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.Utils.LiaraApiService>((sp, client) =>
 {
     client.BaseAddress = new Uri("https://api.iran.liara.ir");
     client.Timeout = TimeSpan.FromSeconds(15);
@@ -155,67 +186,132 @@ builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<DealDetailService>();
 
 // CRM Services
-builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Contact>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Deal>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Company>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Objects.Ticket>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Engagements.Notes>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Associate>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.ContactUpdateService>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Objects.Contact>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Objects.Deal>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Objects.Company>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Objects.Ticket>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Engagements.Notes>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Associate>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.ContactUpdateService>();
 
-builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.Product>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.CRM.Commerce.Product>((sp, client) =>
 {
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
-builder.Services.AddHttpClient<PicoPlus.Services.CRM.Commerce.LineItem>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.CRM.Commerce.LineItem>((sp, client) =>
 {
     client.BaseAddress = new Uri("https://api.hubapi.com");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
-builder.Services.AddScoped<PicoPlus.Services.CRM.Pipelines>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Associate>();
-builder.Services.AddScoped<PicoPlus.Services.CRM.Owners>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Pipelines>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Associate>();
+builder.Services.AddScoped<NovinCRM.Services.CRM.Owners>();
 
 // SMS
-builder.Services.AddHttpClient<PicoPlus.Services.SMS.SmsIr>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.SMS.SmsIr>((sp, client) =>
 {
     client.BaseAddress = new Uri("https://api.sms.ir");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
-builder.Services.AddScoped<PicoPlus.Services.SMS.SMS.Send>();
+builder.Services.AddScoped<NovinCRM.Services.SMS.SMS.Send>();
 // IPPanel Edge API
-builder.Services.AddHttpClient<PicoPlus.Services.SMS.IpPanelClient>((sp, client) =>
+builder.Services.AddHttpClient<NovinCRM.Services.SMS.IpPanelClient>((sp, client) =>
 {
-    client.BaseAddress = new Uri(PicoPlus.Services.SMS.IpPanelClient.BaseUrl);
+    client.BaseAddress = new Uri(NovinCRM.Services.SMS.IpPanelClient.BaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
-    client.DefaultRequestHeaders.Add("User-Agent", "PicoPlus-IPPanel-Client/1.0");
+    client.DefaultRequestHeaders.Add("User-Agent", "NovinCRM-IPPanel-Client/1.0");
 })
 .ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
-builder.Services.AddScoped<PicoPlus.Services.SMS.SmsIrService>();
-builder.Services.AddScoped<PicoPlus.Services.SMS.FarazSmsService>();
-builder.Services.AddScoped<PicoPlus.Services.SMS.IpPanelSmsService>();
-builder.Services.AddScoped<PicoPlus.Services.SMS.SmsServiceFactory>();
-builder.Services.AddScoped<PicoPlus.Services.SMS.ISmsService, PicoPlus.Services.SMS.SmsService>();
+// Register each provider as both its concrete type (for HttpClient wiring) AND
+// as a keyed ISmsService so SmsServiceFactory can resolve by config string key.
+builder.Services.AddScoped<NovinCRM.Services.SMS.SmsIrService>();
+builder.Services.AddScoped<NovinCRM.Services.SMS.FarazSmsService>();
+builder.Services.AddScoped<NovinCRM.Services.SMS.IpPanelSmsService>();
 
-builder.Services.AddSingleton<OtpService>();
+builder.Services.AddKeyedScoped<NovinCRM.Services.SMS.ISmsService,
+    NovinCRM.Services.SMS.SmsIrService>(NovinCRM.Services.SMS.SmsServiceFactory.KeySmsIr);
+builder.Services.AddKeyedScoped<NovinCRM.Services.SMS.ISmsService,
+    NovinCRM.Services.SMS.FarazSmsService>(NovinCRM.Services.SMS.SmsServiceFactory.KeyFarazSms);
+builder.Services.AddKeyedScoped<NovinCRM.Services.SMS.ISmsService,
+    NovinCRM.Services.SMS.IpPanelSmsService>(NovinCRM.Services.SMS.SmsServiceFactory.KeyIpPanel);
+
+builder.Services.AddScoped<NovinCRM.Services.SMS.SmsServiceFactory>();
+builder.Services.AddScoped<NovinCRM.Services.SMS.ISmsService, NovinCRM.Services.SMS.SmsService>();
+
+builder.Services.AddScoped<OtpService>();
 
 // ── Application services (Clean Arch — no MVVM) ──────────────────────────────
-builder.Services.AddScoped<PicoPlus.Services.Auth.IRegisterService,    PicoPlus.Services.Auth.RegisterService>();
-builder.Services.AddScoped<PicoPlus.Services.Deal.IDealCreateService,  PicoPlus.Services.Deal.DealCreateService>();
+builder.Services.AddScoped<NovinCRM.Services.Auth.IRegisterService,    NovinCRM.Services.Auth.RegisterService>();
+builder.Services.AddScoped<NovinCRM.Services.Deal.IDealCreateService,  NovinCRM.Services.Deal.DealCreateService>();
 
 // User Panel
-builder.Services.AddSingleton<PicoPlus.Services.UserPanel.IPersianDateService, PicoPlus.Services.UserPanel.PersianDateService>();
-builder.Services.AddScoped<PicoPlus.Services.UserPanel.IUserPanelService, PicoPlus.Services.UserPanel.UserPanelService>();
+builder.Services.AddSingleton<NovinCRM.Services.UserPanel.IPersianDateService, NovinCRM.Services.UserPanel.PersianDateService>();
+builder.Services.AddScoped<NovinCRM.Services.UserPanel.IUserPanelService, NovinCRM.Services.UserPanel.UserPanelService>();
 
 builder.Services.AddMemoryCache();
+
+// ── Distributed cache — Redis in production, in-process fallback in dev ──────
+// Set REDIS_CONNECTION_STRING env var (or ConnectionStrings:Redis in config)
+// to activate the Redis-backed IDistributedCache. Without it the app falls back
+// to an in-process store that is sufficient for single-instance development.
+var redisCs =
+    Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("Redis");
+
+if (!string.IsNullOrWhiteSpace(redisCs))
+    builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisCs);
+else
+    builder.Services.AddDistributedMemoryCache();
+
+// ── Rate limiting (ASP.NET Core built-in — no extra package needed) ───────────
+// Protects OTP send, OTP verify, and admin login from brute-force / SMS-pumping.
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // OTP send: max 3 per phone per 60 s (keyed by remote IP as a safe default)
+    opts.AddSlidingWindowLimiter("otp-send", o =>
+    {
+        o.PermitLimit         = 3;
+        o.Window              = TimeSpan.FromMinutes(1);
+        o.SegmentsPerWindow   = 6;
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit          = 0;
+    });
+
+    // OTP verify: max 10 attempts per IP per 10 min
+    opts.AddSlidingWindowLimiter("otp-verify", o =>
+    {
+        o.PermitLimit         = 10;
+        o.Window              = TimeSpan.FromMinutes(10);
+        o.SegmentsPerWindow   = 5;
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit          = 0;
+    });
+
+    // Admin login: max 10 per IP per 15 min
+    opts.AddSlidingWindowLimiter("admin-login", o =>
+    {
+        o.PermitLimit         = 10;
+        o.Window              = TimeSpan.FromMinutes(15);
+        o.SegmentsPerWindow   = 5;
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit          = 0;
+    });
+});
+
+// ── Dead-letter store — in-memory singleton (swap for Redis/SQL implementation) ──
+builder.Services.AddSingleton<
+    NovinCRM.Application.Common.Interfaces.IDeadLetterStore,
+    NovinCRM.Infrastructure.Webhooks.InMemoryDeadLetterStore>();
 
 // ── HubSpot Webhook Infrastructure ───────────────────────────────────────────
 // Registers: HubSpotWebhookOptions, HubSpotSignatureVerifier (singleton),
@@ -224,46 +320,76 @@ builder.Services.AddHubSpotWebhooks();
 
 // ── Event-Driven Architecture + Bidirectional Sync ────────────────────────────
 // Registers: MediatR, IDomainEventDispatcher, IIntegrationEventPublisher,
-//            ISyncStateRepository, BidirectionalSyncService, HubSpotWebhookSyncHandler.
-builder.Services.AddEventDrivenSync();
+//            ISyncStateRepository (Redis or in-memory), BidirectionalSyncService, HubSpotWebhookSyncHandler.
+builder.Services.AddEventDrivenSync(builder.Configuration);
 
 // ── Infrastructure: concrete implementations ──────────────────────────────
-builder.Services.AddScoped<PicoPlus.Services.Imaging.ImageProcessingService>();
+builder.Services.AddScoped<NovinCRM.Services.Imaging.ImageProcessingService>();
 
 // ── Application interfaces → Infrastructure adapters ─────────────────────
 // These registrations satisfy the dependency-inversion rule:
 //   Application layer depends on interfaces; Infrastructure provides implementations.
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IContactRepository,
-    PicoPlus.Services.CRM.Objects.ContactRepository>();
+    NovinCRM.Application.Common.Interfaces.IContactRepository,
+    NovinCRM.Services.CRM.Objects.ContactRepository>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IDealRepository,
-    PicoPlus.Services.CRM.Objects.DealRepository>();
+    NovinCRM.Application.Common.Interfaces.IDealRepository,
+    NovinCRM.Services.CRM.Objects.DealRepository>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IOwnerRepository,
-    PicoPlus.Services.CRM.OwnerRepository>();
+    NovinCRM.Application.Common.Interfaces.IOwnerRepository,
+    NovinCRM.Services.CRM.OwnerRepository>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IPipelineRepository,
-    PicoPlus.Services.CRM.PipelineRepository>();
+    NovinCRM.Application.Common.Interfaces.IPipelineRepository,
+    NovinCRM.Services.CRM.PipelineRepository>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IAssociateService,
-    PicoPlus.Services.CRM.AssociateAdapter>();
+    NovinCRM.Application.Common.Interfaces.IAssociateService,
+    NovinCRM.Services.CRM.AssociateAdapter>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.ILineItemRepository,
-    PicoPlus.Services.CRM.Commerce.LineItemRepository>();
+    NovinCRM.Application.Common.Interfaces.ILineItemRepository,
+    NovinCRM.Services.CRM.Commerce.LineItemRepository>();
+
+// ── Invoice sub-system (issue #96) ───────────────────────────────────────────
+builder.Services.AddHttpClient<HubSpotInvoiceClient>((sp, client) =>
+{
+    client.BaseAddress = new Uri("https://api.hubapi.com");
+    client.Timeout     = TimeSpan.FromSeconds(30);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new ShecanDnsHttpClientHandler());
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IIdentityVerificationService,
-    PicoPlus.Services.Identity.ZohalIdentityAdapter>();
+    NovinCRM.Application.Common.Interfaces.IInvoiceService,
+    InvoiceService>();
+
+builder.Services.AddSingleton<
+    NovinCRM.Application.Common.Interfaces.IInvoiceAccessTokenRepository,
+    NovinCRM.Infrastructure.Services.InMemoryInvoiceAccessTokenRepository>();
 
 builder.Services.AddScoped<
-    PicoPlus.Application.Common.Interfaces.IImageProcessingService,
-    PicoPlus.Services.Imaging.ImageProcessingAdapter>();
+    NovinCRM.Application.Common.Interfaces.IIdentityVerificationService,
+    NovinCRM.Services.Identity.ZohalIdentityAdapter>();
+
+builder.Services.AddScoped<
+    NovinCRM.Application.Common.Interfaces.IImageProcessingService,
+    NovinCRM.Services.Imaging.ImageProcessingAdapter>();
+
+// ── Health checks ─────────────────────────────────────────────────────────────
+// /health/live  — liveness: process is running (no dependencies checked)
+// /health/ready — readiness: webhook queue depth + memory
+builder.Services.AddHealthChecks()
+    .AddCheck<NovinCRM.Infrastructure.Health.WebhookQueueHealthCheck>("webhook-queue")
+    .AddCheck("memory", () =>
+    {
+        var bytes = GC.GetTotalMemory(forceFullCollection: false);
+        const long limit = 512L * 1024 * 1024; // 512 MB
+        return bytes < limit
+            ? Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy($"{bytes / 1024 / 1024} MB")
+            : Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Degraded($"High memory: {bytes / 1024 / 1024} MB");
+    });
 
 builder.Services.AddRazorPages();
 
@@ -299,6 +425,12 @@ app.UseRequestLocalization(locOptions);
 // Enable response compression
 app.UseResponseCompression();
 
+// ── Correlation-ID middleware — assigns / echoes X-Correlation-Id header ──
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Rate limiting middleware — must come before endpoint routing
+app.UseRateLimiter();
+
 // Static files with caching in production
 var cacheMaxAge = app.Environment.IsProduction()
     ? TimeSpan.FromDays(30)
@@ -331,12 +463,21 @@ app.UseAntiforgery();
 // GET /diag/ippanel  — validates the configured API key against IPPanel
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/diag/ippanel", async (PicoPlus.Services.SMS.IpPanelClient client) =>
+    app.MapGet("/diag/ippanel", async (NovinCRM.Services.SMS.IpPanelClient client) =>
     {
         var result = await client.CheckTokenAsync();
         return Results.Json(result);
     });
 }
+
+// ── Health check endpoints ────────────────────────────────────────────────────
+// Liveness — just proves the process is alive (no dependency checks)
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false   // skip all named checks — instant 200
+});
+// Readiness — runs webhook-queue + memory checks
+app.MapHealthChecks("/health/ready");
 
 // ── HubSpot Webhook Endpoint ──────────────────────────────────────────────────
 // POST /webhooks/hubspot  — antiforgery disabled (HMAC-SHA256 v3 signature used instead)

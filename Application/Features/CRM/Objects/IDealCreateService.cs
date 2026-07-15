@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.ValueObjects;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.ValueObjects;
 
-namespace PicoPlus.Services.Deal;
+namespace NovinCRM.Services.Deal;
 
 /// <summary>
 /// Service for the Create Deal dialog.

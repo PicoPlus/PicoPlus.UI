@@ -1,7 +1,8 @@
 @inherits LayoutComponentBase
-@using PicoPlus.Infrastructure.Authorization
-@using PicoPlus.State.Admin
-@using PicoPlus.Models.Admin
+@using NovinCRM.Infrastructure.Authorization
+@using NovinCRM.State.Admin
+@using NovinCRM.Models.Admin
+@using NovinCRM.Components.Shared
 @inject AdminAuthorizationHandler AuthHandler
 @inject AdminStateService AdminState
 @inject NavigationManager Navigation
@@ -96,7 +97,7 @@
             <button class="btn btn-link sidebar-toggle d-lg-none" @onclick="ToggleSidebar">
                 <i class="bi bi-list fs-3"></i>
             </button>
-            
+
             <div class="header-content">
                 @if (showOwnerWarning && selectedOwner == null)
                 {
@@ -107,10 +108,15 @@
                     </div>
                 }
             </div>
+            <div class="ms-auto">
+                <ThemeToggle />
+            </div>
         </div>
 
         <div class="admin-content">
-            @Body
+            <CircuitErrorBoundary>
+                @Body
+            </CircuitErrorBoundary>
         </div>
     </main>
 </div>

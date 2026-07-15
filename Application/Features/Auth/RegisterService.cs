@@ -1,14 +1,14 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.Events.Contact;
-using PicoPlus.Infrastructure.Services;
-using PicoPlus.Infrastructure.State;
-using PicoPlus.Services.SMS;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.Events.Contact;
+using NovinCRM.Infrastructure.Services;
+using NovinCRM.Infrastructure.State;
+using NovinCRM.Services.SMS;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.Auth;
+namespace NovinCRM.Services.Auth;
 
 /// <summary>
 /// Multi-step user registration flow as a plain Application-layer service.
@@ -138,7 +138,7 @@ public class RegisterService : IRegisterService
                         LastName     = LastName,
                         NationalCode = NationalCode,
                         Phone        = string.Empty,
-                        Email        = $"{NationalCode}@picoplus.app",
+                        Email        = $"{NationalCode}@NovinCRM.app",
                         DateOfBirth  = BirthDate,
                         FatherName   = FatherName,
                         Gender       = Gender,
@@ -252,7 +252,7 @@ public class RegisterService : IRegisterService
                     LastName      = LastName,
                     NationalCode  = NationalCode,
                     Phone         = Phone,
-                    Email         = $"{NationalCode}@picoplus.app",
+                    Email         = $"{NationalCode}@NovinCRM.app",
                     DateOfBirth   = BirthDate,
                     FatherName    = FatherName,
                     Gender        = Gender,
@@ -271,7 +271,7 @@ public class RegisterService : IRegisterService
                     LastName      = LastName,
                     NationalCode  = NationalCode,
                     Phone         = Phone,
-                    Email         = $"{NationalCode}@picoplus.app",
+                    Email         = $"{NationalCode}@NovinCRM.app",
                     DateOfBirth   = BirthDate,
                     FatherName    = FatherName,
                     Gender        = Gender,

@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Domain.Events.Contact;
+namespace NovinCRM.Domain.Events.Contact;
 
 /// <summary>
 /// Raised when a new contact (customer) is created during registration.

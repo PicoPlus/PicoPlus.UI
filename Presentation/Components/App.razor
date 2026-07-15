@@ -1,4 +1,4 @@
-@namespace PicoPlus.Components
+@namespace NovinCRM.Components
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -18,7 +18,7 @@
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <!-- PicoPlus Design System (single entry-point — imports all tokens/themes/components) -->
+    <!-- NovinCRM Design System (single entry-point — imports all tokens/themes/components) -->
     <link href="/css/app.css" rel="stylesheet" />
 
     <!-- Persian Date Picker -->
@@ -26,18 +26,17 @@
 
     <link rel="icon" type="image/png" href="favicon.png" />
 
+    <!--
+        Anti-FOUC: theme bootstrap inline script — MUST be inside <head> so
+        the data-theme attribute is set BEFORE the browser paints anything.
+        Detects: Telegram WebApp → 'telegram' | localStorage → saved pref | OS prefers-color-scheme
+    -->
+    <script src="/js/theme.js"></script>
+
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
-    <!--
-        Theme bootstrap script — must run BEFORE first paint to avoid
-        flash of unstyled content (FOUC).
-        Detects: Telegram WebApp → 'telegram' theme
-                 localStorage pref → saved theme
-                 OS prefers-color-scheme → 'dark' or 'light'
-    -->
-    <script src="/js/theme.js"></script>
 
     <Routes @rendermode="InteractiveServer" />
 

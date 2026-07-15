@@ -1,7 +1,7 @@
 using System.Globalization;
-using PicoPlus.Localization.Models;
+using NovinCRM.Localization.Models;
 
-namespace PicoPlus.Localization.Abstractions;
+namespace NovinCRM.Localization.Abstractions;
 
 /// <summary>
 /// Primary localization service. Inject this into Razor components and services.

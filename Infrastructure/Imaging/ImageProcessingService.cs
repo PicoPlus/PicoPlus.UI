@@ -3,7 +3,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.Imaging;
+namespace NovinCRM.Services.Imaging;
 
 /// <summary>
 /// Image processing service for converting and optimizing images

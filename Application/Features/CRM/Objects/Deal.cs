@@ -1,11 +1,11 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-namespace PicoPlus.Services.CRM.Objects
+namespace NovinCRM.Services.CRM.Objects
 {
     /// <summary>
     /// HubSpot Deals API Service

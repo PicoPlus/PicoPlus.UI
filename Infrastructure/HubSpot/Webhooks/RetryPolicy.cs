@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Calculates the delay before a failed event should be retried.

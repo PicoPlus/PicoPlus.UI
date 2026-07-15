@@ -1,5 +1,5 @@
-﻿
-namespace PicoPlus.Models.Services.SMS;
+
+namespace NovinCRM.Models.Services.SMS;
 
 public interface IMessageModel<TInputdata>
 {

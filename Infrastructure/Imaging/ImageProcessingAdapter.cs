@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
+using NovinCRM.Application.Common.Interfaces;
 
-namespace PicoPlus.Services.Imaging;
+namespace NovinCRM.Services.Imaging;
 
 /// <summary>
 /// Implements IImageProcessingService by delegating to the existing ImageProcessingService.

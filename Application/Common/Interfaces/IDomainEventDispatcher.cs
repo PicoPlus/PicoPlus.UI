@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Domain;
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Application.Common.Interfaces;
+namespace NovinCRM.Application.Common.Interfaces;
 
 /// <summary>
 /// Dispatches all domain events collected on an aggregate root.

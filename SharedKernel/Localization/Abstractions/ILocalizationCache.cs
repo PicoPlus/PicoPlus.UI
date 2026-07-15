@@ -1,4 +1,4 @@
-namespace PicoPlus.Localization.Abstractions;
+namespace NovinCRM.Localization.Abstractions;
 
 /// <summary>
 /// Thread-safe, in-memory cache for loaded translation dictionaries.

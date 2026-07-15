@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using RestSharp;
 
-namespace PicoPlus.Services.SMS
+namespace NovinCRM.Services.SMS
 {
     public partial class SMS
     {

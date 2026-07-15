@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace PicoPlus.Services.SMS
+namespace NovinCRM.Services.SMS
 {
     /// <summary>
     /// FarazSMS implementation of ISmsService (wrapper for existing SMS.Send class)
@@ -105,6 +105,15 @@ namespace PicoPlus.Services.SMS
                 _logger.LogError(ex, "Error sending deal closed notification via FarazSMS to {Mobile}", mobile);
                 throw;
             }
+        }
+
+        public Task SendOrderReviewAsync(string mobile, string firstName, string invoiceLink)
+        {
+            // FarazSMS: log and skip — template not yet configured; non-fatal.
+            _logger.LogWarning(
+                "FarazSMS: SendOrderReviewAsync not yet configured — skipping for {Mobile}. " +
+                "Configure FarazSms:Templates:OrderReview to enable.", mobile);
+            return Task.CompletedTask;
         }
     }
 }

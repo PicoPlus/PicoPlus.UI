@@ -2,9 +2,9 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PicoPlus.SMS.Models.IPPanel;
+using NovinCRM.SMS.Models.IPPanel;
 
-namespace PicoPlus.Services.SMS;
+namespace NovinCRM.Services.SMS;
 
 /// <summary>
 /// IPPanel Edge API implementation of ISmsService.
@@ -85,25 +85,52 @@ public class IpPanelSmsService : ISmsService
     }
 
     public async Task SendDealClosedAsync(string mobile, string firstName, string lastName, string dealId, string dealLink = "")
-    {
-        _logger.LogInformation("IPPanel: sending deal-closed to {Mobile}", mobile);
+        {
+            _logger.LogInformation("IPPanel: sending deal-closed to {Mobile}", mobile);
 
-        if (string.IsNullOrEmpty(DealClosedPatternId)) { _logger.LogWarning("IPPanel DealClosed pattern ID not configured — skipping"); return; }
+            if (string.IsNullOrEmpty(DealClosedPatternId)) { _logger.LogWarning("IPPanel DealClosed pattern ID not configured — skipping"); return; }
+
+            var req = new SendPatternRequest
+            {
+                FromNumber = Sender,
+                Code       = DealClosedPatternId,
+                Recipients = new List<string> { NormalizePhone(mobile) },
+                Params     = new Dictionary<string, string>
+                {
+                    ["oid"]       = dealId,
+                    ["DealiLInk"] = dealLink
+                }
+            };
+
+            var res = await _client.SendPatternAsync(req);
+            LogResult("DealClosed", mobile, res);
+        }
+
+    public async Task SendOrderReviewAsync(string mobile, string firstName, string invoiceLink)
+    {
+        _logger.LogInformation("IPPanel: sending order-review link to {Mobile}", mobile);
+
+        var patternId = _config["IPPanel:Patterns:OrderReview"] ?? string.Empty;
+        if (string.IsNullOrEmpty(patternId))
+        {
+            _logger.LogWarning("IPPanel OrderReview pattern ID not configured — skipping for {Mobile}", mobile);
+            return;
+        }
 
         var req = new SendPatternRequest
         {
             FromNumber = Sender,
-            Code       = DealClosedPatternId,
+            Code       = patternId,
             Recipients = new List<string> { NormalizePhone(mobile) },
             Params     = new Dictionary<string, string>
             {
-                ["oid"]       = dealId,
-                ["DealiLInk"] = dealLink
+                ["first_name"] = firstName,
+                ["link"]       = invoiceLink
             }
         };
 
         var res = await _client.SendPatternAsync(req);
-        LogResult("DealClosed", mobile, res);
+        LogResult("OrderReview", mobile, res);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -63,8 +63,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #667eea;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand);
     color: #fff;
     border: none;
     border-radius: 7px;
@@ -128,7 +127,7 @@
 .tab-item.active {
     color: #111827;
     font-weight: 700;
-    border-bottom-color: #667eea;
+    border-bottom-color: var(--color-primary);
 }
 
 .tab-add {
@@ -204,8 +203,8 @@
 }
 
 .toolbar-search:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
     background: #fff;
 }
 
@@ -237,7 +236,7 @@
 }
 
 .filter-count {
-    background: #667eea;
+    background: var(--color-primary);
     color: #fff;
     border-radius: 20px;
     font-size: 0.72rem;
@@ -278,8 +277,8 @@
 }
 
 .pipeline-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .btn-refresh {
@@ -654,7 +653,7 @@
 }
 
 .kb-card-view:hover {
-    color: #667eea;
+    color: var(--color-primary);
 }
 
 /* ── Column empty state ─────────────────────────────────────────────────────── */
@@ -717,8 +716,8 @@
 
 .kb-col-add:hover {
     background: #f3f4f6;
-    border-color: #667eea;
-    color: #667eea;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -729,13 +728,15 @@
 .deal-drawer {
     position: absolute;
     top: 0;
-    left: 0;                  /* RTL: drawer opens from left side */
+    /* RTL fix: inset-inline-end:0 places the drawer at the right (reading-start)
+       side in RTL layout, matching the visual convention for slide-over panels. */
+    inset-inline-end: 0;
     width: 580px;             /* 560–620px spec, using middle value */
     max-width: 96vw;
     height: 100%;
     background: #fff;
-    border-right: 1px solid #d0d7de;
-    box-shadow: -2px 0 16px rgba(0,0,0,0.08);
+    border-inline-start: 1px solid #d0d7de;
+    box-shadow: 2px 0 16px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
     z-index: 400;
@@ -744,8 +745,9 @@
 }
 
 @keyframes drawerSlideIn {
-    from { transform: translateX(-100%); opacity: 0.6; }
-    to   { transform: translateX(0);     opacity: 1; }
+    /* RTL: drawer slides in from the inline-end (right) side */
+    from { transform: translateX(100%); opacity: 0.6; }
+    to   { transform: translateX(0);    opacity: 1; }
 }
 
 /* ── Drawer header (68px height per spec) ───────────────────────────────────── */
@@ -813,7 +815,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.8125rem;     /* 13px */
-    color: #667eea;
+    color: var(--color-primary);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.12s, text-decoration 0.12s;
@@ -827,7 +829,7 @@
 }
 
 .edit-form-link:hover {
-    color: #764ba2;
+    color: var(--color-primary-hover);
     text-decoration: underline;
 }
 
@@ -898,8 +900,8 @@
 }
 
 .df-group-active .df-input {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
     background: #fff;
 }
 
@@ -940,8 +942,8 @@
 }
 
 .df-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .df-input:disabled {
@@ -955,8 +957,8 @@
 }
 
 .df-input-focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .df-textarea {
@@ -1082,7 +1084,7 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 24px;       /* 40px total height same as inputs */
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -1098,7 +1100,7 @@
 
 .drawer-btn-primary:hover:not(:disabled) {
     filter: brightness(1.08);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    box-shadow: var(--shadow-brand-sm);
 }
 
 .drawer-btn-primary:active:not(:disabled) {

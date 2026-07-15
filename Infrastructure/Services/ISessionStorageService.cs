@@ -1,4 +1,4 @@
-namespace PicoPlus.Infrastructure.Services;
+namespace NovinCRM.Infrastructure.Services;
 
 /// <summary>
 /// Abstraction for session storage operations

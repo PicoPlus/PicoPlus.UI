@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace PicoPlus.Services.Utils;
+namespace NovinCRM.Services.Utils;
 
 /// <summary>
 /// Helper class for Persian (Jalali/Shamsi) calendar conversions

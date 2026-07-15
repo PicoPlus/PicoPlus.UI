@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Parses a HubSpot <c>subscriptionType</c> string such as

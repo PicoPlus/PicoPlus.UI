@@ -1,5 +1,5 @@
-@using PicoPlus.Localization.Abstractions
-@using PicoPlus.Localization.Services
+@using NovinCRM.Localization.Abstractions
+@using NovinCRM.Localization.Services
 @implements IAsyncDisposable
 
 @inject ILocalizationService L
@@ -39,7 +39,7 @@
             await OnLanguageChanged.InvokeAsync(code);
     }
 
-    private void HandleLanguageChanged(object? sender, PicoPlus.Localization.Models.LanguageChangedEventArgs args)
+    private void HandleLanguageChanged(object? sender, NovinCRM.Localization.Models.LanguageChangedEventArgs args)
         => InvokeAsync(StateHasChanged);
 
     public ValueTask DisposeAsync()

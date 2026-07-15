@@ -1,11 +1,11 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.Enums;
-using PicoPlus.Domain.Extensions;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.Enums;
+using NovinCRM.Domain.Extensions;
 
-namespace PicoPlus.Services.CRM.Objects;
+namespace NovinCRM.Services.CRM.Objects;
 
 /// <summary>
 /// Implements IDealRepository by delegating to the existing Deal service.

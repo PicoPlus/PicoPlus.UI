@@ -1,8 +1,8 @@
 @page "/Deal/Search"
 
-@inject PicoPlus.Services.CRM.Objects.Contact ContactService
-@inject PicoPlus.Services.CRM.Associate AssociteService
-@inject PicoPlus.Services.CRM.Objects.Deal DealService
+@inject NovinCRM.Services.CRM.Objects.Contact ContactService
+@inject NovinCRM.Services.CRM.Associate AssociteService
+@inject NovinCRM.Services.CRM.Objects.Deal DealService
 
 <div class="container mt-5">
     <div class="row mb-3">
@@ -32,7 +32,7 @@
                             <tr>
                                 <td>@deal.id</td>
                                 <td>@deal.properties.dealname</td>
-                                <td>@PicoPlus.Services.Helpers.ConvertToPersianCalendar( @deal.properties.createdate)</td>
+                                <td>@NovinCRM.Services.Helpers.ConvertToPersianCalendar( @deal.properties.createdate)</td>
                                 <td><button class="btn btn-info">??????</button></td>
                             </tr>
                         }
@@ -50,7 +50,7 @@
 
     private string? ContactID { get; set; }
 
-    private List<PicoPlus.Models.CRM.Objects.Deal.Get.Response> Deals { get; set; } = new List<PicoPlus.Models.CRM.Objects.Deal.Get.Response>();
+    private List<NovinCRM.Models.CRM.Objects.Deal.Get.Response> Deals { get; set; } = new List<NovinCRM.Models.CRM.Objects.Deal.Get.Response>();
 
     private async Task GetAsssocDealsToContact()
     {

@@ -2,11 +2,11 @@
 
 using MediatR;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain;
-using PicoPlus.Domain.Events;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Infrastructure.Events;
+namespace NovinCRM.Infrastructure.Events;
 
 /// <summary>
 /// Dispatches domain events in-process via MediatR.

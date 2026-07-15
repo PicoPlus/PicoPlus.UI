@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 
-namespace PicoPlus.Services.CRM.Objects;
+namespace NovinCRM.Services.CRM.Objects;
 
 /// <summary>
 /// HubSpot Companies API Service

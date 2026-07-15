@@ -1,4 +1,4 @@
-namespace PicoPlus.Domain.Webhooks;
+namespace NovinCRM.Domain.Webhooks;
 
 /// <summary>
 /// The lifecycle verb component of a HubSpot webhook subscription type.

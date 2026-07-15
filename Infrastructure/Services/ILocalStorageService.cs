@@ -1,4 +1,4 @@
-namespace PicoPlus.Infrastructure.Services;
+namespace NovinCRM.Infrastructure.Services;
 
 using Blazored.LocalStorage;
 

@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Domain.Entities;
-using PicoPlus.Domain.ValueObjects;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Domain.ValueObjects;
 
-namespace PicoPlus.Domain.Aggregates;
+namespace NovinCRM.Domain.Aggregates;
 
 /// <summary>
 /// Aggregate root that holds the complete, immutable state snapshot

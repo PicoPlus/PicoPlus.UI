@@ -1,0 +1,78 @@
+@namespace NovinCRM.Components.Shared
+
+<!--
+    Circuit-level error boundary for Blazor Server.
+    Wraps any subtree; on unhandled exception the faulted component tree is
+    replaced with a Persian RTL error card with a "retry" button that calls
+    ErrorBoundary.Recover() to re-render from scratch.
+-->
+<ErrorBoundary @ref="_boundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent Context="ex">
+        <div class="circuit-error-card">
+            <div class="circuit-error-icon">⚠️</div>
+            <h4 class="circuit-error-title">خطای غیرمنتظره‌ای رخ داد</h4>
+            <p class="circuit-error-message">
+                متأسفیم، در پردازش درخواست شما مشکلی به وجود آمد.
+                لطفاً دوباره تلاش کنید یا صفحه را بارگذاری مجدد نمایید.
+            </p>
+            <div class="circuit-error-actions">
+                <button class="btn btn-primary" @onclick="HandleRecover">
+                    <i class="bi bi-arrow-clockwise me-1"></i>تلاش مجدد
+                </button>
+                <a class="btn btn-outline-secondary" href="/">
+                    <i class="bi bi-house me-1"></i>صفحه اصلی
+                </a>
+            </div>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+<style>
+    .circuit-error-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 40vh;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        direction: rtl;
+    }
+
+    .circuit-error-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .circuit-error-title {
+        color: #dc2626;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .circuit-error-message {
+        color: #6b7280;
+        max-width: 440px;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+
+    .circuit-error-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    private ErrorBoundary? _boundary;
+
+    private void HandleRecover() => _boundary?.Recover();
+}

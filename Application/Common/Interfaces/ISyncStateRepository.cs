@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Application.Common.Interfaces;
+namespace NovinCRM.Application.Common.Interfaces;
 
 /// <summary>
 /// Persistent store for idempotency / duplicate-detection records.

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Newtonsoft.Json;
 
-namespace PicoPlus.Services.Utils.Security
+namespace NovinCRM.Services.Utils.Security
 {
     /// <summary>
     /// Provides data protection (encryption/decryption) for user data using
@@ -14,7 +14,7 @@ namespace PicoPlus.Services.Utils.Security
     public class DataProtect
     {
         // Data Protection purpose string — changing this invalidates all existing ciphertext.
-        private const string Purpose = "PicoPlus.UserData.v1";
+        private const string Purpose = "NovinCRM.UserData.v1";
 
         private readonly IDataProtector _protector;
 

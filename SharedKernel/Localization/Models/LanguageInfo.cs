@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace PicoPlus.Localization.Models;
+namespace NovinCRM.Localization.Models;
 
 /// <summary>
 /// Metadata for a registered language / locale.

@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
+using NovinCRM.Application.Common.Interfaces;
 
-namespace PicoPlus.Services.CRM.Commerce;
+namespace NovinCRM.Services.CRM.Commerce;
 
 /// <summary>
 /// Implements ILineItemRepository by delegating to the existing LineItem HTTP service.

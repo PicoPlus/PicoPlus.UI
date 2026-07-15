@@ -1,7 +1,7 @@
-﻿
+
 using System.Text.Json.Serialization;
 
-namespace PicoPlus.Models.CRM.Commerce
+namespace NovinCRM.Models.CRM.Commerce
 {
     public partial class LineItem
     {
@@ -28,7 +28,7 @@ namespace PicoPlus.Models.CRM.Commerce
                     public string? hs_discount_percentage { get; set; }
                     public string? hs_recurring_billing_period { get; set; }
                     public string? hs_sku { get; set; }
-                    /// <summary>Net row total sent to HubSpot (price × qty × (1 − discount/100)).</summary>
+                    /// <summary>Net row total sent to HubSpot (price � qty � (1 - discount/100)).</summary>
                     public string? amount { get; set; }
 
                     [JsonIgnore]

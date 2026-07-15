@@ -1,11 +1,11 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
-namespace PicoPlus.Services.CRM.Commerce
+namespace NovinCRM.Services.CRM.Commerce
 {
     public class Product
     {

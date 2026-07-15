@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Models.Services.SMS;
+namespace NovinCRM.Models.Services.SMS;
 
 /// <summary>
 /// SMS.ir API Data Transfer Objects

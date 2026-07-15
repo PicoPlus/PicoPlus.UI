@@ -7,7 +7,7 @@
 
 .admin-sidebar {
     width: 280px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand);
     color: white;
     display: flex;
     flex-direction: column;
@@ -65,19 +65,22 @@
     color: rgba(255,255,255,0.8);
     text-decoration: none;
     transition: all 0.3s ease;
-    border-left: 3px solid transparent;
+    /* RTL physical-property fix — border-inline-start maps to the right side
+       in RTL (the reading start), matching the visual convention of all major
+       RTL enterprise apps (Teams, WhatsApp Web, etc.) */
+    border-inline-start: 3px solid transparent;
 }
 
 .sidebar-nav .nav-item:hover {
     background: rgba(255,255,255,0.1);
     color: white;
-    border-left-color: rgba(255,255,255,0.5);
+    border-inline-start-color: rgba(255,255,255,0.5);
 }
 
 .sidebar-nav .nav-item.active {
     background: rgba(255,255,255,0.15);
     color: white;
-    border-left-color: white;
+    border-inline-start-color: white;
     font-weight: 600;
 }
 
@@ -103,7 +106,7 @@
 }
 
 .sidebar-toggle {
-    color: #667eea;
+    color: var(--color-primary);
     text-decoration: none;
 }
 

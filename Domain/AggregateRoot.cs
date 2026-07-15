@@ -1,15 +1,15 @@
 #nullable enable
 
-using PicoPlus.Domain.Events;
+using NovinCRM.Domain.Events;
 
-namespace PicoPlus.Domain;
+namespace NovinCRM.Domain;
 
 /// <summary>
 /// Base class for DDD aggregate roots.
 ///
 /// Aggregates collect domain events during a business operation.
 /// The Application layer is responsible for dispatching those events
-/// via <see cref="PicoPlus.Application.Common.Interfaces.IDomainEventDispatcher"/>
+/// via <see cref="NovinCRM.Application.Common.Interfaces.IDomainEventDispatcher"/>
 /// after the aggregate's state has been persisted.
 ///
 /// Design note — why a class, not a record:

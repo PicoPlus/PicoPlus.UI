@@ -1,8 +1,8 @@
-﻿
+
 
 using Newtonsoft.Json;
 
-namespace PicoPlus.Models.CRM.Objects;
+namespace NovinCRM.Models.CRM.Objects;
 
 public partial class Deal
 {
@@ -194,6 +194,11 @@ public partial class Deal
                 public string hs_object_id { get; set; }
                 public string dealname { get; set; }
                 public string dealstage { get; set; }
+                // ── Previously missing properties (fixes #72 / MP-9) ──────
+                public string pipeline { get; set; }
+                public string closedate { get; set; }
+                public string hubspot_owner_id { get; set; }
+                public string description { get; set; }
             }
 
             public class Result

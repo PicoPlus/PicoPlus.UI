@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace PicoPlus.Domain.Webhooks;
+namespace NovinCRM.Domain.Webhooks;
 
 /// <summary>
 /// A single event within a HubSpot webhook batch payload.

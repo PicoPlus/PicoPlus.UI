@@ -1,7 +1,7 @@
 @using Microsoft.JSInterop
 @using Newtonsoft.Json
-@inject PicoPlus.Services.CRM.Objects.Contact ContactService
-@inject PicoPlus.Services.CRM.Objects.Deal DealService
+@inject NovinCRM.Services.CRM.Objects.Contact ContactService
+@inject NovinCRM.Services.CRM.Objects.Deal DealService
 
 @inject IJSRuntime JSRuntime
 
@@ -62,11 +62,11 @@
     public string? ContactID { get; set; }
 
 
-    public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
+    public NovinCRM.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
         {
-            properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+            properties = new NovinCRM.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
         };
-    public PicoPlus.Models.CRM.Objects.Deal.Get.Response DealModel { get; set; } = new() { };
+    public NovinCRM.Models.CRM.Objects.Deal.Get.Response DealModel { get; set; } = new() { };
 
     private async Task LoaddealInfo()
     {

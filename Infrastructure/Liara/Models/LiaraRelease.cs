@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace PicoPlus.Models.Services.Liara;
+namespace NovinCRM.Models.Services.Liara;
 
 public class LiaraReleaseResponse
 {

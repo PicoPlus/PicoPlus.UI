@@ -2,11 +2,11 @@
 
 using MediatR;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Events.Contact;
-using PicoPlus.Domain.Events.Integration;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Events.Contact;
+using NovinCRM.Domain.Events.Integration;
 
-namespace PicoPlus.Application.Features.Auth.EventHandlers;
+namespace NovinCRM.Application.Features.Auth.EventHandlers;
 
 /// <summary>
 /// Handles the <see cref="ContactRegisteredEvent"/> domain event.

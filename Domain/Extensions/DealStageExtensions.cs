@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Enums;
+using NovinCRM.Domain.Enums;
 
-namespace PicoPlus.Domain.Extensions;
+namespace NovinCRM.Domain.Extensions;
 
 /// <summary>
 /// Extension methods that encode deal-stage business rules.

@@ -1,8 +1,8 @@
 #nullable enable
 
-using PicoPlus.Domain.Entities;
+using NovinCRM.Domain.Entities;
 
-namespace PicoPlus.Application.Common.Interfaces;
+namespace NovinCRM.Application.Common.Interfaces;
 
 /// <summary>
 /// Application-layer contract for HubSpot Deal operations.

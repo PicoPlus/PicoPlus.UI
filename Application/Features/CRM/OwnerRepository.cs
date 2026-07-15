@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Entities;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Entities;
 
-namespace PicoPlus.Services.CRM;
+namespace NovinCRM.Services.CRM;
 
 /// <summary>
 /// Implements IOwnerRepository by delegating to the existing Owners service.

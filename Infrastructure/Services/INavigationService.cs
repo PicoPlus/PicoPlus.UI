@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace PicoPlus.Infrastructure.Services;
+namespace NovinCRM.Infrastructure.Services;
 
 /// <summary>
 /// Abstraction for navigation operations

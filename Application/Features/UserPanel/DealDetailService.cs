@@ -1,23 +1,23 @@
 #nullable enable
 
 using Microsoft.Extensions.Logging;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Models.CRM.Objects;
-using PicoPlus.Services.CRM.Objects;
-using PicoPlus.Domain.Enums;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Models.CRM.Objects;
+using NovinCRM.Services.CRM.Objects;
+using NovinCRM.Domain.Enums;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-using PicoPlus.Application.Common.Interfaces;
-using DealService = PicoPlus.Services.CRM.Objects.Deal;
-using NotesService = PicoPlus.Services.CRM.Engagements.Notes;
-using LineItemService = PicoPlus.Services.CRM.Commerce.LineItem;
-using DealModel = PicoPlus.Models.CRM.Objects.Deal;
-using DealStage = PicoPlus.Domain.Enums.DealStage;
-using PicoPlus.Domain.Extensions;
+using NovinCRM.Application.Common.Interfaces;
+using DealService = NovinCRM.Services.CRM.Objects.Deal;
+using NotesService = NovinCRM.Services.CRM.Engagements.Notes;
+using LineItemService = NovinCRM.Services.CRM.Commerce.LineItem;
+using DealModel = NovinCRM.Models.CRM.Objects.Deal;
+using DealStage = NovinCRM.Domain.Enums.DealStage;
+using NovinCRM.Domain.Extensions;
 
-namespace PicoPlus.Services.UserPanel;
+namespace NovinCRM.Services.UserPanel;
 
 /// <summary>
 /// Service to load comprehensive deal details including notes, files, and engagement logs.
@@ -54,7 +54,7 @@ public class DealDetailService
 
     public class DealDetailViewModel
     {
-        public required PicoPlus.Domain.Entities.Deal Deal { get; init; }
+        public required NovinCRM.Domain.Entities.Deal Deal { get; init; }
         public List<Note> Notes { get; init; } = [];
         public List<EngagementLog> CallLogs { get; init; } = [];
         public List<FileAttachment> Files { get; init; } = [];
@@ -122,7 +122,7 @@ public class DealDetailService
             {
                 return new DealDetailViewModel
                 {
-                    Deal = new PicoPlus.Domain.Entities.Deal
+                    Deal = new NovinCRM.Domain.Entities.Deal
                     {
                         Id = dealId,
                         DealName = "Unknown Deal"
@@ -154,7 +154,7 @@ public class DealDetailService
             _logger.LogError(ex, "Error loading deal details for: {DealId}", dealId);
             return new DealDetailViewModel
             {
-                Deal = new PicoPlus.Domain.Entities.Deal
+                Deal = new NovinCRM.Domain.Entities.Deal
                 {
                     Id = dealId,
                     DealName = "Error Loading Deal"
@@ -164,10 +164,10 @@ public class DealDetailService
         }
     }
 
-    private PicoPlus.Domain.Entities.Deal MapToDomainDeal(DealModel.Get.Response dealModel)
+    private NovinCRM.Domain.Entities.Deal MapToDomainDeal(DealModel.Get.Response dealModel)
     {
         var props = dealModel.properties;
-        return new PicoPlus.Domain.Entities.Deal
+        return new NovinCRM.Domain.Entities.Deal
         {
             Id = dealModel.id,
             DealName = props?.dealname ?? "Unknown",

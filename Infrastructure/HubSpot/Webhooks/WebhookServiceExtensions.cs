@@ -1,9 +1,9 @@
 #nullable enable
 
 using Microsoft.Extensions.DependencyInjection;
-using PicoPlus.Application.Common.Interfaces;
+using NovinCRM.Application.Common.Interfaces;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Extension methods for registering the complete HubSpot webhook infrastructure.
@@ -41,8 +41,16 @@ public static class WebhookServiceExtensions
         // ── Signature verifier — stateless singleton ──────────────────────────
         services.AddSingleton<HubSpotSignatureVerifier>();
 
-        // ── Bounded channel queue — singleton so dispatcher and endpoint share it
-        services.AddSingleton<IWebhookEventQueue, InMemoryWebhookEventQueue>();
+        // ── Bounded channel queue — singleton so dispatcher and endpoint share it.
+        // Registered under both interfaces so:
+        //   • HTTP endpoint injects IWebhookEventQueue  (write-only view)
+        //   • Dispatcher injects IRetryableEventQueue   (adds retry channel access)
+        // Both resolve the same singleton instance.
+        services.AddSingleton<InMemoryWebhookEventQueue>();
+        services.AddSingleton<IWebhookEventQueue>(sp =>
+            sp.GetRequiredService<InMemoryWebhookEventQueue>());
+        services.AddSingleton<IRetryableEventQueue>(sp =>
+            sp.GetRequiredService<InMemoryWebhookEventQueue>());
 
         // ── Retry policy — singleton, uses options resolved at construction time
         services.AddSingleton<IRetryPolicy>(sp =>

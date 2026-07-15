@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
-using PicoPlus.Models.CRM.Objects;
-using PicoPlus.Services.Identity;
-using ContactService = PicoPlus.Services.CRM.Objects.Contact;
+using NovinCRM.Models.CRM.Objects;
+using NovinCRM.Services.Identity;
+using ContactService = NovinCRM.Services.CRM.Objects.Contact;
 
-namespace PicoPlus.Services.CRM;
+namespace NovinCRM.Services.CRM;
 
 /// <summary>
 /// Service for automatically updating contact information from Zohal.

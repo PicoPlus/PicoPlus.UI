@@ -3,10 +3,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Webhooks;
+namespace NovinCRM.Infrastructure.Webhooks;
 
 /// <summary>
 /// Enterprise-grade webhook event dispatcher.
@@ -54,26 +54,27 @@ namespace PicoPlus.Infrastructure.Webhooks;
 /// </summary>
 public sealed class WebhookDispatcherService : BackgroundService
 {
-    private readonly InMemoryWebhookEventQueue   _queue;
+    private readonly IRetryableEventQueue        _queue;
     private readonly IServiceScopeFactory        _scopeFactory;
     private readonly IRetryPolicy                _retryPolicy;
     private readonly HubSpotWebhookOptions       _options;
     private readonly ILogger<WebhookDispatcherService> _logger;
+    private readonly IDeadLetterStore            _deadLetterStore;
 
     public WebhookDispatcherService(
-        IWebhookEventQueue              queue,
+        IRetryableEventQueue            queue,
         IServiceScopeFactory            scopeFactory,
         IRetryPolicy                    retryPolicy,
         IOptions<HubSpotWebhookOptions> options,
+        IDeadLetterStore                deadLetterStore,
         ILogger<WebhookDispatcherService> logger)
     {
-        // Cast is safe: InMemoryWebhookEventQueue is the only registered implementation.
-        // We need the concrete type to access the retry channel internals.
-        _queue        = (InMemoryWebhookEventQueue)queue;
-        _scopeFactory = scopeFactory;
-        _retryPolicy  = retryPolicy;
-        _options      = options.Value;
-        _logger       = logger;
+        _queue           = queue;
+        _scopeFactory    = scopeFactory;
+        _retryPolicy     = retryPolicy;
+        _options         = options.Value;
+        _deadLetterStore = deadLetterStore;
+        _logger          = logger;
     }
 
     // ── BackgroundService entrypoint ──────────────────────────────────────────
@@ -158,8 +159,22 @@ public sealed class WebhookDispatcherService : BackgroundService
     private async Task ProcessEnvelopeAsync(EventEnvelope envelope, CancellationToken ct)
     {
         using var scope    = _scopeFactory.CreateScope();
-        var       handlers = scope.ServiceProvider
-                                  .GetServices<IHubSpotWebhookHandler>();
+
+        // Push a structured log scope so every log call inside this envelope
+        // processing automatically carries { CorrelationId, HubSpotEventId, EventType }.
+        var correlationId = envelope.CorrelationId
+            ??= Guid.NewGuid().ToString("N");
+
+        using var logScope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["CorrelationId"]   = correlationId,
+            ["HubSpotEventId"]  = envelope.Event.EventId,
+            ["EventType"]       = envelope.Event.SubscriptionType?.ToString(),
+            ["ObjectId"]        = envelope.Event.ObjectId,
+        });
+
+        var handlers = scope.ServiceProvider
+                            .GetServices<IHubSpotWebhookHandler>();
 
         foreach (var handler in handlers)
         {
@@ -255,6 +270,23 @@ public sealed class WebhookDispatcherService : BackgroundService
             envelope.Event.SubscriptionType,
             envelope.AttemptCount,
             envelope.FirstEnqueuedAt);
+
+        // Persist to dead-letter store for later inspection / re-drive
+        var entry = new NovinCRM.Application.Common.Interfaces.DeadLetterEntry
+        {
+            EventId          = envelope.Event.EventId.ToString(),
+            SubscriptionType = envelope.Event.SubscriptionType?.ToString() ?? string.Empty,
+            PortalId         = envelope.Event.PortalId,
+            HandlerName      = handlerName,
+            FailureReason    = reason,
+            LastErrorMessage = ex.Message,
+            AttemptCount     = envelope.AttemptCount,
+            FirstEnqueuedAt  = envelope.FirstEnqueuedAt,
+            DeadLetteredAt   = DateTimeOffset.UtcNow,
+            EventPayloadJson = System.Text.Json.JsonSerializer.Serialize(envelope.Event)
+        };
+        // Fire-and-forget — DeadLetter is called on a hot path; don't block
+        _ = _deadLetterStore.WriteAsync(entry);
     }
 
     // ── Graceful shutdown drain ───────────────────────────────────────────────

@@ -1,11 +1,12 @@
 #nullable enable
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Application.Features.CRM.EventHandlers;
-using PicoPlus.Infrastructure.Events;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Application.Features.CRM.EventHandlers;
+using NovinCRM.Infrastructure.Events;
 
-namespace PicoPlus.Infrastructure.Sync;
+namespace NovinCRM.Infrastructure.Sync;
 
 /// <summary>
 /// Registers the complete EDA + bidirectional sync stack.
@@ -13,16 +14,17 @@ namespace PicoPlus.Infrastructure.Sync;
 /// </summary>
 public static class SyncServiceExtensions
 {
-    public static IServiceCollection AddEventDrivenSync(this IServiceCollection services)
+    public static IServiceCollection AddEventDrivenSync(
+        this IServiceCollection services, IConfiguration configuration)
     {
         // ── MediatR ───────────────────────────────────────────────────────────
         // Scans Application and Infrastructure assemblies for INotificationHandlers.
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining<
-                PicoPlus.Application.Features.Auth.EventHandlers.ContactRegisteredHandler>();
+                NovinCRM.Application.Features.Auth.EventHandlers.ContactRegisteredHandler>();
             cfg.RegisterServicesFromAssemblyContaining<
-                PicoPlus.Infrastructure.Events.MediatRDomainEventDispatcher>();
+                NovinCRM.Infrastructure.Events.MediatRDomainEventDispatcher>();
         });
 
         // ── Domain event dispatcher ───────────────────────────────────────────
@@ -32,8 +34,17 @@ public static class SyncServiceExtensions
         services.AddScoped<IIntegrationEventPublisher, WebhookIntegrationEventPublisher>();
 
         // ── Sync state (idempotency / duplicate / out-of-order) ───────────────
-        // Swap to a database-backed implementation for multi-instance deployments.
-        services.AddSingleton<ISyncStateRepository, InMemorySyncStateRepository>();
+        // Uses RedisSyncStateRepository when ConnectionStrings:Redis is configured
+        // (survives restarts, safe for multi-instance). Falls back to the
+        // in-memory implementation for local development without Redis.
+        var redisConnection =
+            Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+            ?? configuration.GetConnectionString("Redis");
+
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+            services.AddSingleton<ISyncStateRepository, RedisSyncStateRepository>();
+        else
+            services.AddSingleton<ISyncStateRepository, InMemorySyncStateRepository>();
 
         // ── Bidirectional sync service ────────────────────────────────────────
         services.AddScoped<BidirectionalSyncService>();

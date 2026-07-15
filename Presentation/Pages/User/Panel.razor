@@ -1,14 +1,12 @@
 @page "/user/panel"
-@using PicoPlus.Domain.Aggregates
-@using PicoPlus.Domain.Enums
-@using PicoPlus.Components.User
-@using PicoPlus.Components.Shared
-@using PicoPlus.Components.Dialogs
+@using NovinCRM.Domain.Aggregates
+@using NovinCRM.Domain.Enums
+@using NovinCRM.Components.User
+@using NovinCRM.Components.Shared
+@using NovinCRM.Components.Dialogs
 @using Microsoft.AspNetCore.Components.Web
 @attribute [StreamRendering]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-
-<link href="/css/user-panel.css" rel="stylesheet" />
 
 <ErrorBoundary>
     <ChildContent>
@@ -20,7 +18,8 @@
                         <i class="bi bi-grid-fill me-2"></i>
                         <span class="fw-bold">پیکوپلاس</span>
                     </div>
-                    <div class="user-info-header">
+                    <div class="user-info-header d-flex align-items-center gap-2">
+                        <ThemeToggle />
                         @if (_state?.Contact != null)
                         {
                             <div class="dropdown">

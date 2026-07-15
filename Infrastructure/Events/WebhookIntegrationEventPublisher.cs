@@ -2,11 +2,11 @@
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Events;
-using PicoPlus.Domain.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Events;
+using NovinCRM.Domain.Webhooks;
 
-namespace PicoPlus.Infrastructure.Events;
+namespace NovinCRM.Infrastructure.Events;
 
 /// <summary>
 /// Publishes integration events by converting them into synthetic

@@ -3,12 +3,12 @@
 @inject IJSRuntime Js
 @using Newtonsoft.Json
 @inject IConfiguration Config
-@inject PicoPlus.Services.CRM.Pipelines PiplineService
-@inject PicoPlus.Services.CRM.Owners OwnerService
-@inject PicoPlus.Services.CRM.Objects.Deal DealService
-@inject PicoPlus.Services.CRM.Commerce.LineItem LineitemService
-@inject PicoPlus.Services.SMS.SMS.Send SMSService
-@inject PicoPlus.Infrastructure.Services.IDialogService DialogService
+@inject NovinCRM.Services.CRM.Pipelines PiplineService
+@inject NovinCRM.Services.CRM.Owners OwnerService
+@inject NovinCRM.Services.CRM.Objects.Deal DealService
+@inject NovinCRM.Services.CRM.Commerce.LineItem LineitemService
+@inject NovinCRM.Services.SMS.SMS.Send SMSService
+@inject NovinCRM.Infrastructure.Services.IDialogService DialogService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 
 <div class="page-content">
@@ -111,13 +111,13 @@
     [Parameter]
     public string UserID { get; set; }
 
-    private PicoPlus.Models.CRM.Pipelines.List PipList { get; set; } = new();
+    private NovinCRM.Models.CRM.Pipelines.List PipList { get; set; } = new();
     private string SelectedPipID { get; set; } = string.Empty;
     private string SelectedDealStage { get; set; } = string.Empty;
 
     private SeletedLineItemPane productGrid;
 
-    private PicoPlus.Models.CRM.Owners.GetAll OwnerList { get; set; }
+    private NovinCRM.Models.CRM.Owners.GetAll OwnerList { get; set; }
     private string SelectedOwner { get; set; }
     private string SelectedOwnerID { get; set; }
 
@@ -125,11 +125,11 @@
     private string TotalPrice { get; set; }
     private string DealAmount { get; set; }
 
-    private List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association> DealLines { get; set; } = new();
+    private List<NovinCRM.Models.CRM.Objects.Deal.Create.Request.Association> DealLines { get; set; } = new();
 
-    public PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
+    public NovinCRM.Models.CRM.Objects.Contact.Search.Response.Result ContactModel { get; set; } = new()
     {
-        properties = new PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
+        properties = new NovinCRM.Models.CRM.Objects.Contact.Search.Response.Result.Properties()
     };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -155,7 +155,7 @@
         var temp = await sessionStorage.GetItemAsync<string>("ContactModel");
         if (!string.IsNullOrEmpty(temp))
         {
-            ContactModel = JsonConvert.DeserializeObject<PicoPlus.Models.CRM.Objects.Contact.Search.Response.Result>(temp);
+            ContactModel = JsonConvert.DeserializeObject<NovinCRM.Models.CRM.Objects.Contact.Search.Response.Result>(temp);
             UserID = ContactModel.id;
         }
     }
@@ -199,7 +199,7 @@
                 return;
             }
 
-            var lnitm = await LineitemService.CreateLineAsync(new PicoPlus.Models.CRM.Commerce.LineItem.Create.Request
+            var lnitm = await LineitemService.CreateLineAsync(new NovinCRM.Models.CRM.Commerce.LineItem.Create.Request
             {
                 inputs = lineItems
             });
@@ -211,13 +211,13 @@
             {
                 foreach (var line_to_deal in lnitm.results)
                 {
-                    DealLines.Add(new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association
+                    DealLines.Add(new NovinCRM.Models.CRM.Objects.Deal.Create.Request.Association
                     {
-                        to = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.To
+                        to = new NovinCRM.Models.CRM.Objects.Deal.Create.Request.To
                         {
                             id = long.Parse(line_to_deal.id)
                         },
-                        types = new List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type>
+                        types = new List<NovinCRM.Models.CRM.Objects.Deal.Create.Request.Type>
                         {
                             new()
                             {
@@ -232,13 +232,13 @@
             // Add contact association
             if (!string.IsNullOrEmpty(UserID))
             {
-                DealLines.Add(new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Association
+                DealLines.Add(new NovinCRM.Models.CRM.Objects.Deal.Create.Request.Association
                 {
-                    to = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.To
+                    to = new NovinCRM.Models.CRM.Objects.Deal.Create.Request.To
                     {
                         id = long.Parse(UserID)
                     },
-                    types = new List<PicoPlus.Models.CRM.Objects.Deal.Create.Request.Type>
+                    types = new List<NovinCRM.Models.CRM.Objects.Deal.Create.Request.Type>
                     {
                         new()
                         {
@@ -249,9 +249,9 @@
                 });
             }
 
-            var deal = await DealService.Create(new PicoPlus.Models.CRM.Objects.Deal.Create.Request
+            var deal = await DealService.Create(new NovinCRM.Models.CRM.Objects.Deal.Create.Request
             {
-                properties = new PicoPlus.Models.CRM.Objects.Deal.Create.Request.Properties
+                properties = new NovinCRM.Models.CRM.Objects.Deal.Create.Request.Properties
                 {
                     amount = productGrid.GetTotalAmount(),
                     dealname = DealName,

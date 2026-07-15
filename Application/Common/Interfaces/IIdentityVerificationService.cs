@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Application.Common.Interfaces;
+namespace NovinCRM.Application.Common.Interfaces;
 
 /// <summary>
 /// Application-layer contract for Iranian national identity verification (Zibal).

@@ -1,9 +1,9 @@
 #nullable enable
 
-using PicoPlus.Application.Common.Interfaces;
-using DomainContact = PicoPlus.Domain.Entities.Contact;
+using NovinCRM.Application.Common.Interfaces;
+using DomainContact = NovinCRM.Domain.Entities.Contact;
 
-namespace PicoPlus.Services.CRM.Objects;
+namespace NovinCRM.Services.CRM.Objects;
 
 /// <summary>
 /// Implements IContactRepository by delegating to the existing Contact HTTP service.

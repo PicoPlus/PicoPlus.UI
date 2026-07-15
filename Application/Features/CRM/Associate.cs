@@ -1,7 +1,7 @@
-﻿using RestSharp;
+using RestSharp;
 using Microsoft.Extensions.Configuration;
 
-namespace PicoPlus.Services.CRM
+namespace NovinCRM.Services.CRM
 {
     public partial class Associate
     {

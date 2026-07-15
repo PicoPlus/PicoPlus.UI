@@ -1,4 +1,4 @@
-namespace PicoPlus.Services.SMS
+namespace NovinCRM.Services.SMS
 {
     /// <summary>
     /// SMS Provider types
@@ -29,6 +29,12 @@ namespace PicoPlus.Services.SMS
         /// Send deal closed notification
         /// </summary>
         Task SendDealClosedAsync(string mobile, string firstName, string lastName, string dealId, string dealLink = "");
+
+        /// <summary>
+        /// Send order review / invoice link to customer after deal is closed.
+        /// Pattern variables: {firstName}, {link}
+        /// </summary>
+        Task SendOrderReviewAsync(string mobile, string firstName, string invoiceLink);
 
         /// <summary>
         /// Get SMS provider name

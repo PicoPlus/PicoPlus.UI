@@ -1,11 +1,11 @@
 #nullable enable
 
 using System.Text.Json;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Webhooks;
-using PicoPlus.Infrastructure.Webhooks;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Webhooks;
+using NovinCRM.Infrastructure.Webhooks;
 
-namespace PicoPlus.Presentation.Webhooks;
+namespace NovinCRM.Presentation.Webhooks;
 
 /// <summary>
 /// Maps the HubSpot webhook endpoint: POST /webhooks/hubspot

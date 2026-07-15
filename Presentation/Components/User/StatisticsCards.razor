@@ -1,4 +1,4 @@
-@using PicoPlus.Domain.ValueObjects
+@using NovinCRM.Domain.ValueObjects
 
 @* Statistics cards container *@
 
@@ -46,7 +46,7 @@
 
 @code {
     [Parameter, EditorRequired]
-    public PicoPlus.Domain.ValueObjects.UserStatistics Statistics { get; set; } = new();
+    public NovinCRM.Domain.ValueObjects.UserStatistics Statistics { get; set; } = new();
 
     [Parameter]
     public decimal WalletBalance { get; set; }

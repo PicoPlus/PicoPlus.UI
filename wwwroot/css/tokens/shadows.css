@@ -33,8 +33,9 @@
     --shadow-brand-md: 0 6px 16px rgba(129, 140, 248, 0.35);
     --shadow-brand-lg: 0 8px 24px rgba(99,  102, 241, 0.40);
 
-    --shadow-fab:   0 4px 20px rgba(142, 84, 233, 0.55);
-    --shadow-fab-hover: 0 8px 28px rgba(142, 84, 233, 0.65);
+    /* Note: FAB shadow uses brand-600 channel. Override in dark.css if needed. */
+    --shadow-fab:   0 4px 20px rgba(99, 102, 241, 0.55);
+    --shadow-fab-hover: 0 8px 28px rgba(99, 102, 241, 0.65);
 
     /* ── Inset Shadows ───────────────────────────────────────────── */
     --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);

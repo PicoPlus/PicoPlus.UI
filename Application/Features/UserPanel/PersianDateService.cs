@@ -2,7 +2,7 @@
 
 using System.Globalization;
 
-namespace PicoPlus.Services.UserPanel;
+namespace NovinCRM.Services.UserPanel;
 
 /// <summary>
 /// Implementation of Persian date service

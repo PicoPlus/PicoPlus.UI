@@ -1,4 +1,4 @@
-namespace PicoPlus.Domain.Webhooks;
+namespace NovinCRM.Domain.Webhooks;
 
 /// <summary>
 /// Every CRM object type that HubSpot can send webhook events for.

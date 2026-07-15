@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Services.Auth;
+namespace NovinCRM.Services.Auth;
 
 /// <summary>
 /// Multi-step user registration flow.

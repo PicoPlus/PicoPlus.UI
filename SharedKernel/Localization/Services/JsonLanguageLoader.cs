@@ -4,10 +4,10 @@ using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PicoPlus.Localization.Abstractions;
-using PicoPlus.Localization.Models;
+using NovinCRM.Localization.Abstractions;
+using NovinCRM.Localization.Models;
 
-namespace PicoPlus.Localization.Services;
+namespace NovinCRM.Localization.Services;
 
 /// <summary>
 /// Loads translation dictionaries from JSON files on the local file system.

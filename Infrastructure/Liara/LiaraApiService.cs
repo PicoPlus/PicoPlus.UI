@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using PicoPlus.Models.Services.Liara;
+using NovinCRM.Models.Services.Liara;
 
-namespace PicoPlus.Services.Utils;
+namespace NovinCRM.Services.Utils;
 
 public class LiaraApiService
 {

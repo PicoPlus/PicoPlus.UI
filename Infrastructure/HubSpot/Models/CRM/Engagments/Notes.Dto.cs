@@ -1,4 +1,4 @@
-﻿namespace PicoPlus.Models.CRM.Engagements;
+namespace NovinCRM.Models.CRM.Engagements;
 
 
 public partial class Notes

@@ -1,4 +1,4 @@
-﻿namespace PicoPlus.Models.CRM
+namespace NovinCRM.Models.CRM
 {
     public partial class Pipelines
     {

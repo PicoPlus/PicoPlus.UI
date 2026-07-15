@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
-using PicoPlus.Application.Common.Interfaces;
-using PicoPlus.Domain.Entities;
-using PicoPlus.Infrastructure.Services;
+using NovinCRM.Application.Common.Interfaces;
+using NovinCRM.Domain.Entities;
+using NovinCRM.Infrastructure.Services;
 
-namespace PicoPlus.Services.Auth;
+namespace NovinCRM.Services.Auth;
 
 /// <summary>
 /// Authentication Service for handling role-based authentication and contact lookup.

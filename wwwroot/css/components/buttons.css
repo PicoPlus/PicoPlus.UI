@@ -88,9 +88,9 @@
 }
 
 .btn-action:hover {
-    background:   var(--gradient-cyan);
-    border-color: transparent;
-    color:        #fff;
+    background:   var(--color-primary-subtle);
+    border-color: var(--color-primary);
+    color:        var(--color-primary);
 }
 
 /* ── Info ────────────────────────────────────────────────────────── */

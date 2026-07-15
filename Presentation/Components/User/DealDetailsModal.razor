@@ -1,6 +1,6 @@
-@using PicoPlus.Domain.Entities
-@using PicoPlus.Domain.Extensions
-@using PicoPlus.Services.UserPanel
+@using NovinCRM.Domain.Entities
+@using NovinCRM.Domain.Extensions
+@using NovinCRM.Services.UserPanel
 @using System.Globalization
 
 @inject IPersianDateService DateService
@@ -319,7 +319,7 @@
     public bool IsVisible { get; set; }
 
     [Parameter]
-    public PicoPlus.Domain.Entities.Deal? Deal { get; set; }
+    public NovinCRM.Domain.Entities.Deal? Deal { get; set; }
 
     [Parameter]
     public EventCallback OnClose { get; set; }

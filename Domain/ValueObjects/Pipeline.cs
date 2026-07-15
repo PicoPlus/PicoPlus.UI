@@ -1,6 +1,6 @@
 #nullable enable
 
-namespace PicoPlus.Domain.ValueObjects;
+namespace NovinCRM.Domain.ValueObjects;
 
 /// <summary>
 /// Immutable value object representing a deal pipeline.
