@@ -40,7 +40,7 @@
   <!-- External NuGet packages -->
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.*" />
     <PackageReference Include="Blazor.PersianDatePicker" Version="3.7.2" />
     <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
