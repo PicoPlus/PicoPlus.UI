@@ -11,9 +11,12 @@ using NovinCRM.Infrastructure.State;
 using NovinCRM.Infrastructure.Sync;
 using NovinCRM.Infrastructure.Webhooks;
 using NovinCRM.Presentation.Webhooks;
+using Microsoft.EntityFrameworkCore;
 using NovinCRM.Application.Features.CRM.Commerce;
 using NovinCRM.Application.Features.CRM.EventHandlers;
+using NovinCRM.Infrastructure.Backup;
 using NovinCRM.Infrastructure.HubSpot.CRM.Commerce;
+using NovinCRM.Infrastructure.Persistence;
 using NovinCRM.Services.Admin;
 using NovinCRM.Services.Auth;
 using NovinCRM.Services.UserPanel;
@@ -392,6 +395,31 @@ builder.Services.AddHealthChecks()
     });
 
 builder.Services.AddRazorPages();
+
+// ── Nightly Backup sub-system (issue #97) ────────────────────────────────────
+var backupCs = builder.Configuration.GetConnectionString("BackupDb");
+if (!string.IsNullOrWhiteSpace(backupCs))
+{
+    builder.Services.AddDbContextFactory<NovinBackupDbContext>(opts =>
+        opts.UseSqlServer(backupCs));
+
+    builder.Services.AddScoped<
+        NovinCRM.Application.Common.Interfaces.IHubSpotBackupService,
+        HubSpotBackupService>();
+
+    builder.Services.AddSingleton<
+        NovinCRM.Application.Common.Interfaces.IMaintenanceModeService,
+        NovinCRM.Infrastructure.Services.MaintenanceModeService>();
+
+    builder.Services.AddHostedService<NightlyBackupHostedService>();
+}
+else
+{
+    // Register a no-op maintenance service so DI doesn't fail when backup is disabled
+    builder.Services.AddSingleton<
+        NovinCRM.Application.Common.Interfaces.IMaintenanceModeService,
+        NovinCRM.Infrastructure.Services.MaintenanceModeService>();
+}
 
 var app = builder.Build();
 

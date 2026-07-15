@@ -1,0 +1,57 @@
+@* Presentation/Components/MaintenanceBanner.razor *@
+@using NovinCRM.Application.Common.Interfaces
+@inject IMaintenanceModeService Maintenance
+@implements IDisposable
+
+@if (Maintenance.IsMaintenanceMode)
+{
+    <div class="maintenance-overlay" dir="rtl" lang="fa">
+        <div class="maintenance-card">
+            <div class="maintenance-icon">🔧</div>
+            <h2 class="maintenance-title">سیستم در حال به‌روزرسانی است</h2>
+            <p class="maintenance-msg">
+                لطفاً تا ساعت ۱۲:۳۰ صبر کنید. در این مدت اطلاعات سیستم در حال پشتیبان‌گیری می‌باشد.
+            </p>
+            @if (Maintenance.CurrentInfo?.EstimatedEnd.HasValue == true)
+            {
+                <p class="maintenance-eta">
+                    زمان تخمینی پایان: @Maintenance.CurrentInfo.EstimatedEnd.Value.ToString("HH:mm")
+                </p>
+            }
+            <p class="maintenance-readonly">امکان مشاهده اطلاعات موجود است، اما ثبت عملیات جدید تا پایان این بازه امکان‌پذیر نیست.</p>
+        </div>
+    </div>
+}
+
+@code {
+    private System.Threading.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        // Poll every 60 seconds so the banner hides automatically when maintenance ends
+        _timer = new System.Threading.Timer(_ =>
+            InvokeAsync(StateHasChanged), null,
+            TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}
+
+<style>
+    .maintenance-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(15, 23, 42, 0.85);
+        display: flex; align-items: center; justify-content: center;
+        font-family: Tahoma, 'Segoe UI', sans-serif;
+    }
+    .maintenance-card {
+        background: #fff; border-radius: 16px;
+        padding: 2.5rem 2rem; max-width: 480px; text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,.3);
+    }
+    .maintenance-icon  { font-size: 3rem; margin-bottom: .5rem; }
+    .maintenance-title { font-size: 1.3rem; font-weight: 700; color: #1e3a5f; margin-bottom: .75rem; }
+    .maintenance-msg   { color: #374151; font-size: .95rem; margin-bottom: .5rem; }
+    .maintenance-eta   { color: #2563eb; font-weight: 600; font-size: .9rem; }
+    .maintenance-readonly { font-size: .82rem; color: #6b7280; margin-top: .75rem; }
+</style>
